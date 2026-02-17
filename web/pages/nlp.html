@@ -51,7 +51,10 @@
                 <div style="display: flex; gap: 2rem; align-items: center;">
                     <!-- Firebase Status -->
                     <div
-                        style="flex: 1; text-align: center; padding: 1rem; border: 1px dashed var(--border-subtle); border-radius: var(--radius-sm);">
+                        style="flex: 1; text-align: center; padding: 1rem; border: 1px dashed var(--border-subtle); border-radius: var(--radius-sm); position: relative;">
+                        <input type="checkbox" id="checkFirebase" checked
+                            style="position: absolute; top: 8px; right: 8px; cursor: pointer;"
+                            title="Toggle Firebase Check">
                         <div style="font-weight: 600; margin-bottom: 0.5rem;">Firebase</div>
                         <span id="statusFirebase" class="badge"
                             style="background: var(--bg-app); color: var(--text-muted);">Unknown</span>
@@ -59,7 +62,10 @@
 
                     <!-- Gemini API Status -->
                     <div
-                        style="flex: 1; text-align: center; padding: 1rem; border: 1px dashed var(--border-subtle); border-radius: var(--radius-sm);">
+                        style="flex: 1; text-align: center; padding: 1rem; border: 1px dashed var(--border-subtle); border-radius: var(--radius-sm); position: relative;">
+                        <input type="checkbox" id="checkGemini" checked
+                            style="position: absolute; top: 8px; right: 8px; cursor: pointer;"
+                            title="Toggle Gemini Check">
                         <div style="font-weight: 600; margin-bottom: 0.5rem;">Gemini API</div>
                         <span id="statusGemini" class="badge"
                             style="background: var(--bg-app); color: var(--text-muted);">Unknown</span>
@@ -67,7 +73,10 @@
 
                     <!-- OpenAI API Status -->
                     <div
-                        style="flex: 1; text-align: center; padding: 1rem; border: 1px dashed var(--border-subtle); border-radius: var(--radius-sm);">
+                        style="flex: 1; text-align: center; padding: 1rem; border: 1px dashed var(--border-subtle); border-radius: var(--radius-sm); position: relative;">
+                        <input type="checkbox" id="checkOpenAI" checked
+                            style="position: absolute; top: 8px; right: 8px; cursor: pointer;"
+                            title="Toggle OpenAI Check">
                         <div style="font-weight: 600; margin-bottom: 0.5rem;">OpenAI API</div>
                         <span id="statusOpenAI" class="badge"
                             style="background: var(--bg-app); color: var(--text-muted);">Unknown</span>
@@ -148,54 +157,73 @@
     <script>
         function checkAllConnections() {
             console.log("Starting connection checks...");
-            // Set loading state
-            const badges = ['statusFirebase', 'statusGemini', 'statusOpenAI'];
-            badges.forEach(id => {
-                const el = document.getElementById(id);
-                if (el) {
-                    el.innerText = 'Checking...';
-                    el.className = 'badge running';
-                }
-            });
 
-            // 1. Check Firebase (Local Write) - Using SILENT mode
-            try {
-                // Call global function with silent=true
-                if (typeof window.testFirestoreWrite === 'function') {
-                    window.testFirestoreWrite(true)
-                        .then(() => {
-                            console.log("Firebase check passed.");
-                            const el = document.getElementById('statusFirebase');
-                            if (el) {
-                                el.innerText = 'Connected';
-                                el.className = 'badge done';
-                            }
-                        })
-                        .catch((e) => {
-                            console.error("Firebase check failed:", e);
-                            const el = document.getElementById('statusFirebase');
-                            if (el) {
-                                el.innerText = 'Failed';
-                                el.className = 'badge error';
-                            }
-                        });
-                } else {
-                    console.error("testFirestoreWrite not found on window");
-                }
-            } catch (e) {
-                console.error("Error calling testFirestoreWrite:", e);
+            // Get Toggle States
+            const doFirebase = document.getElementById('checkFirebase').checked;
+            const doGemini = document.getElementById('checkGemini').checked;
+            const doOpenAI = document.getElementById('checkOpenAI').checked;
+
+            // Set loading state ONLY for checked items
+            if (doFirebase) {
                 const el = document.getElementById('statusFirebase');
-                if (el) {
-                    el.innerText = 'Error';
-                    el.className = 'badge error';
-                }
+                if (el) { el.innerText = 'Checking...'; el.className = 'badge running'; }
+            }
+            if (doGemini) {
+                const el = document.getElementById('statusGemini');
+                if (el) { el.innerText = 'Checking...'; el.className = 'badge running'; }
+            }
+            if (doOpenAI) {
+                const el = document.getElementById('statusOpenAI');
+                if (el) { el.innerText = 'Checking...'; el.className = 'badge running'; }
             }
 
-            // 2. Check APIs (Triggers Cloud Job)
-            if (typeof window.testAIConnection === 'function') {
-                window.testAIConnection();
+            // 1. Check Firebase (Local Write) - if toggled
+            if (doFirebase) {
+                try {
+                    if (typeof window.testFirestoreWrite === 'function') {
+                        window.testFirestoreWrite(true)
+                            .then(() => {
+                                console.log("Firebase check passed.");
+                                const el = document.getElementById('statusFirebase');
+                                if (el) { el.innerText = 'Connected'; el.className = 'badge done'; }
+                            })
+                            .catch((e) => {
+                                console.error("Firebase check failed:", e);
+                                const el = document.getElementById('statusFirebase');
+                                if (el) { el.innerText = 'Failed'; el.className = 'badge error'; }
+                            });
+                    } else {
+                        console.error("testFirestoreWrite not found on window");
+                    }
+                } catch (e) {
+                    console.error("Error calling testFirestoreWrite:", e);
+                    const el = document.getElementById('statusFirebase');
+                    if (el) { el.innerText = 'Error'; el.className = 'badge error'; }
+                }
             } else {
-                console.error("testAIConnection not found on window");
+                // Reset badge if unchecked
+                const el = document.getElementById('statusFirebase');
+                if (el) { el.innerText = 'Skipped'; el.className = 'badge'; style = "background-color:#eee; color:#aaa"; }
+            }
+
+            // 2. Check APIs (Triggers Cloud Job) - if either is toggled
+            if (doGemini || doOpenAI) {
+                if (typeof window.testAIConnection === 'function') {
+                    // Pass the toggle states to the backend function
+                    window.testAIConnection(doGemini, doOpenAI);
+                } else {
+                    console.error("testAIConnection not found on window");
+                }
+            } else {
+                // Reset badges if unchecked
+                if (!doGemini) {
+                    const el = document.getElementById('statusGemini');
+                    if (el) { el.innerText = 'Skipped'; el.className = 'badge'; style = "background-color:#eee; color:#aaa"; }
+                }
+                if (!doOpenAI) {
+                    const el = document.getElementById('statusOpenAI');
+                    if (el) { el.innerText = 'Skipped'; el.className = 'badge'; style = "background-color:#eee; color:#aaa"; }
+                }
             }
 
             // 3. Poll for results

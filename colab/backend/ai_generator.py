@@ -125,28 +125,39 @@ class AIPipelines:
             clean = clean[:-3]
         return clean.strip()
 
-    def test_connections(self):
-        """Tests connectivity to both APIs."""
+    def test_connections(self, check_openai=True, check_gemini=True):
+        """Tests connectivity to APIs based on flags."""
         results = {"openai": False, "gemini": False, "details": ""}
         
         # Test OpenAI
-        if self.openai_client:
-            try:
-                self.openai_client.chat.completions.create(
-                    model="gpt-3.5-turbo", messages=[{"role": "user", "content": "hi"}], max_tokens=1
-                )
-                results["openai"] = True
-            except Exception as e:
-                results["details"] += f"OpenAI Fail: {str(e)}; "
+        if check_openai:
+            if self.openai_client:
+                try:
+                    self.openai_client.chat.completions.create(
+                        model="gpt-3.5-turbo", messages=[{"role": "user", "content": "hi"}], max_tokens=1
+                    )
+                    results["openai"] = True
+                except Exception as e:
+                    results["details"] += f"OpenAI Fail: {str(e)}; "
+            else:
+                 results["details"] += "OpenAI Client Missing; "
+        else:
+             results["details"] += "OpenAI Skipped; "
         
         # Test Gemini
-        if self.gemini_client:
-            try:
-                self.gemini_client.models.generate_content(
-                    model='gemini-2.5-flash-lite', contents="hi"
-                )
-                results["gemini"] = True
-            except Exception as e:
-                results["details"] += f"Gemini Fail: {str(e)}; "
+        if check_gemini:
+            if self.gemini_client:
+                try:
+                    self.gemini_client.models.generate_content(
+                        model='gemini-2.5-flash-lite', contents="hi"
+                    )
+                    results["gemini"] = True
+                except Exception as e:
+                    results["details"] += f"Gemini Fail: {str(e)}; "
+            else:
+                 results["details"] += "Gemini Client Missing; "
+        else:
+             results["details"] += "Gemini Skipped; "
                 
         return results
+

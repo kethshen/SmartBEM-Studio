@@ -121,19 +121,19 @@ function submitDescription() {
 // ----------------------------
 // Test AI Connectivity (Layer 4 Check)
 // ----------------------------
-function testAIConnection() {
+// ----------------------------
+// Test AI Connectivity (Layer 4 Check)
+// ----------------------------
+function testAIConnection(checkGemini = true, checkOpenAI = true) {
   const statusMsg = document.getElementById("statusMsg");
-  // SILENCED: Do not show "Requesting..." text in UI
-  // if (statusMsg) {
-  //   statusMsg.style.display = 'block';
-  //   statusMsg.innerText = "Requesting connectivity test...";
-  // }
 
   // Create a special "test_connection" job
   const jobData = {
     status: "test_connection",
     createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-    nlpInputText: "Connectivity Check"
+    nlpInputText: "Connectivity Check",
+    checkGemini: checkGemini,
+    checkOpenAI: checkOpenAI
   };
 
   const now = new Date();
