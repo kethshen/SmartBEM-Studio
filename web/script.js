@@ -18,9 +18,20 @@ document.body.classList.add('js-loaded'); // Mark for CSS if needed
 // ----------------------------
 // Added 'silent' parameter to suppress alerts for background checks
 function testFirestoreWrite(silent = false) {
-  return db.collection("test_connectivity").add({
+  const now = new Date();
+  const timestampId = now.getFullYear() +
+    String(now.getMonth() + 1).padStart(2, '0') +
+    String(now.getDate()).padStart(2, '0') + "_" +
+    String(now.getHours()).padStart(2, '0') +
+    String(now.getMinutes()).padStart(2, '0') +
+    String(now.getSeconds()).padStart(2, '0');
+
+  const customId = `client_check_${timestampId}`;
+
+  return db.collection("test_connectivity").doc(customId).set({
     message: "SmartHVAC Studio connected",
-    timestamp: new Date()
+    source: "frontend_client",
+    timestamp: now
   })
     .then(() => {
       if (!silent) alert("Firestore connection successful!");
