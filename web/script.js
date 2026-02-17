@@ -135,7 +135,7 @@ function testAIConnection() {
 
   const customJobId = `test_ai_${timestampId}`;
 
-  db.collection("jobs").doc(customJobId).set(jobData)
+  db.collection("test_connectivity").doc(customJobId).set(jobData)
     .then(() => {
       // SILENCED: Do not show "Waiting for Colab"
       // if (statusMsg) {
@@ -144,7 +144,7 @@ function testAIConnection() {
       // }
 
       // Listen for the result of THIS specific test job
-      const unsubscribe = db.collection("jobs").doc(customJobId)
+      const unsubscribe = db.collection("test_connectivity").doc(customJobId)
         .onSnapshot((doc) => {
           const data = doc.data();
           if (data && data.status === "tested" && data.testResults) {
@@ -188,7 +188,7 @@ function loadJobs() {
 
   db.collection("jobs")
     .orderBy("createdAt", "desc")
-    .limit(10) // Keep UI clean
+    .limit(4) // Keep UI clean - Last 4 only per user request
     .onSnapshot((snapshot) => {
       // Real-time listener (better than manual polling)
       tableBody.innerHTML = ""; // Clear again for update

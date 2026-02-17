@@ -57,7 +57,6 @@
         <li><a href="../index.html" class="nav-link"><span>Home</span></a></li>
         <li><a href="nlp.html" class="nav-link"><span>Simulation Setup</span></a></li>
         <li><a href="results.html" class="nav-link active"><span>Results</span></a></li>
-        <li><a href="config.html" class="nav-link"><span>Config</span></a></li>
         <li><a href="architecture.html" class="nav-link"><span>Architecture</span></a></li>
         <li><a href="about.html" class="nav-link"><span>About</span></a></li>
       </ul>
@@ -84,11 +83,11 @@
       <div class="grid-2" style="grid-template-columns: 1fr 1fr; align-items: start;">
 
         <!-- Left Col: Job List (Master) -->
-        <section class="card" style="height: 400px; display: flex; flex-direction: column;">
+        <section class="card" style="height: 450px; display: flex; flex-direction: column;">
           <div class="card-header">
             <h2 class="card-title">Job History</h2>
           </div>
-          <div style="flex: 1; overflow-y: auto;">
+          <div style="flex: 1; overflow: hidden;"> <!-- No scroll -->
             <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
               <thead>
                 <tr
@@ -110,7 +109,7 @@
         </section>
 
         <!-- Right Col: Details (Detail) -->
-        <section class="card" style="height: 400px; display: flex; flex-direction: column;">
+        <section class="card" style="height: 450px; display: flex; flex-direction: column;">
           <div class="card-header">
             <h2 class="card-title">Selected Job Details</h2>
           </div>
@@ -143,9 +142,9 @@
       </div>
 
       <!-- Row 2: Result Plots (Grid) -->
-      <h3 style="font-size: 1.25rem; font-weight: 600; margin-top: 2rem; color: var(--text-primary);">Visualizations
+      <h3 style="font-size: 1.25rem; font-weight: 600; margin-top: 2rem; color: var(--text-primary);">Results
       </h3>
-      <div id="resultsContainer" class="plot-grid">
+      <div id="resultsContainer" class="plot-grid" style="grid-template-columns: repeat(2, 1fr);">
 
         <!-- Plot 1: Zone Temp -->
         <div class="plot-card">
