@@ -1,79 +1,88 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
-    <title>Connectivity Test</title>
-    <style>
-        body {
-            font-family: monospace;
-            padding: 20px;
-        }
-
-        .pass {
-            color: green;
-            font-weight: bold;
-        }
-
-        .fail {
-            color: red;
-            font-weight: bold;
-        }
-    </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connectivity - SmartHVAC Studio</title>
+    <link rel="stylesheet" href="../style.css">
 </head>
 
 <body>
-    <nav>
-        <a href="../index.html">Home</a> |
-        <a href="nlp.html">NLP Input</a> |
-        <a href="config.html">Config</a> |
-        <a href="results.html">Results</a>
-    </nav>
-    <hr>
-    <h2>System Diagnostic</h2>
-    <div id="logs">Initializing...<br></div>
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="brand">
+                <span>⚡ SmartHVAC</span>
+            </div>
+            <ul class="nav-links">
+                <li><a href="../index.html" class="nav-link">Home</a></li>
+                <li><a href="nlp.html" class="nav-link">Dashboard</a></li>
+                <li><a href="results.html" class="nav-link">Results</a></li>
+                <li><a href="config.html" class="nav-link">Config</a></li>
+                <!-- <li><a href="connectivity.html" class="nav-link active">Connectivity</a></li> -->
+                <li><a href="architecture.html" class="nav-link">Architecture</a></li>
+                <li><a href="about.html" class="nav-link">About</a></li>
+            </ul>
+        </aside>
 
-    <!-- Firebase SDKs (Compat version for simplicity) -->
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="page-header">
+                <h1 class="page-title">Connectivity Debug</h1>
+                <p class="page-subtitle">Real-time log of Firestore actions for debugging purposes.</p>
+            </header>
+
+            <section class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Live Actions</h2>
+                </div>
+                <ul id="logList"
+                    style="font-family: var(--font-mono); font-size: 0.85rem; color: var(--text-secondary);">
+                    <li>Attempting to connect to Firestore...</li>
+                </ul>
+            </section>
+        </main>
+    </div>
+
+    <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
 
-    <!-- Config Loader -->
+    <!-- Inline Script for Connectivity -->
     <script type="module">
         import { firebaseConfig } from "../firebaseConfig.js";
 
-        function log(msg, type = "") {
-            const el = document.getElementById("logs");
-            el.innerHTML += `<span class="${type}">${msg}</span><br>`;
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        function log(msg) {
+            const ul = document.getElementById("logList");
+            const li = document.createElement("li");
+            li.innerText = `[${new Date().toLocaleTimeString()}] ${msg}`;
+            li.style.marginBottom = "0.5rem";
+            ul.prepend(li);
         }
 
-        try {
-            log("1. Loading Config...");
-            if (!firebaseConfig) throw new Error("Config object is missing!");
-            log("Config loaded Project: " + firebaseConfig.projectId, "pass");
+        log("Firebase initialized.");
 
-            log("2. Initializing App...");
-            firebase.initializeApp(firebaseConfig);
-            const db = firebase.firestore();
-            log("App Initialized.", "pass");
-
-            log("3. Testing Firestore Write...");
-            const testId = "test_" + Date.now();
-            db.collection("connectivity_test").doc(testId).set({
-                status: "alive",
-                timestamp: new Date()
-            })
-                .then(() => {
-                    log(`Write Success! Document ID: ${testId}`, "pass");
-                    log("<b>SYSTEM READY.</b> If you see this, Firebase is working.", "pass");
-                })
-                .catch(e => {
-                    log("Write Failed: " + e.message, "fail");
-                    console.error(e);
+        // Listen for ANY change in 'test_connectivity' collection
+        db.collection("test_connectivity").orderBy("timestamp", "desc").limit(5)
+            .onSnapshot((snapshot) => {
+                snapshot.docChanges().forEach((change) => {
+                    if (change.type === "added") {
+                        const data = change.doc.data();
+                        log(`Received: ${data.message} (ID: ${change.doc.id})`);
+                    }
                 });
-
-        } catch (e) {
-            log("CRITICAL ERROR: " + e.message, "fail");
-            console.error(e);
-        }
+            }, (error) => {
+                log(`Error: ${error.message}`);
+                const li = document.createElement("li");
+                li.innerText = "Check your Console for details.";
+                li.style.color = "red";
+                document.getElementById("logList").prepend(li);
+            });
     </script>
 </body>
 

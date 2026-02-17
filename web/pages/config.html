@@ -1,52 +1,85 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
-    <title>Configuration – SmartHVAC Studio</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configuration - SmartHVAC Studio</title>
     <link rel="stylesheet" href="../style.css">
 </head>
 
 <body>
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="brand">
+                <span>⚡ SmartHVAC</span>
+            </div>
+            <ul class="nav-links">
+                <li><a href="../index.html" class="nav-link">Home</a></li>
+                <li><a href="nlp.html" class="nav-link">Dashboard</a></li>
+                <li><a href="results.html" class="nav-link">Results</a></li>
+                <li><a href="config.html" class="nav-link active">Config</a></li>
+                <!-- <li><a href="connectivity.html" class="nav-link">Connectivity</a></li> -->
+                <li><a href="architecture.html" class="nav-link">Architecture</a></li>
+                <li><a href="about.html" class="nav-link">About</a></li>
+            </ul>
+        </aside>
 
-    <nav>
-        <a href="../index.html">Home</a> |
-        <a href="nlp.html">NLP Input</a> |
-        <a href="results.html">Results</a>
-    </nav>
-    <hr>
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="page-header">
+                <h1 class="page-title">Global Settings</h1>
+                <p class="page-subtitle">Configure default parameters for new simulation jobs.</p>
+            </header>
 
-    <h2>Simulation Configuration</h2>
+            <div style="max-width: 600px;">
+                <section class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">Preferences</h2>
+                    </div>
 
-    <p>
-        Configure global settings for your simulation jobs. These settings will be applied to new jobs when you queue
-        them.
-    </p>
+                    <div class="form-group">
+                        <label for="weather">Default Weather Location</label>
+                        <select id="weather">
+                            <option value="Colombo, Sri Lanka">Colombo, Sri Lanka</option>
+                            <option value="New York, USA">New York, USA</option>
+                            <option value="London, UK">London, UK</option>
+                        </select>
+                        <p style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 5px;">
+                            Note: The dashboard has its own weather selector which overrides this.
+                        </p>
+                    </div>
 
-    <!-- Config Form -->
-    <div style="border: 1px solid #ccc; padding: 20px; max-width: 600px;">
-        <label for="weather"><strong>Weather Location:</strong></label><br>
-        <select id="weather">
-            <option value="Colombo, Sri Lanka">Colombo, Sri Lanka</option>
-            <option value="New York, USA">New York, USA</option>
-            <option value="London, UK">London, UK</option>
-        </select>
-        <br><br>
+                    <div class="form-group">
+                        <label for="duration">Simulation Duration (Days)</label>
+                        <input type="number" id="duration" value="7" min="1" max="365">
+                    </div>
 
-        <label for="duration"><strong>Simulation Duration (Days):</strong></label><br>
-        <input type="number" id="duration" value="7" min="1" max="365">
-        <br><br>
+                    <div class="form-group"
+                        style="border-top: 1px solid var(--border-subtle); padding-top: 1rem; margin-top: 1rem;">
+                        <label>Advanced Options</label>
+                        <div style="display: flex; gap: 1rem; align-items: center; margin-top: 0.5rem;">
+                            <input type="checkbox" id="enableEKF" checked style="width: auto;">
+                            <label for="enableEKF" style="margin: 0; font-weight: 400;">Enable EKF Estimation</label>
+                        </div>
+                        <div style="display: flex; gap: 1rem; align-items: center; margin-top: 0.5rem;">
+                            <input type="checkbox" id="enableLogging" style="width: auto;">
+                            <label for="enableLogging" style="margin: 0; font-weight: 400;">Enable Verbose
+                                Logging</label>
+                        </div>
+                    </div>
 
-        <label><strong>Advanced Options:</strong></label><br>
-        <input type="checkbox" id="enableEKF" checked> <label for="enableEKF">Enable EKF Estimation</label><br>
-        <input type="checkbox" id="enableLogging"> <label for="enableLogging">Enable Verbose Logging</label>
-        <br><br>
-
-        <button onclick="saveConfig()">Save Configuration</button>
-        <span id="saveMsg" style="margin-left: 10px; color: green;"></span>
+                    <div class="mt-4" style="display: flex; align-items: center; gap: 1rem;">
+                        <button onclick="saveConfig()" class="btn btn-primary">
+                            Save Changes
+                        </button>
+                        <span id="saveMsg" style="color: var(--success); font-weight: 500;"></span>
+                    </div>
+                </section>
+            </div>
+        </main>
     </div>
-
-    <br>
-    <a href="nlp.html">Go to NLP description &rarr;</a>
 
     <script>
         console.log("Config page script running...");
@@ -82,7 +115,6 @@
         // Load defaults on run
         loadConfig();
     </script>
-
 </body>
 
 </html>

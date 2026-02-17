@@ -1,104 +1,116 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
-  <title>Jobs – SmartHVAC Studio</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Results - SmartHVAC Studio</title>
   <link rel="stylesheet" href="../style.css">
 </head>
 
 <body>
+  <div class="dashboard-container">
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+      <div class="brand">
+        <span>⚡ SmartHVAC</span>
+      </div>
+      <ul class="nav-links">
+        <li><a href="../index.html" class="nav-link">Home</a></li>
+        <li><a href="nlp.html" class="nav-link">Dashboard</a></li>
+        <li><a href="results.html" class="nav-link active">Results</a></li>
+        <li><a href="config.html" class="nav-link">Config</a></li>
+        <!-- <li><a href="connectivity.html" class="nav-link">Connectivity</a></li> -->
+        <li><a href="architecture.html" class="nav-link">Architecture</a></li>
+        <li><a href="about.html" class="nav-link">About</a></li>
+      </ul>
+    </aside>
 
-  <nav>
-    <a href="../index.html">Home</a> |
-    <a href="nlp.html">NLP Input</a> |
-    <a href="config.html">Config</a>
-  </nav>
-  <hr>
+    <!-- Main Content Area -->
+    <main class="main-content">
+      <header class="page-header" style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+          <h1 class="page-title">Simulation Jobs</h1>
+          <p class="page-subtitle">View history and download simulation results.</p>
+        </div>
+        <button onclick="loadRuns()" class="btn btn-primary" style="font-size: 0.9rem;">
+          Refresh List ↻
+        </button>
+      </header>
 
-  <h2>Job Dashboard</h2>
+      <p id="autoMsg" style="color: var(--error); font-size: 0.9rem; margin-bottom: 1rem;"></p>
 
-  <p>
-    Below is the list of submitted simulation jobs.
-  </p>
+      <div class="grid-2" style="grid-template-columns: 1fr 1fr;">
 
-  <button onclick="loadRuns()">Refresh Jobs</button>
-  <p id="autoMsg"></p>
+        <!-- Left Col: Job List (Master) -->
+        <section class="card" style="height: fit-content; max-height: 80vh; overflow-y: auto;">
+          <div class="card-header">
+            <h2 class="card-title">Job History</h2>
+          </div>
+          <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
+            <thead>
+              <tr
+                style="text-align: left; border-bottom: 2px solid var(--border-subtle); color: var(--text-secondary);">
+                <th style="padding: 0.75rem;">Description</th>
+                <th style="padding: 0.75rem;">Status</th>
+                <th style="padding: 0.75rem;">Time</th>
+              </tr>
+            </thead>
+            <tbody id="runsTable">
+              <!-- JS injects rows here -->
+              <tr>
+                <td colspan="3" style="padding: 1rem; text-align: center; color: var(--text-secondary);">Loading jobs...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
 
-  <br><br>
+        <!-- Right Col: Details (Detail) -->
+        <section class="card">
+          <div class="card-header">
+            <h2 class="card-title">Selected Job Details</h2>
+          </div>
 
-  <table border="1" cellpadding="8">
-    <thead>
-      <tr>
-        <th>Description</th>
-        <th>Status</th>
-        <th>Created At</th>
-      </tr>
-    </thead>
-    <tbody id="runsTable">
-      <!-- Jobs will appear here -->
-    </tbody>
-  </table>
+          <div id="runDetails" style="margin-bottom: 1.5rem;">
+            <div style="display: grid; grid-template-columns: auto 1fr; gap: 0.5rem 1rem; font-size: 0.9rem;">
+              <span style="color: var(--text-secondary);">Description:</span>
+              <span id="detailDescription" style="font-weight: 500;">-</span>
 
-  <hr>
+              <span style="color: var(--text-secondary);">Status:</span>
+              <span id="detailStatus">-</span>
 
-  <!-- See details of a selected job -->
-  <h3>Selected Job Details</h3>
+              <span style="color: var(--text-secondary);">Created At:</span>
+              <span id="detailTime">-</span>
 
-  <div id="runDetails">
-    <p><b>Description:</b> <span id="detailDescription">-</span></p>
-    <p><b>Status:</b> <span id="detailStatus">-</span></p>
-    <p><b>Created At:</b> <span id="detailTime">-</span></p>
-    <p><b>Output Path:</b> <span id="detailPath">-</span></p>
-  </div>
+              <span style="color: var(--text-secondary);">Output Path:</span>
+              <span id="detailPath" style="font-family: var(--font-mono); font-size: 0.8rem;">-</span>
+            </div>
+          </div>
 
-  <!-- Job Status Guide -->
-  <hr>
+          <div id="resultsContainer">
+            <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 0.5rem; color: var(--text-primary);">Zone
+              Temperature Plot</h3>
+            <div
+              style="background: var(--bg-app); border-radius: var(--radius-sm); padding: 1rem; min-height: 200px; display: flex; align-items: center; justify-content: center; border: 1px dashed var(--border-subtle);">
+              <img id="zonePlot" style="max-width: 100%; display: none; border-radius: var(--radius-sm);"
+                alt="Result Plot">
+              <p id="zonePlotMsg" style="color: var(--text-secondary); font-size: 0.9rem; margin: 0;">Select a 'Done'
+                job to view results.</p>
+            </div>
+          </div>
+        </section>
 
-  <h3>Job Status Guide (5-Layer Arch)</h3>
+      </div>
 
-  <ul>
-    <li><b>Queued</b> – Job is waiting in Firestore for Colab to pick it up.</li>
-    <li><b>Running</b> – Colab is processing (Generating IDF, Simulating EKF).</li>
-    <li><b>Done</b> – Results have been uploaded to Storage and are ready to view.</li>
-    <li><b>Error</b> – Something failed in the backend.</li>
-  </ul>
-
-  <!-- Prepare the Results panel structure -->
-  <hr>
-
-  <div id="resultsContainer">
-    <h3>Simulation Results</h3>
-
-    <div class="results-section">
-      <h4>Zone State Plots</h4>
-      <img id="zonePlot" width="600" alt="Select a completed job to see plot">
-      <p id="zonePlotMsg"></p>
-    </div>
-
-    <div class="results-section">
-      <h4>EKF Estimation Results</h4>
-      <div class="placeholder">EKF convergence plots will appear here.</div>
-    </div>
-
-    <div class="results-section">
-      <h4>Weather Data</h4>
-      <div class="placeholder">Outdoor weather plots will appear here.</div>
-    </div>
-
-    <div class="results-section">
-      <h4>Energy & System Outputs</h4>
-      <div class="placeholder">Energy consumption plots will appear here.</div>
-    </div>
+    </main>
   </div>
 
   <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
-
-  <!-- Shared JS -->
   <script type="module" src="../script.js"></script>
-
 </body>
 
 </html>

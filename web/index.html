@@ -1,42 +1,92 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
-  <title>SmartHVAC Studio</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Home - SmartHVAC Studio</title>
+  <link rel="stylesheet" href="web/style.css">
+  <!-- Fallback if opened from root without server/weird path, but standard is style.css if file is in root? No, file is in web/, style is in web/ -->
   <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
+  <div class="dashboard-container">
+    <!-- Sidebar Navigation (Root Paths) -->
+    <aside class="sidebar">
+      <div class="brand">
+        <span>⚡ SmartHVAC</span>
+      </div>
+      <ul class="nav-links">
+        <li><a href="index.html" class="nav-link active">Home</a></li>
+        <li><a href="pages/nlp.html" class="nav-link">Dashboard</a></li>
+        <li><a href="pages/results.html" class="nav-link">Results</a></li>
+        <li><a href="pages/config.html" class="nav-link">Config</a></li>
+        <!-- <li><a href="pages/connectivity.html" class="nav-link">Connectivity</a></li> -->
+        <li><a href="pages/architecture.html" class="nav-link">Architecture</a></li>
+        <li><a href="pages/about.html" class="nav-link">About</a></li>
+      </ul>
+    </aside>
 
-  <h1>SmartHVAC Studio</h1>
-  <p>
-    An academic platform for AI-assisted HVAC modeling,
-    EnergyPlus simulation, and EKF-based estimation.
-  </p>
+    <!-- Main Content Area -->
+    <main class="main-content">
+      <header class="page-header">
+        <h1 class="page-title">Welcome to SmartHVAC Studio</h1>
+        <p class="page-subtitle">An academic platform for AI-assisted HVAC modeling, EnergyPlus simulation, and
+          EKF-based estimation.</p>
+      </header>
 
-  <nav>
-    <a href="index.html">Home</a>
-    <a href="pages/config.html">Simulation Config</a>
-    <a href="pages/nlp.html">NLP Input</a>
-    <a href="pages/results.html">Results</a>
-    <a href="pages/architecture.html">Architecture</a>
-    <a href="pages/about.html">About</a>
-    <br><br>
-    <a href="pages/connectivity.html" style="color: gray; font-size: 0.8em;">(Debug) Connectivity</a>
-  </nav>
+      <div class="grid-2">
+        <section class="card">
+          <div class="card-header">
+            <h2 class="card-title">Getting Started</h2>
+          </div>
+          <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">
+            Start by describing your building in natural language. Our AI will generate the energy model and run
+            simulations in the cloud.
+          </p>
+          <a href="pages/nlp.html" class="btn btn-primary">
+            Go to Simulation Dashboard &rarr;
+          </a>
+        </section>
 
-  <br><br>
-  <button onclick="testFirestoreWrite()">Test Firebase Connection</button>
+        <section class="card">
+          <div class="card-header">
+            <h2 class="card-title">System Status</h2>
+          </div>
+          <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">
+            Check connectivity with Firebase and the Backend Worker.
+          </p>
+          <button onclick="testFirestoreWrite()" class="btn"
+            style="background-color: var(--bg-app); border: 1px solid var(--border-subtle);">
+            Test Firebase Connection
+          </button>
+          <div style="margin-top: 1rem;">
+            <a href="pages/connectivity.html" style="font-size: 0.9rem; color: var(--primary);">View Connectivity
+              Logs</a>
+          </div>
+        </section>
+      </div>
+
+      <section class="card mt-4">
+        <div class="card-header">
+          <h2 class="card-title">Project Overview</h2>
+        </div>
+        <div style="color: var(--text-secondary);">
+          <p><strong>Goal:</strong> Validate the feasibility of using LLMs to generate valid IDF models for EnergyPlus.
+          </p>
+          <p><strong>Architecture:</strong> 5-Layer Design (Frontend, Firebase, Colab, AI, EnergyPlus).</p>
+        </div>
+      </section>
+
+    </main>
+  </div>
 
   <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-
-  <!-- Your JS -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
   <script type="module" src="script.js"></script>
-
-
-
 </body>
 
 </html>

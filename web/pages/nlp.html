@@ -1,76 +1,108 @@
 <!DOCTYPE html>
-<html>
-
+<html lang="en">
 <head>
-  <title>NLP Input – SmartHVAC Studio</title>
-  <link rel="stylesheet" href="../style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulation Dashboard - SmartHVAC Studio</title>
+    <link rel="stylesheet" href="../style.css">
 </head>
-
 <body>
+    <div class="dashboard-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="brand">
+                <span>⚡ SmartHVAC</span>
+            </div>
+            <ul class="nav-links">
+                <li><a href="../index.html" class="nav-link">Home</a></li>
+                <li><a href="nlp.html" class="nav-link active">Dashboard</a></li>
+                <li><a href="results.html" class="nav-link">Results</a></li>
+                <li><a href="config.html" class="nav-link">Config</a></li>
+                <!-- <li><a href="connectivity.html" class="nav-link">Connectivity</a></li> -->
+                <li><a href="architecture.html" class="nav-link">Architecture</a></li>
+                <li><a href="about.html" class="nav-link">About</a></li>
+            </ul>
+        </aside>
 
-  <nav>
-    <a href="../index.html">Home</a> |
-    <a href="config.html">Config</a> |
-    <a href="results.html">Results</a>
-  </nav>
-  <hr>
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <header class="page-header">
+                <h1 class="page-title">New Simulation</h1>
+                <p class="page-subtitle">Describe your building and run EnergyPlus simulations powered by AI.</p>
+            </header>
 
-  <h2>Natural Language HVAC Description</h2>
+            <div class="grid-2">
+                <!-- Left Column: Input -->
+                <section class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">1. Building Description</h2>
+                    </div>
+                    <div class="form-group">
+                        <label for="description">Natural Language Input</label>
+                        <textarea id="description" rows="8" placeholder="Example: A 3-zone office building in Chicago with a VAV HVAC system..."></textarea>
+                    </div>
+                    <div class="form-group">
+                         <label for="aiModel">AI Model</label>
+                         <select id="aiModel">
+                            <option value="gemini">Google Gemini (Free Tier)</option>
+                            <option value="openai">OpenAI (Requires Paid Key)</option>
+                         </select>
+                    </div>
+                </section>
+                
+                <!-- Right Column: Configuration -->
+                <section class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">2. Simulation Settings</h2>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="simType">Run Configuration</label>
+                        <select id="simType">
+                            <option value="design_day">Design Day (Fast Test)</option>
+                            <option value="annual">Annual Simulation (Slow)</option>
+                        </select>
+                    </div>
 
-  <p>
-    Describe your building and HVAC system in natural language.
-  </p>
+                    <div class="form-group">
+                        <label for="weatherFile">Weather Location</label>
+                        <select id="weatherFile">
+                            <option value="USA_IL_Chicago-OHare.Intl.AP.725300_TMY3.epw">Chicago, USA</option>
+                            <option value="GBR_London.Gatwick.037760_IWEC.epw">London, UK</option>
+                            <option value="USA_CA_San.Francisco.Intl.AP.724940_TMY3.epw">San Francisco, USA</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mt-4">
+                        <button onclick="submitDescription()" class="btn btn-primary btn-block">
+                            Queue Simulation Job
+                        </button>
+                    </div>
+                    
+                    <div class="mt-4" style="border-top: 1px solid var(--border-subtle); padding-top: 1rem;">
+                        <button onclick="testAIConnection()" class="btn" style="color: var(--text-secondary); font-size: 0.85rem; width: 100%;">
+                            Test AI Connections
+                        </button>
+                        <div id="connectionResults" style="margin-top: 0.5rem; font-size: 0.85rem;"></div>
+                    </div>
+                </section>
+            </div>
+            
+            <!-- Status Section -->
+            <section class="card">
+                 <div class="card-header">
+                    <h2 class="card-title">Live Status</h2>
+                 </div>
+                 <p id="statusMsg" style="color: var(--text-secondary);">Ready to simulate.</p>
+            </section>
 
-  <textarea id="description" rows="6" cols="80"
-    placeholder="Example: A 3-zone office building in Colombo with a VAV HVAC system">
-</textarea>
+        </main>
+    </div>
 
-  <br><br>
-
-  <br><br>
-
-  <label for="aiModel">Select AI Model:</label>
-  <select id="aiModel">
-    <option value="gemini">Google Gemini (Free Tier)</option>
-    <option value="openai">OpenAI (Requires Paid Key)</option>
-  </select>
-
-  <br><br>
-
-  <!-- Layer 1 Retrofit: Simulation Controls -->
-  <h3>Simulation Settings</h3>
-  <label for="simType">Run Type:</label>
-  <select id="simType">
-    <option value="design_day">Design Day (Fast)</option>
-    <option value="annual">Annual (Slow)</option>
-  </select>
-  
-  &nbsp;&nbsp;
-  
-  <label for="weatherFile">Weather Location:</label>
-  <select id="weatherFile">
-    <option value="USA_IL_Chicago-OHare.Intl.AP.725300_TMY3.epw">Chicago, USA</option>
-    <option value="GBR_London.Gatwick.037760_IWEC.epw">London, UK</option>
-    <option value="USA_CA_San.Francisco.Intl.AP.724940_TMY3.epw">San Francisco, USA</option>
-  </select>
-  
-  <br><br>
-
-  <button onclick="submitDescription()">Queue Simulation Job</button>
-
-  <button onclick="testAIConnection()" style="background-color: #b4b4b4;">Test AI Connections</button>
-
-  <p id="statusMsg"></p>
-  <div id="connectionResults" style="margin-top: 10px; font-weight: bold;"></div>
-
-  <!-- Firebase SDKs -->
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
-
-  <!-- Shared JS -->
-  <script type="module" src="../script.js"></script>
-
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+    <script type="module" src="../script.js"></script>
 </body>
-
 </html>

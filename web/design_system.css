@@ -1,0 +1,56 @@
+/* SmartHVAC Studio - Design System (Light Mode) */
+:root {
+    /* --- Palette: Modern SaaS/E-commerce (Slate & Royal Blue) --- */
+    
+    /* Backgrounds */
+    --bg-app: #f8fafc;        /* Ultra light slate - Main App Background */
+    --bg-card: #ffffff;       /* Pure White - Cards & Containers */
+    --bg-sidebar: #f1f5f9;    /* Light Slate - Sidebar/Nav Background */
+    --bg-input: #ffffff;      /* White - Input fields */
+    
+    /* Text Colors */
+    --text-primary: #0f172a;  /* Slate 900 - Headings & Main Text */
+    --text-secondary: #64748b;/* Slate 500 - Labels, Metadata, Descriptions */
+    --text-muted: #94a3b8;    /* Slate 400 - Placeholders, disabled */
+    --text-on-accent: #ffffff;/* White - Text on primary buttons */
+
+    /* Accents & Brand */
+    --primary: #2563eb;       /* Royal Blue - Primary Buttons, Links, Active States */
+    --primary-hover: #1d4ed8; /* Darker Blue - Hover state */
+    --secondary: #475569;     /* Slate 600 - Secondary actions */
+    
+    /* Functional Colors */
+    --success: #10b981;       /* Emerald - "Done", "Connected" */
+    --success-bg: #dcfce7;    /* Light Emerald - Badges */
+    --error: #ef4444;         /* Red - "Error", "Failed" */
+    --error-bg: #fee2e2;      /* Light Red - Badges */
+    --warning: #f59e0b;       /* Amber - "Running", "Pending" */
+    --warning-bg: #fef3c7;    /* Light Amber - Badges */
+
+    /* Borders & Dividers */
+    --border-subtle: #e2e8f0; /* Slate 200 - Card borders, dividers */
+    --border-focus: #2563eb;  /* Primary Blue - Input focus ring */
+
+    /* --- Typography --- */
+    --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+    --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+
+    /* --- Spacing & Radius --- */
+    --radius-sm: 6px;
+    --radius-md: 12px;        /* Standard Card Radius */
+    --radius-lg: 16px;
+    --radius-full: 9999px;    /* Pills/Badges */
+
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -1px rgb(0 0 0 / 0.06);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -2px rgb(0 0 0 / 0.05);
+    
+    /* --- Transitions --- */
+    --transition-fast: 0.15s ease;
+    --transition-normal: 0.3s ease;
+}
+
+/* Dark Mode Support (Future Proofing - Optional for now) */
+@media (prefers-color-scheme: dark) {
+    /* :root { ... override specific vars if needed later ... } */
+}

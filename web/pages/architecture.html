@@ -1,81 +1,101 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
-  <title>System Architecture – SmartHVAC Studio</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Architecture - SmartHVAC Studio</title>
   <link rel="stylesheet" href="../style.css">
 </head>
 
 <body>
+  <div class="dashboard-container">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="brand">
+        <span>⚡ SmartHVAC</span>
+      </div>
+      <ul class="nav-links">
+        <li><a href="../index.html" class="nav-link">Home</a></li>
+        <li><a href="nlp.html" class="nav-link">Dashboard</a></li>
+        <li><a href="results.html" class="nav-link">Results</a></li>
+        <li><a href="config.html" class="nav-link">Config</a></li>
+        <!-- <li><a href="connectivity.html" class="nav-link">Connectivity</a></li> -->
+        <li><a href="architecture.html" class="nav-link active">Architecture</a></li>
+        <li><a href="about.html" class="nav-link">About</a></li>
+      </ul>
+    </aside>
 
-  <nav>
-    <a href="../index.html">Home</a> |
-    <a href="nlp.html">NLP Input</a> |
-    <a href="config.html">Config</a> |
-    <a href="results.html">Results</a>
-  </nav>
-  <hr>
+    <!-- Main Content -->
+    <main class="main-content">
+      <header class="page-header">
+        <h1 class="page-title">System Architecture</h1>
+        <p class="page-subtitle">Technical overview of the 5-Layer SmartHVAC Studio platform.</p>
+      </header>
 
-  <h2>System Architecture</h2>
+      <section class="card">
+        <div class="card-header">
+          <h2 class="card-title">High-Level Overview</h2>
+        </div>
 
-  <p>
-    SmartHVAC Studio is an academic platform that integrates a web interface,
-    cloud coordination, and offline HVAC simulation to support AI-assisted
-    modeling and analysis of HVAC systems.
-  </p>
+        <p style="margin-bottom: 1.5rem; color: var(--text-secondary);">
+          SmartHVAC Studio integrates a modern web interface with cloud coordination and offline simulation engines.
+        </p>
 
-  <hr>
+        <div class="grid-2">
+          <div>
+            <h3 style="font-size: 1rem; margin-bottom: 0.5rem;">Components</h3>
+            <ul style="list-style-type: disc; margin-left: 1.5rem; color: var(--text-secondary); line-height: 1.6;">
+              <li><strong>Web Interface (Layer 1):</strong> Experiment configuration & NLP input.</li>
+              <li><strong>Cloud Coordination (Layer 2):</strong> Firebase Firestore & Storage.</li>
+              <li><strong>AI Engine (Layer 3):</strong> LLM-based IDF generation.</li>
+              <li><strong>Simulation Backend (Layer 4/5):</strong> Google Colab executing EnergyPlus & EKF.</li>
+            </ul>
+          </div>
 
-  <h3>High-Level Architecture</h3>
+          <div
+            style="background: var(--bg-app); padding: 1.5rem; border-radius: var(--radius-sm); border: 1px solid var(--border-subtle);">
+            <h4 style="font-size: 0.85rem; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.5rem;">
+              Data Flow</h4>
+            <pre style="font-family: var(--font-mono); font-size: 0.85rem; color: var(--text-primary);">
+User -> Web UI -> Firebase
+           |
+           v
+      Google Colab
+   (AI -> IDF -> Sim)
+           |
+           v
+Firebase -> Web UI (Plots)
+                        </pre>
+          </div>
+        </div>
+      </section>
 
-  <ul>
-    <li><b>Web Interface (SmartHVAC Studio)</b><br>
-      Used for experiment configuration, natural language input,
-      and visualization of results.</li>
+      <section class="card mt-4">
+        <div class="card-header">
+          <h2 class="card-title">Design Principles</h2>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+          <div style="padding: 1rem; border: 1px solid var(--border-subtle); border-radius: var(--radius-sm);">
+            <strong>Separation of Concerns</strong>
+            <p style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.5rem;">Interface decoupled from
+              computation via Firebase.</p>
+          </div>
+          <div style="padding: 1rem; border: 1px solid var(--border-subtle); border-radius: var(--radius-sm);">
+            <strong>Physics + AI</strong>
+            <p style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.5rem;">EnergyPlus accuracy with
+              LLM ease-of-use.</p>
+          </div>
+          <div style="padding: 1rem; border: 1px solid var(--border-subtle); border-radius: var(--radius-sm);">
+            <strong>Academic Focus</strong>
+            <p style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.5rem;">Transparent data flow for
+              research validation.</p>
+          </div>
+        </div>
+      </section>
 
-    <li><b>Cloud Coordination (Firebase)</b><br>
-      Stores experiment metadata and manages file-based simulation outputs.</li>
-
-    <li><b>Simulation & Estimation Backend (Google Colab)</b><br>
-      Executes EnergyPlus simulations and EKF-based parameter estimation.</li>
-
-    <li><b>Experimental Validation</b><br>
-      Uses a single-zone HVAC laboratory setup for real-world validation.</li>
-  </ul>
-
-  <hr>
-
-  <h3>Data Flow Overview</h3>
-
-  <p>
-    The web interface submits experiment requests, which are processed offline
-    by the simulation backend. Results are uploaded to cloud storage and
-    visualized through the web platform.
-  </p>
-
-  <pre>
-User → Web Interface → Firebase → Colab (Simulation & EKF)
-     ← Results & Plots ← Firebase Storage
-</pre>
-
-  <hr>
-
-  <h3>Design Principles</h3>
-
-  <ul>
-    <li>Clear separation between interface and computation</li>
-    <li>Physics-based simulation with AI-assisted configuration</li>
-    <li>Modular and extensible research platform</li>
-    <li>Suitable for academic demonstration and evaluation</li>
-  </ul>
-
-  <hr>
-
-  <p style="font-size: 0.9em; color: #555;">
-    This platform is developed as part of an academic Final Year Project and
-    is intended for research and educational purposes only.
-  </p>
-
+    </main>
+  </div>
 </body>
 
 </html>
