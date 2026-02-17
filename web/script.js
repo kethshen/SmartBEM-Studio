@@ -11,22 +11,36 @@ const db = firebase.firestore();
 const storage = firebase.storage();
 
 console.log("Firebase initialized (5-Layer Architecture Mode)");
+document.body.classList.add('js-loaded'); // Mark for CSS if needed
 
 // ----------------------------
 // TEST: Firestore write
 // ----------------------------
-function testFirestoreWrite() {
-  db.collection("test_connectivity").add({
+// Added 'silent' parameter to suppress alerts for background checks
+function testFirestoreWrite(silent = false) {
+  return db.collection("test_connectivity").add({
     message: "SmartHVAC Studio connected",
     timestamp: new Date()
   })
     .then(() => {
-      alert("Firestore connection successful!");
+      if (!silent) alert("Firestore connection successful!");
+      return true;
     })
     .catch((error) => {
       console.error("Firestore error:", error);
-      alert("Firestore error: " + error.message);
+      if (!silent) alert("Firestore error: " + error.message);
+      throw error;
     });
+}
+
+// Sidebar Toggle Logic
+function toggleSidebar() {
+  const container = document.querySelector('.dashboard-container');
+  const sidebar = document.querySelector('.sidebar');
+  if (container && sidebar) {
+    container.classList.toggle('sidebar-collapsed');
+    sidebar.classList.toggle('collapsed');
+  }
 }
 
 // ----------------------------
@@ -98,7 +112,11 @@ function submitDescription() {
 // ----------------------------
 function testAIConnection() {
   const statusMsg = document.getElementById("statusMsg");
-  if (statusMsg) statusMsg.innerText = "Requesting connectivity test...";
+  // SILENCED: Do not show "Requesting..." text in UI
+  // if (statusMsg) {
+  //   statusMsg.style.display = 'block';
+  //   statusMsg.innerText = "Requesting connectivity test...";
+  // }
 
   // Create a special "test_connection" job
   const jobData = {
@@ -119,10 +137,11 @@ function testAIConnection() {
 
   db.collection("jobs").doc(customJobId).set(jobData)
     .then(() => {
-      if (statusMsg) {
-        statusMsg.innerText = "Test requested. Waiting for Colab...";
-        statusMsg.style.color = "blue";
-      }
+      // SILENCED: Do not show "Waiting for Colab"
+      // if (statusMsg) {
+      //   statusMsg.innerText = "Test requested. Waiting for Colab...";
+      //   statusMsg.style.color = "blue";
+      // }
 
       // Listen for the result of THIS specific test job
       const unsubscribe = db.collection("jobs").doc(customJobId)
@@ -141,8 +160,13 @@ function testAIConnection() {
               html += `<br><small style="color:gray; font-weight:normal;">${results.details}</small>`;
             }
 
-            if (resDiv) resDiv.innerHTML = html;
-            if (statusMsg) statusMsg.innerText = "Connection Check Complete.";
+            if (resDiv) {
+              resDiv.innerHTML = html;
+              // resDiv.style.display = 'block'; // Or keep hidden if only parsing text
+            }
+
+            // SILENCED: Do not show "Check Complete"
+            // if (statusMsg) statusMsg.innerText = "Connection Check Complete.";
 
             unsubscribe(); // Stop listening
           }
@@ -179,15 +203,20 @@ function loadJobs() {
         if (data.status === "done") statusColor = "green";
         if (data.status === "error") statusColor = "red";
 
+        // Simple date formatting
+        const dateStr = data.createdAt ? data.createdAt.toDate().toLocaleString() : "Just now";
+
         row.innerHTML = `
-              <td>${data.nlpInputText ? data.nlpInputText.substring(0, 50) + "..." : "No description"}</td>
-              <td style="color: ${statusColor}; font-weight: bold;">${data.status}</td>
-              <td>${data.createdAt ? data.createdAt.toDate().toLocaleString() : "Just now"}</td>
+              <td style="padding: 0.75rem; border-bottom: 1px solid var(--border-subtle);">${data.nlpInputText ? data.nlpInputText.substring(0, 40) + "..." : "No description"}</td>
+              <td style="padding: 0.75rem; border-bottom: 1px solid var(--border-subtle); color: ${statusColor}; font-weight: bold;">${data.status}</td>
+              <td style="padding: 0.75rem; border-bottom: 1px solid var(--border-subtle); color: var(--text-secondary); font-size: 0.85rem;">${dateStr}</td>
             `;
 
         // Click to show details
         row.onclick = () => showJobDetails(doc.id, data);
         row.style.cursor = "pointer";
+        row.onmouseover = () => row.style.backgroundColor = "var(--bg-app)";
+        row.onmouseout = () => row.style.backgroundColor = "transparent";
 
         tableBody.appendChild(row);
       });
@@ -202,6 +231,12 @@ function loadJobs() {
 // Show Job Details & Results
 // ----------------------------
 function showJobDetails(jobId, data) {
+  // Hide placeholder, show content
+  const placeholder = document.getElementById("detailPlaceholder");
+  const content = document.getElementById("detailContent");
+  if (placeholder) placeholder.style.display = 'none';
+  if (content) content.style.display = 'grid';
+
   // Fill text details
   const elDesc = document.getElementById("detailDescription");
   const elStatus = document.getElementById("detailStatus");
@@ -209,12 +244,18 @@ function showJobDetails(jobId, data) {
   const elPath = document.getElementById("detailPath"); // Re-purposed for ID/Path
 
   if (elDesc) elDesc.innerText = data.nlpInputText;
-  if (elStatus) elStatus.innerText = data.status;
+  if (elStatus) {
+    elStatus.innerText = data.status;
+    // Coloring
+    if (data.status === "running") elStatus.style.color = "var(--warning)";
+    else if (data.status === "done") elStatus.style.color = "var(--success)";
+    else if (data.status === "error") elStatus.style.color = "var(--error)";
+    else elStatus.style.color = "var(--text-primary)";
+  }
   if (elTime) elTime.innerText = data.createdAt ? data.createdAt.toDate().toLocaleString() : "-";
   if (elPath) elPath.innerText = data.resultPath || "Waiting...";
 
   // Handle Results Visualization
-  const container = document.getElementById("resultsContainer"); // Make sure HTML has this
   const imgInfo = document.getElementById("zonePlot");
   const msgInfo = document.getElementById("zonePlotMsg");
 
@@ -223,7 +264,7 @@ function showJobDetails(jobId, data) {
   if (data.status === "done") {
     // Load real results from Storage
     const plotPath = `results/${jobId}/zone_plot.png`;
-    msgInfo.innerText = "Loading plot from: " + plotPath;
+    msgInfo.innerText = "Loading plot...";
 
     storage.ref(plotPath).getDownloadURL()
       .then((url) => {
@@ -239,11 +280,11 @@ function showJobDetails(jobId, data) {
   } else if (data.status === "error") {
     imgInfo.style.display = "none";
     msgInfo.innerText = "Job failed: " + (data.errorMessage || "Unknown error");
-    msgInfo.style.color = "red";
+    msgInfo.style.color = "var(--error)";
   } else {
     imgInfo.style.display = "none";
     msgInfo.innerText = "Simulation in progress... (" + data.status + ")";
-    msgInfo.style.color = "gray";
+    msgInfo.style.color = "var(--text-secondary)";
   }
 }
 
@@ -262,3 +303,4 @@ window.testFirestoreWrite = testFirestoreWrite;
 window.submitDescription = submitDescription;
 window.testAIConnection = testAIConnection;
 window.loadRuns = loadJobs; // Alias for backward compatibility if HTML buttons haven't changed yet
+window.toggleSidebar = toggleSidebar;

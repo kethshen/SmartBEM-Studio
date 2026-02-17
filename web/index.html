@@ -5,8 +5,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Home - SmartHVAC Studio</title>
-  <link rel="stylesheet" href="web/style.css">
-  <!-- Fallback if opened from root without server/weird path, but standard is style.css if file is in root? No, file is in web/, style is in web/ -->
+  <link rel="stylesheet" href="web/style.css"> <!-- Fallback -->
   <link rel="stylesheet" href="style.css">
 </head>
 
@@ -18,14 +17,16 @@
         <span>⚡ SmartHVAC</span>
       </div>
       <ul class="nav-links">
-        <li><a href="index.html" class="nav-link active">Home</a></li>
-        <li><a href="pages/nlp.html" class="nav-link">Dashboard</a></li>
-        <li><a href="pages/results.html" class="nav-link">Results</a></li>
-        <li><a href="pages/config.html" class="nav-link">Config</a></li>
-        <!-- <li><a href="pages/connectivity.html" class="nav-link">Connectivity</a></li> -->
-        <li><a href="pages/architecture.html" class="nav-link">Architecture</a></li>
-        <li><a href="pages/about.html" class="nav-link">About</a></li>
+        <li><a href="index.html" class="nav-link active"><span>Home</span></a></li>
+        <li><a href="pages/nlp.html" class="nav-link"><span>Simulation Setup</span></a></li>
+        <li><a href="pages/results.html" class="nav-link"><span>Results</span></a></li>
+        <li><a href="pages/config.html" class="nav-link"><span>Config</span></a></li>
+        <li><a href="pages/architecture.html" class="nav-link"><span>Architecture</span></a></li>
+        <li><a href="pages/about.html" class="nav-link"><span>About</span></a></li>
       </ul>
+      <button class="sidebar-toggle" onclick="toggleSidebar()">
+        &lsaquo;
+      </button>
     </aside>
 
     <!-- Main Content Area -->
@@ -46,25 +47,14 @@
             simulations in the cloud.
           </p>
           <a href="pages/nlp.html" class="btn btn-primary">
-            Go to Simulation Dashboard &rarr;
+            Go to Simulation Setup &rarr;
           </a>
         </section>
 
-        <section class="card">
-          <div class="card-header">
-            <h2 class="card-title">System Status</h2>
-          </div>
-          <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">
-            Check connectivity with Firebase and the Backend Worker.
-          </p>
-          <button onclick="testFirestoreWrite()" class="btn"
-            style="background-color: var(--bg-app); border: 1px solid var(--border-subtle);">
-            Test Firebase Connection
-          </button>
-          <div style="margin-top: 1rem;">
-            <a href="pages/connectivity.html" style="font-size: 0.9rem; color: var(--primary);">View Connectivity
-              Logs</a>
-          </div>
+        <section class="card"
+          style="min-height: 200px; display: flex; align-items: center; justify-content: center; background: var(--bg-app); border: 1px dashed var(--border-subtle);">
+          <!-- Placeholder Card -->
+          <span style="color: var(--text-muted); font-size: 0.9rem;">(Content Coming Soon)</span>
         </section>
       </div>
 

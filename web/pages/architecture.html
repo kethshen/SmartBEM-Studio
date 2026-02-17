@@ -16,14 +16,17 @@
         <span>⚡ SmartHVAC</span>
       </div>
       <ul class="nav-links">
-        <li><a href="../index.html" class="nav-link">Home</a></li>
-        <li><a href="nlp.html" class="nav-link">Dashboard</a></li>
-        <li><a href="results.html" class="nav-link">Results</a></li>
-        <li><a href="config.html" class="nav-link">Config</a></li>
+        <li><a href="../index.html" class="nav-link"><span>Home</span></a></li>
+        <li><a href="nlp.html" class="nav-link"><span>Simulation Setup</span></a></li>
+        <li><a href="results.html" class="nav-link"><span>Results</span></a></li>
+        <li><a href="config.html" class="nav-link"><span>Config</span></a></li>
         <!-- <li><a href="connectivity.html" class="nav-link">Connectivity</a></li> -->
-        <li><a href="architecture.html" class="nav-link active">Architecture</a></li>
-        <li><a href="about.html" class="nav-link">About</a></li>
+        <li><a href="architecture.html" class="nav-link active"><span>Architecture</span></a></li>
+        <li><a href="about.html" class="nav-link"><span>About</span></a></li>
       </ul>
+      <button class="sidebar-toggle" onclick="toggleSidebar()">
+        &lsaquo;
+      </button>
     </aside>
 
     <!-- Main Content -->
@@ -96,6 +99,10 @@ Firebase -> Web UI (Plots)
 
     </main>
   </div>
+
+  <!-- Script Imports -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script type="module" src="../script.js"></script>
 </body>
 
 </html>

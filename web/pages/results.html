@@ -6,6 +6,44 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Results - SmartHVAC Studio</title>
   <link rel="stylesheet" href="../style.css">
+  <style>
+    /* Specific enhancements for this page */
+    .plot-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      /* 2x2 for now, user asked for 4x4 style grid */
+      gap: 1.5rem;
+      margin-top: 1.5rem;
+    }
+
+    @media (min-width: 1400px) {
+      .plot-grid {
+        grid-template-columns: repeat(4, 1fr);
+      }
+    }
+
+    .plot-card {
+      background: var(--bg-card);
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-subtle);
+      padding: 1rem;
+      min-height: 250px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .plot-placeholder {
+      flex: 1;
+      background: var(--bg-app);
+      border-radius: var(--radius-sm);
+      border: 1px dashed var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+    }
+  </style>
 </head>
 
 <body>
@@ -16,14 +54,16 @@
         <span>⚡ SmartHVAC</span>
       </div>
       <ul class="nav-links">
-        <li><a href="../index.html" class="nav-link">Home</a></li>
-        <li><a href="nlp.html" class="nav-link">Dashboard</a></li>
-        <li><a href="results.html" class="nav-link active">Results</a></li>
-        <li><a href="config.html" class="nav-link">Config</a></li>
-        <!-- <li><a href="connectivity.html" class="nav-link">Connectivity</a></li> -->
-        <li><a href="architecture.html" class="nav-link">Architecture</a></li>
-        <li><a href="about.html" class="nav-link">About</a></li>
+        <li><a href="../index.html" class="nav-link"><span>Home</span></a></li>
+        <li><a href="nlp.html" class="nav-link"><span>Simulation Setup</span></a></li>
+        <li><a href="results.html" class="nav-link active"><span>Results</span></a></li>
+        <li><a href="config.html" class="nav-link"><span>Config</span></a></li>
+        <li><a href="architecture.html" class="nav-link"><span>Architecture</span></a></li>
+        <li><a href="about.html" class="nav-link"><span>About</span></a></li>
       </ul>
+      <button class="sidebar-toggle" onclick="toggleSidebar()">
+        &lsaquo;
+      </button>
     </aside>
 
     <!-- Main Content Area -->
@@ -40,66 +80,107 @@
 
       <p id="autoMsg" style="color: var(--error); font-size: 0.9rem; margin-bottom: 1rem;"></p>
 
-      <div class="grid-2" style="grid-template-columns: 1fr 1fr;">
+      <!-- Row 1: Job History + Job Details -->
+      <div class="grid-2" style="grid-template-columns: 1fr 1fr; align-items: start;">
 
         <!-- Left Col: Job List (Master) -->
-        <section class="card" style="height: fit-content; max-height: 80vh; overflow-y: auto;">
+        <section class="card" style="height: 400px; display: flex; flex-direction: column;">
           <div class="card-header">
             <h2 class="card-title">Job History</h2>
           </div>
-          <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
-            <thead>
-              <tr
-                style="text-align: left; border-bottom: 2px solid var(--border-subtle); color: var(--text-secondary);">
-                <th style="padding: 0.75rem;">Description</th>
-                <th style="padding: 0.75rem;">Status</th>
-                <th style="padding: 0.75rem;">Time</th>
-              </tr>
-            </thead>
-            <tbody id="runsTable">
-              <!-- JS injects rows here -->
-              <tr>
-                <td colspan="3" style="padding: 1rem; text-align: center; color: var(--text-secondary);">Loading jobs...
-                </td>
-              </tr>
-            </tbody>
-          </table>
+          <div style="flex: 1; overflow-y: auto;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
+              <thead>
+                <tr
+                  style="text-align: left; border-bottom: 2px solid var(--border-subtle); color: var(--text-secondary); position: sticky; top: 0; background: var(--bg-card);">
+                  <th style="padding: 0.75rem;">Description</th>
+                  <th style="padding: 0.75rem;">Status</th>
+                  <th style="padding: 0.75rem;">Time</th>
+                </tr>
+              </thead>
+              <tbody id="runsTable">
+                <!-- JS injects rows here -->
+                <tr>
+                  <td colspan="3" style="padding: 1rem; text-align: center; color: var(--text-secondary);">Loading
+                    jobs...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </section>
 
         <!-- Right Col: Details (Detail) -->
-        <section class="card">
+        <section class="card" style="height: 400px; display: flex; flex-direction: column;">
           <div class="card-header">
             <h2 class="card-title">Selected Job Details</h2>
           </div>
 
-          <div id="runDetails" style="margin-bottom: 1.5rem;">
-            <div style="display: grid; grid-template-columns: auto 1fr; gap: 0.5rem 1rem; font-size: 0.9rem;">
-              <span style="color: var(--text-secondary);">Description:</span>
-              <span id="detailDescription" style="font-weight: 500;">-</span>
+          <div id="runDetails" style="flex: 1; display: flex; flex-direction: column; justify-content: center;">
+            <!-- Placeholder when nothing selected -->
+            <div id="detailPlaceholder" style="text-align: center; color: var(--text-secondary);">
+              Select a job from the list to view details.
+            </div>
 
-              <span style="color: var(--text-secondary);">Status:</span>
+            <!-- Real Details (Hidden by default or populated) -->
+            <div id="detailContent"
+              style="display: none; grid-template-columns: auto 1fr; gap: 1rem; font-size: 0.95rem;">
+              <span style="color: var(--text-secondary); font-weight: 500;">Description:</span>
+              <span id="detailDescription" style="font-weight: 600;">-</span>
+
+              <span style="color: var(--text-secondary); font-weight: 500;">Status:</span>
               <span id="detailStatus">-</span>
 
-              <span style="color: var(--text-secondary);">Created At:</span>
+              <span style="color: var(--text-secondary); font-weight: 500;">Created At:</span>
               <span id="detailTime">-</span>
 
-              <span style="color: var(--text-secondary);">Output Path:</span>
-              <span id="detailPath" style="font-family: var(--font-mono); font-size: 0.8rem;">-</span>
-            </div>
-          </div>
-
-          <div id="resultsContainer">
-            <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 0.5rem; color: var(--text-primary);">Zone
-              Temperature Plot</h3>
-            <div
-              style="background: var(--bg-app); border-radius: var(--radius-sm); padding: 1rem; min-height: 200px; display: flex; align-items: center; justify-content: center; border: 1px dashed var(--border-subtle);">
-              <img id="zonePlot" style="max-width: 100%; display: none; border-radius: var(--radius-sm);"
-                alt="Result Plot">
-              <p id="zonePlotMsg" style="color: var(--text-secondary); font-size: 0.9rem; margin: 0;">Select a 'Done'
-                job to view results.</p>
+              <span style="color: var(--text-secondary); font-weight: 500;">Output Path:</span>
+              <span id="detailPath"
+                style="font-family: var(--font-mono); font-size: 0.85rem; word-break: break-all;">-</span>
             </div>
           </div>
         </section>
+
+      </div>
+
+      <!-- Row 2: Result Plots (Grid) -->
+      <h3 style="font-size: 1.25rem; font-weight: 600; margin-top: 2rem; color: var(--text-primary);">Visualizations
+      </h3>
+      <div id="resultsContainer" class="plot-grid">
+
+        <!-- Plot 1: Zone Temp -->
+        <div class="plot-card">
+          <h4 style="font-size: 0.9rem; font-weight: 600; margin-bottom: 0.5rem;">Zone Temperature Plot</h4>
+          <div class="plot-placeholder">
+            <img id="zonePlot"
+              style="max-width: 100%; max-height: 200px; display: none; border-radius: var(--radius-sm);"
+              alt="Result Plot">
+            <p id="zonePlotMsg">Select a 'Done' job.</p>
+          </div>
+        </div>
+
+        <!-- Plot 2: EKF (Placeholder) -->
+        <div class="plot-card">
+          <h4 style="font-size: 0.9rem; font-weight: 600; margin-bottom: 0.5rem;">EKF Estimation</h4>
+          <div class="plot-placeholder">
+            (Coming Soon)
+          </div>
+        </div>
+
+        <!-- Plot 3: Weather (Placeholder) -->
+        <div class="plot-card">
+          <h4 style="font-size: 0.9rem; font-weight: 600; margin-bottom: 0.5rem;">Weather Data</h4>
+          <div class="plot-placeholder">
+            (Coming Soon)
+          </div>
+        </div>
+
+        <!-- Plot 4: Energy (Placeholder) -->
+        <div class="plot-card">
+          <h4 style="font-size: 0.9rem; font-weight: 600; margin-bottom: 0.5rem;">Energy Consumption</h4>
+          <div class="plot-placeholder">
+            (Coming Soon)
+          </div>
+        </div>
 
       </div>
 

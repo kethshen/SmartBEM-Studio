@@ -16,14 +16,17 @@
                 <span>⚡ SmartHVAC</span>
             </div>
             <ul class="nav-links">
-                <li><a href="../index.html" class="nav-link">Home</a></li>
-                <li><a href="nlp.html" class="nav-link">Dashboard</a></li>
-                <li><a href="results.html" class="nav-link">Results</a></li>
-                <li><a href="config.html" class="nav-link">Config</a></li>
+                <li><a href="../index.html" class="nav-link"><span>Home</span></a></li>
+                <li><a href="nlp.html" class="nav-link"><span>Simulation Setup</span></a></li>
+                <li><a href="results.html" class="nav-link"><span>Results</span></a></li>
+                <li><a href="config.html" class="nav-link"><span>Config</span></a></li>
                 <!-- <li><a href="connectivity.html" class="nav-link">Connectivity</a></li> -->
-                <li><a href="architecture.html" class="nav-link">Architecture</a></li>
-                <li><a href="about.html" class="nav-link active">About</a></li>
+                <li><a href="architecture.html" class="nav-link"><span>Architecture</span></a></li>
+                <li><a href="about.html" class="nav-link active"><span>About</span></a></li>
             </ul>
+            <button class="sidebar-toggle" onclick="toggleSidebar()">
+                &lsaquo;
+            </button>
         </aside>
 
         <!-- Main Content -->
@@ -33,49 +36,74 @@
                 <p class="page-subtitle">Project details and credits.</p>
             </header>
 
-            <div style="max-width: 600px;">
-                <section class="card">
-                    <div class="card-header">
-                        <h2 class="card-title">Project Information</h2>
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Project Information</h2>
+                </div>
+
+                <p style="font-size: 1.1rem; font-weight: 500; color: var(--text-primary); margin-bottom: 0.5rem;">
+                    "Intelligent HVAC Modeling, Estimation & Control"
+                </p>
+
+                <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">
+                    This platform bridges the gap between theoretical modeling and practical HVAC control by
+                    establishing an AI-assisted framework for EnergyPlus simulation and online parameter estimation
+                    (EKF).
+                </p>
+
+                <div
+                    style="background-color: var(--bg-app); border-radius: var(--radius-sm); padding: 1.25rem; border: 1px solid var(--border-subtle); margin-bottom: 2rem;">
+                    <h3
+                        style="font-size: 0.85rem; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.5rem; letter-spacing: 0.5px;">
+                        Affiliation</h3>
+                    <div style="color: var(--text-primary); font-weight: 600; font-size: 1rem;">
+                        Department of Mechanical Engineering<br>
+                        <span style="font-weight: 400;">University of Peradeniya</span>
                     </div>
+                </div>
 
-                    <p style="font-size: 1.1rem; font-weight: 500; color: var(--text-primary); margin-bottom: 1rem;">
-                        "Intelligent HVAC Modeling, Estimation & Control"
-                    </p>
+                <h3
+                    style="font-size: 1rem; color: var(--text-primary); margin-bottom: 1rem; border-bottom: 1px solid var(--border-subtle); padding-bottom: 0.5rem;">
+                    Project Team</h3>
 
-                    <p style="color: var(--text-secondary); margin-bottom: 2rem;">
-                        This platform bridges the gap between theoretical modeling and practical HVAC control by
-                        establishing an AI-assisted framework for EnergyPlus simulation and online parameter estimation
-                        (EKF).
-                    </p>
-
-                    <div style="background: var(--bg-app); padding: 1.5rem; border-radius: var(--radius-sm);">
-                        <h3
-                            style="font-size: 0.9rem; text-transform: uppercase; color: var(--text-muted); margin-bottom: 1rem;">
-                            Contributors</h3>
-
-                        <div style="display: flex; gap: 1rem; align-items: center;">
-                            <div
-                                style="width: 40px; height: 40px; background: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold;">
-                                K</div>
-                            <div>
-                                <div style="font-weight: 600;">Kethaka</div>
-                                <div style="font-size: 0.85rem; color: var(--text-secondary);">Model & Estimation</div>
-                            </div>
+                <div class="grid-2">
+                    <!-- Student -->
+                    <div style="display: flex; gap: 1rem; align-items: center; padding: 0.5rem;">
+                        <div
+                            style="width: 48px; height: 48px; background: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 1.2rem;">
+                            K</div>
+                        <div>
+                            <div style="font-weight: 600; font-size: 1rem;">Kethaka</div>
+                            <div style="font-size: 0.85rem; color: var(--text-secondary);">Research Student</div>
                         </div>
                     </div>
 
-                    <div
-                        style="margin-top: 2rem; padding-top: 1rem; border-top: 1px solid var(--border-subtle); text-align: center;">
-                        <span class="badge"
-                            style="background: var(--bg-app); color: var(--text-secondary); border: 1px solid var(--border-subtle);">Academic
-                            Use Only</span>
+                    <!-- Supervisor -->
+                    <div style="display: flex; gap: 1rem; align-items: center; padding: 0.5rem;">
+                        <div
+                            style="width: 48px; height: 48px; background: var(--secondary); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 1.2rem;">
+                            M</div>
+                        <div>
+                            <div style="font-weight: 600; font-size: 1rem;">Dr. D.H.S. Maithripala</div>
+                            <div style="font-size: 0.85rem; color: var(--text-secondary);">Project Supervisor</div>
+                        </div>
                     </div>
-                </section>
+                </div>
+
+                <div
+                    style="margin-top: 2rem; padding-top: 1rem; border-top: 1px solid var(--border-subtle); text-align: center;">
+                    <span class="badge"
+                        style="background: var(--bg-app); color: var(--text-secondary); border: 1px solid var(--border-subtle);">Academic
+                        Use Only</span>
+                </div>
             </div>
 
         </main>
     </div>
+
+    <!-- Script Imports -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script type="module" src="../script.js"></script>
 </body>
 
 </html>
