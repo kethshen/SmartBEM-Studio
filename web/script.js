@@ -266,6 +266,22 @@ function showJobDetails(jobId, data) {
   if (elTime) elTime.innerText = data.createdAt ? data.createdAt.toDate().toLocaleString() : "-";
   if (elPath) elPath.innerText = data.resultPath || "Waiting...";
 
+  // Handle "View IDF" Button Visibility
+  const btnView = document.getElementById("btnViewIDF");
+  if (btnView) {
+    if (data.status === "done" || data.status === "running") { // Allow viewing even if running if file exists (optional, keeping safe)
+      // Actually only show if 'done' for now to ensure file exists, or if we track idf generation separately
+      if (data.status === "done") {
+        btnView.style.display = "block";
+        btnView.onclick = () => viewIDF(jobId);
+      } else {
+        btnView.style.display = "none";
+      }
+    } else {
+      btnView.style.display = "none";
+    }
+  }
+
   // Handle Results Visualization
   const imgInfo = document.getElementById("zonePlot");
   const msgInfo = document.getElementById("zonePlotMsg");
@@ -297,7 +313,60 @@ function showJobDetails(jobId, data) {
     msgInfo.innerText = "Simulation in progress... (" + data.status + ")";
     msgInfo.style.color = "var(--text-secondary)";
   }
+  msgInfo.style.color = "var(--text-secondary)";
 }
+
+
+// ----------------------------
+// IDF Viewer Logic
+// ----------------------------
+function viewIDF(jobId) {
+  const modal = document.getElementById("idfModal");
+  const contentPre = document.getElementById("idfContent");
+
+  if (!modal || !contentPre) return;
+
+  // Show Modal immediately with loading state
+  modal.style.display = "flex";
+  contentPre.innerText = "Loading IDF from Cloud Storage...";
+
+  // Construct path: jobs/{jobId}/in.idf
+  const idfPath = `jobs/${jobId}/in.idf`;
+
+  storage.ref(idfPath).getDownloadURL()
+    .then((url) => {
+      // Fetch the actual text content
+      return fetch(url);
+    })
+    .then((response) => {
+      if (!response.ok) throw new Error("File not found or unreadable.");
+      return response.text();
+    })
+    .then((text) => {
+      contentPre.innerText = text;
+    })
+    .catch((error) => {
+      console.error("Error fetching IDF:", error);
+      contentPre.innerText = "Error loading IDF file.\n\n" +
+        "Details: " + error.message + "\n\n" +
+        "Ensure the backend has generated and uploaded 'in.idf'.";
+    });
+}
+
+function closeIDFModal() {
+  const modal = document.getElementById("idfModal");
+  if (modal) {
+    modal.style.display = "none";
+  }
+}
+
+// Close modal if clicking outside content
+window.addEventListener("click", (e) => {
+  const modal = document.getElementById("idfModal");
+  if (e.target === modal) {
+    closeIDFModal();
+  }
+});
 
 // ----------------------------
 // Auto-Init on Page Load
@@ -314,4 +383,8 @@ window.testFirestoreWrite = testFirestoreWrite;
 window.submitDescription = submitDescription;
 window.testAIConnection = testAIConnection;
 window.loadRuns = loadJobs; // Alias for backward compatibility if HTML buttons haven't changed yet
+window.testAIConnection = testAIConnection;
+window.loadRuns = loadJobs; // Alias for backward compatibility if HTML buttons haven't changed yet
 window.toggleSidebar = toggleSidebar;
+window.viewIDF = viewIDF;
+window.closeIDFModal = closeIDFModal;
