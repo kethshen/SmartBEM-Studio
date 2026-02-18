@@ -385,6 +385,60 @@
     For: AllDays,            !- Field 2
     Until: 24:00,24;         !- Field 3
 
+  Schedule:Compact,
+    ALWAYS_ON,               !- Name
+    Any Number,              !- Schedule Type Limits Name
+    Through: 12/31,          !- Field 1
+    For: AllDays,            !- Field 2
+    Until: 24:00,1;          !- Field 3
+
+  Schedule:Compact,
+    ACTIVITY_SCH,            !- Name
+    Any Number,              !- Schedule Type Limits Name
+    Through: 12/31,          !- Field 1
+    For: AllDays,            !- Field 2
+    Until: 24:00,120;        !- Field 3
+
+!-   ===========  ALL OBJECTS IN CLASS: INTERNAL GAINS ===========
+
+  People,
+    OFFICE_PEOPLE,           !- Name
+    ZONE ONE,                !- Zone or ZoneList Name
+    ALWAYS_ON,               !- Number of People Schedule Name
+    People,                  !- Number of People Calculation Method
+    0,                       !- Number of People
+    ,                        !- People per Zone Floor Area {person/m2}
+    ,                        !- Zone Floor Area per Person {m2/person}
+    0.3,                     !- Fraction Radiant
+    ,                        !- Sensible Heat Fraction
+    ACTIVITY_SCH;            !- Activity Level Schedule Name
+
+  Lights,
+    OFFICE_LIGHTS,           !- Name
+    ZONE ONE,                !- Zone or ZoneList Name
+    ALWAYS_ON,               !- Schedule Name
+    LightingLevel,           !- Design Level Calculation Method
+    0,                       !- Lighting Level {W}
+    ,                        !- Watts per Zone Floor Area {W/m2}
+    ,                        !- Watts per Person {W/person}
+    0,                       !- Return Air Fraction
+    0.42,                    !- Fraction Radiant
+    0.18,                    !- Fraction Visible
+    1;                       !- Fraction Replaceable
+
+  ElectricEquipment,
+    OFFICE_EQUIP,            !- Name
+    ZONE ONE,                !- Zone or ZoneList Name
+    ALWAYS_ON,               !- Schedule Name
+    EquipmentLevel,          !- Design Level Calculation Method
+    0,                       !- Design Level {W}
+    ,                        !- Watts per Zone Floor Area {W/m2}
+    ,                        !- Watts per Person {W/person}
+    0,                       !- Fraction Latent
+    0.3,                     !- Fraction Radiant
+    0,                       !- Fraction Lost
+    General;                 !- End-Use Subcategory
+
 !-   ===========  ALL OBJECTS IN CLASS: CONTROLLED ZONE EQUIP CONFIGURATION ===========
 
   ZoneHVAC:EquipmentConnections,
