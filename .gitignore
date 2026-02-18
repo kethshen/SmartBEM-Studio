@@ -31,3 +31,11 @@ Research/
 
 #idf
 in.idf
+
+#LATEX files
+*.aux
+*.log
+*.out
+*.toc
+*.fls
+*.fdb_latexmk
