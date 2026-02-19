@@ -318,55 +318,27 @@ function showJobDetails(jobId, data) {
 
 
 // ----------------------------
-// IDF Viewer Logic
+// IDF Viewer Logic (Zero-Config Direct Link)
 // ----------------------------
 function viewIDF(jobId) {
-  const modal = document.getElementById("idfModal");
-  const contentPre = document.getElementById("idfContent");
-
-  if (!modal || !contentPre) return;
-
-  // Show Modal immediately with loading state
-  modal.style.display = "flex";
-  contentPre.innerText = "Loading IDF from Cloud Storage...";
-
   // Construct path: jobs/{jobId}/in.idf
   const idfPath = `jobs/${jobId}/in.idf`;
 
+  const btn = document.getElementById("btnViewIDF");
+  if (btn) btn.innerText = "Opening...";
+
   storage.ref(idfPath).getDownloadURL()
     .then((url) => {
-      // Fetch the actual text content
-      return fetch(url);
-    })
-    .then((response) => {
-      if (!response.ok) throw new Error("File not found or unreadable.");
-      return response.text();
-    })
-    .then((text) => {
-      contentPre.innerText = text;
+      // Direct Open in New Tab
+      window.open(url, "_blank");
+      if (btn) btn.innerText = "📄 View Generated IDF";
     })
     .catch((error) => {
-      console.error("Error fetching IDF:", error);
-      contentPre.innerText = "Error loading IDF file.\n\n" +
-        "Details: " + error.message + "\n\n" +
-        "Ensure the backend has generated and uploaded 'in.idf'.";
+      console.error("Error fetching IDF URL:", error);
+      alert("Could not open IDF file. It might not exist yet.\nError: " + error.message);
+      if (btn) btn.innerText = "📄 View Generated IDF";
     });
 }
-
-function closeIDFModal() {
-  const modal = document.getElementById("idfModal");
-  if (modal) {
-    modal.style.display = "none";
-  }
-}
-
-// Close modal if clicking outside content
-window.addEventListener("click", (e) => {
-  const modal = document.getElementById("idfModal");
-  if (e.target === modal) {
-    closeIDFModal();
-  }
-});
 
 // ----------------------------
 // Auto-Init on Page Load
@@ -387,4 +359,3 @@ window.testAIConnection = testAIConnection;
 window.loadRuns = loadJobs; // Alias for backward compatibility if HTML buttons haven't changed yet
 window.toggleSidebar = toggleSidebar;
 window.viewIDF = viewIDF;
-window.closeIDFModal = closeIDFModal;
