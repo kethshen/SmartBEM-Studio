@@ -318,24 +318,30 @@ function showJobDetails(jobId, data) {
 
 
 // ----------------------------
-// IDF Viewer Logic (Zero-Config Direct Link)
+// ----------------------------
+// IDF Viewer Logic (Server-Side Diff)
 // ----------------------------
 function viewIDF(jobId) {
-  // Construct path: jobs/{jobId}/in.idf
-  const idfPath = `jobs/${jobId}/in.idf`;
+  // Construct path: jobs/{jobId}/diff.html
+  // The Backend now generates a "diff.html" file which we can view directly.
+  // This bypasses CORS because we don't fetch it, we just open it.
 
+  const diffPath = `jobs/${jobId}/diff.html`;
   const btn = document.getElementById("btnViewIDF");
   if (btn) btn.innerText = "Opening...";
 
-  storage.ref(idfPath).getDownloadURL()
+  storage.ref(diffPath).getDownloadURL()
     .then((url) => {
-      // Direct Open in New Tab
       window.open(url, "_blank");
       if (btn) btn.innerText = "📄 View Generated IDF";
     })
     .catch((error) => {
-      console.error("Error fetching IDF URL:", error);
-      alert("Could not open IDF file. It might not exist yet.\nError: " + error.message);
+      console.error("Error fetching Diff URL:", error);
+      // Fallback: If diff.html doesn't exist (e.g. old job), try opening in.idf directly
+      alert("Diff view not found. Trying raw file...");
+      const idfPath = `jobs/${jobId}/in.idf`;
+      storage.ref(idfPath).getDownloadURL().then(u => window.open(u, "_blank"));
+
       if (btn) btn.innerText = "📄 View Generated IDF";
     });
 }
