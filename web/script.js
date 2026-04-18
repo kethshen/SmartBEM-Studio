@@ -124,7 +124,7 @@ function submitDescription() {
 // ----------------------------
 // Test AI Connectivity (Layer 4 Check)
 // ----------------------------
-function testAIConnection(checkGemini = true, checkOpenAI = true) {
+function testAIConnection(checkGemini = true, checkOpenAI = true, checkHF = true) {
   const statusMsg = document.getElementById("statusMsg");
 
   // Create a special "test_connection" job
@@ -133,7 +133,8 @@ function testAIConnection(checkGemini = true, checkOpenAI = true) {
     createdAt: firebase.firestore.FieldValue.serverTimestamp(),
     nlpInputText: "Connectivity Check",
     checkGemini: checkGemini,
-    checkOpenAI: checkOpenAI
+    checkOpenAI: checkOpenAI,
+    checkHF: checkHF
   };
 
   const now = new Date();
@@ -165,7 +166,8 @@ function testAIConnection(checkGemini = true, checkOpenAI = true) {
 
             let html = "";
             html += `OpenAI: <span style="color:${results.openai ? 'green' : 'red'}">${results.openai ? 'Supported' : 'Failed'}</span> &nbsp;|&nbsp; `;
-            html += `Gemini: <span style="color:${results.gemini ? 'green' : 'red'}">${results.gemini ? 'Supported' : 'Failed'}</span>`;
+            html += `Gemini: <span style="color:${results.gemini ? 'green' : 'red'}">${results.gemini ? 'Supported' : 'Failed'}</span> &nbsp;|&nbsp; `;
+            html += `HF: <span style="color:${results.hf ? 'green' : 'red'}">${results.hf ? 'Supported' : 'Failed'}</span>`;
 
             if (results.details) {
               html += `<br><small style="color:gray; font-weight:normal;">${results.details}</small>`;

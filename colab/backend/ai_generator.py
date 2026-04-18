@@ -2,6 +2,7 @@ import os
 import json
 import openai
 from google import genai 
+from huggingface_hub import InferenceClient
 
 class AIPipelines:
     def __init__(self, secrets_path="secrets.json", template_path="templates/Base.idf"):
@@ -32,6 +33,18 @@ class AIPipelines:
                 self.gemini_client = None
         else:
             self.gemini_client = None
+
+        # 3.5 Configure HuggingFace
+        if "HUGGINGFACE_API_KEY" in self.api_keys:
+            self.hf_api_key = self.api_keys["HUGGINGFACE_API_KEY"]
+            try:
+                self.hf_client = InferenceClient(api_key=self.hf_api_key)
+            except Exception as e:
+                print(f"[AI] Failed to init HuggingFace: {e}")
+                self.hf_client = None
+        else:
+            self.hf_api_key = None
+            self.hf_client = None
 
         # 4. Load Base Template
         self.base_idf = ""
@@ -80,6 +93,8 @@ class AIPipelines:
                 return self._call_openai(system_prompt, user_prompt)
             elif model_type == "gemini":
                 return self._call_gemini(system_prompt, user_prompt)
+            elif model_type == "huggingface":
+                return self._call_huggingface(system_prompt, user_prompt)
             else:
                 return f"! Error: Unknown model type '{model_type}'"
         except Exception as e:
@@ -113,6 +128,25 @@ class AIPipelines:
         )
         return self._sanitize_output(response.text)
 
+    def _call_huggingface(self, system, user):
+        if not self.hf_client:
+            raise ValueError("HuggingFace Client missing or API Key not provided.")
+            
+        try:
+            response = self.hf_client.chat.completions.create(
+                model="meta-llama/Llama-3.1-8B-Instruct",
+                messages=[
+                    {"role": "system", "content": system},
+                    {"role": "user", "content": user}
+                ],
+                max_tokens=1500,
+                temperature=0.2
+            )
+            content = response.choices[0].message.content
+            return self._sanitize_output(content)
+        except Exception as e:
+            return f"! Analysis Error: HuggingFace API Exception -> {str(e)}"
+
     def _sanitize_output(self, text):
         """Removes markdown wrappers if present."""
         clean = text.strip()
@@ -125,9 +159,9 @@ class AIPipelines:
             clean = clean[:-3]
         return clean.strip()
 
-    def test_connections(self, check_openai=True, check_gemini=True):
+    def test_connections(self, check_openai=True, check_gemini=True, check_hf=True):
         """Tests connectivity to APIs based on flags."""
-        results = {"openai": False, "gemini": False, "details": ""}
+        results = {"openai": False, "gemini": False, "hf": False, "details": ""}
         
         # Test OpenAI
         if check_openai:
@@ -158,6 +192,26 @@ class AIPipelines:
                  results["details"] += "Gemini Client Missing; "
         else:
              results["details"] += "Gemini Skipped; "
+             
+        # Test HuggingFace
+        if check_hf:
+            if self.hf_client:
+                try:
+                    self.hf_client.chat.completions.create(
+                        model="meta-llama/Llama-3.1-8B-Instruct",
+                        messages=[{"role": "user", "content": "hi"}],
+                        max_tokens=1
+                    )
+                    print("[AI] HuggingFace Test: ✅ Success")
+                    results["hf"] = True
+                except Exception as e:
+                    print(f"[AI] HuggingFace Test Exception ❌: {str(e)}")
+                    results["details"] += f"HF Exception: {str(e)}; "
+            else:
+                print("[AI] HuggingFace Test ❌: Missing API Key or Client Init Failed.")
+                results["details"] += "HF Client Missing; "
+        else:
+            results["details"] += "HF Skipped; "
                 
         return results
 

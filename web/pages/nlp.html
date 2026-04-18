@@ -81,6 +81,17 @@
                         <span id="statusOpenAI" class="badge"
                             style="background: var(--bg-app); color: var(--text-muted);">Unknown</span>
                     </div>
+
+                    <!-- HuggingFace API Status -->
+                    <div
+                        style="flex: 1; text-align: center; padding: 1rem; border: 1px dashed var(--border-subtle); border-radius: var(--radius-sm); position: relative;">
+                        <input type="checkbox" id="checkHF" checked
+                            style="position: absolute; top: 8px; right: 8px; cursor: pointer;"
+                            title="Toggle HuggingFace Check">
+                        <div style="font-weight: 600; margin-bottom: 0.5rem;">HuggingFace</div>
+                        <span id="statusHF" class="badge"
+                            style="background: var(--bg-app); color: var(--text-muted);">Unknown</span>
+                    </div>
                 </div>
 
                 <!-- Hidden outputs for script.js to write to, we will observe these -->
@@ -127,6 +138,7 @@
                     <div class="form-group">
                         <label for="aiModel">AI Model</label>
                         <select id="aiModel">
+                            <option value="huggingface">HuggingFace API (Free Tier)</option>
                             <option value="gemini">Google Gemini (Free Tier)</option>
                             <option value="openai">OpenAI (Requires Paid Key)</option>
                         </select>
@@ -162,6 +174,7 @@
             const doFirebase = document.getElementById('checkFirebase').checked;
             const doGemini = document.getElementById('checkGemini').checked;
             const doOpenAI = document.getElementById('checkOpenAI').checked;
+            const doHF = document.getElementById('checkHF').checked;
 
             // Set loading state ONLY for checked items
             if (doFirebase) {
@@ -174,6 +187,10 @@
             }
             if (doOpenAI) {
                 const el = document.getElementById('statusOpenAI');
+                if (el) { el.innerText = 'Checking...'; el.className = 'badge running'; }
+            }
+            if (doHF) {
+                const el = document.getElementById('statusHF');
                 if (el) { el.innerText = 'Checking...'; el.className = 'badge running'; }
             }
 
@@ -207,10 +224,10 @@
             }
 
             // 2. Check APIs (Triggers Cloud Job) - if either is toggled
-            if (doGemini || doOpenAI) {
+            if (doGemini || doOpenAI || doHF) {
                 if (typeof window.testAIConnection === 'function') {
                     // Pass the toggle states to the backend function
-                    window.testAIConnection(doGemini, doOpenAI);
+                    window.testAIConnection(doGemini, doOpenAI, doHF);
                 } else {
                     console.error("testAIConnection not found on window");
                 }
@@ -222,6 +239,10 @@
                 }
                 if (!doOpenAI) {
                     const el = document.getElementById('statusOpenAI');
+                    if (el) { el.innerText = 'Skipped'; el.className = 'badge'; style = "background-color:#eee; color:#aaa"; }
+                }
+                if (!doHF) {
+                    const el = document.getElementById('statusHF');
                     if (el) { el.innerText = 'Skipped'; el.className = 'badge'; style = "background-color:#eee; color:#aaa"; }
                 }
             }
@@ -242,7 +263,7 @@
                             if (text.includes("OpenAI: Supported")) {
                                 elOpenAI.innerText = 'Active';
                                 elOpenAI.className = 'badge done';
-                            } else {
+                            } else if (text.includes("OpenAI: Failed")) {
                                 elOpenAI.innerText = 'Error';
                                 elOpenAI.className = 'badge error';
                             }
@@ -254,11 +275,24 @@
                             if (text.includes("Gemini: Supported")) {
                                 elGemini.innerText = 'Active';
                                 elGemini.className = 'badge done';
-                            } else {
+                            } else if (text.includes("Gemini: Failed")) {
                                 elGemini.innerText = 'Error';
                                 elGemini.className = 'badge error';
                             }
                         }
+                        
+                        // Check HF
+                        const elHF = document.getElementById('statusHF');
+                        if (elHF) {
+                            if (text.includes("HF: Supported")) {
+                                elHF.innerText = 'Active';
+                                elHF.className = 'badge done';
+                            } else if (text.includes("HF: Failed")) {
+                                elHF.innerText = 'Error';
+                                elHF.className = 'badge error';
+                            }
+                        }
+                        
                         observer.disconnect();
                     }
                 });
