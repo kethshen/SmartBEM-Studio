@@ -292,7 +292,7 @@ function showJobDetails(jobId, data) {
 
   if (data.status === "done") {
     // Load real results from Storage
-    const plotPath = `results/${jobId}/zone_plot.png`;
+    const plotPath = `jobs/${jobId}/plot.png`;
     msgInfo.innerText = "Loading plot...";
 
     storage.ref(plotPath).getDownloadURL()
