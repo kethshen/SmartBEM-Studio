@@ -58,7 +58,7 @@ def run_simulation_job(job_id, idf_path, epw_path, config=None, output_dir_base=
     else:
         # Default "Sensible" outputs if none requested
         util.ensure_output_variables([
-            {"name": "Zone Mean Air Temperature", "key": "*", "freq": "Hourly"},
+            {"name": "Zone Air Temperature", "key": "*", "freq": "Hourly"},
             {"name": "System Node Mass Flow Rate", "key": "*", "freq": "Hourly"},
             {"name": "Site Outdoor Air Drybulb Temperature", "key": "Environment", "freq": "Hourly"}
         ])
@@ -83,13 +83,18 @@ def run_simulation_job(job_id, idf_path, epw_path, config=None, output_dir_base=
     results = {}
     sql_path = os.path.join(run_dir, "eplusout.sql")
     if not os.path.exists(sql_path):
-        raise FileNotFoundError(f"Simulation did not produce eplusout.sql at {sql_path}")
+        err_path = os.path.join(run_dir, "eplusout.err")
+        err_msg = ""
+        if os.path.exists(err_path):
+            with open(err_path, "r", encoding="utf-8", errors="ignore") as f:
+                err_msg = f.read()
+        raise Exception(f"Simulation did not produce eplusout.sql.\\nEnergyPlus Engine Error Log:\\n{err_msg}")
         
     xp = EPlusSqlExplorer(sql_path)
     
     # Extract Key Variables for Plotting
-    # We prefer "Zone Mean Air Temperature" as the primary metric
-    plot_var = "Zone Mean Air Temperature"
+    # We prefer "Zone Air Temperature" as the primary metric
+    plot_var = "Zone Air Temperature"
     
     # Try to extract the first variable from the user list if available
     if user_vars:

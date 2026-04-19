@@ -1,6 +1,6 @@
 import os
 
-def generate_zone_geometry(L, W, H, zone_name="Main_Zone"):
+def generate_zone_geometry(L, W, H, zone_name="ZONE ONE"):
     """
     Generates standard CCW EnergyPlus vertices for a rectangular zone.
     L = Length (X-axis)
@@ -14,7 +14,9 @@ def generate_zone_geometry(L, W, H, zone_name="Main_Zone"):
   Zone,
     {zone_name},             !- Name
     0,                       !- Direction of Relative North {{deg}}
-    0, 0, 0,                 !- X,Y,Z  {{m}}
+    0,                       !- X Origin {{m}}
+    0,                       !- Y Origin {{m}}
+    0,                       !- Z Origin {{m}}
     1,                       !- Type
     1,                       !- Multiplier
     autocalculate,           !- Ceiling Height {{m}}
@@ -22,17 +24,19 @@ def generate_zone_geometry(L, W, H, zone_name="Main_Zone"):
 """
     
     def make_surface(name, surf_type, constr, out_bound, sun, wind, v1, v2, v3, v4):
+        vf = "0.50" if surf_type == "Wall" else "0"
         return f"""
   BuildingSurface:Detailed,
     {name},                  !- Name
     {surf_type},             !- Surface Type
     {constr},                !- Construction Name
     {zone_name},             !- Zone Name
+    ,                        !- Space Name
     {out_bound},             !- Outside Boundary Condition
     ,                        !- Outside Boundary Condition Object
     {sun},                   !- Sun Exposure
     {wind},                  !- Wind Exposure
-    autocalculate,           !- View Factor to Ground
+    {vf},                    !- View Factor to Ground
     4,                       !- Number of Vertices
     {v1[0]:.2f}, {v1[1]:.2f}, {v1[2]:.2f},  !- X,Y,Z ==> Vertex 1
     {v2[0]:.2f}, {v2[1]:.2f}, {v2[2]:.2f},  !- X,Y,Z ==> Vertex 2
@@ -64,8 +68,9 @@ def generate_zone_geometry(L, W, H, zone_name="Main_Zone"):
                        (0, W, H), (0, 0, H), (L, 0, H), (L, W, H))
                        
     # Floor (Facing -Z)
+    # Viewed from below (outside), X is Right, Y is Up. CCW = (0,0)->(L,0)->(L,W)->(0,W).
     idf_str += make_surface("Floor", "Floor", floor_constr, "Ground", "NoSun", "NoWind", 
-                       (0, W, 0), (L, W, 0), (L, 0, 0), (0, 0, 0))
+                       (0, 0, 0), (L, 0, 0), (L, W, 0), (0, W, 0))
                        
     return idf_str
 
