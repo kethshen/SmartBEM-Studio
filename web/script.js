@@ -119,6 +119,56 @@ function submitDescription() {
 }
 
 // ----------------------------
+// Run Minimal IDF (Safe Test)
+// ----------------------------
+function runMinimalIdf() {
+  const jobData = {
+    status: "queued",
+    runMode: "minimal",
+    nlpInputText: "Minimal.idf Safe Test Bypass",
+    selectedModel: "none",
+    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+    updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+    idfFilePath: null,
+    weatherFilePath: null,
+    simulationConfig: {
+      ...JSON.parse(localStorage.getItem("smartHVAC_config") || "{}"),
+      run_type: "design_day",
+      weather_file: "USA_IL_Chicago-OHare.Intl.AP.725300_TMY3.epw"
+    },
+    resultPath: null,
+    errorMessage: null
+  };
+
+  const now = new Date();
+  const timestampId = now.getFullYear() +
+    String(now.getMonth() + 1).padStart(2, '0') +
+    String(now.getDate()).padStart(2, '0') + "_" +
+    String(now.getHours()).padStart(2, '0') +
+    String(now.getMinutes()).padStart(2, '0') +
+    String(now.getSeconds()).padStart(2, '0');
+
+  const customJobId = `job_minimal_${timestampId}`;
+
+  db.collection("jobs").doc(customJobId).set(jobData)
+    .then(() => {
+      const statusMsg = document.getElementById("statusMsg");
+      if (statusMsg) {
+        statusMsg.innerText = `Safe Test submitted! ID: ${customJobId} (Waiting for Colab)`;
+        statusMsg.style.color = "blue";
+        statusMsg.style.display = "block";
+      }
+      if (typeof loadJobs === "function") {
+        loadJobs();
+      }
+    })
+    .catch((error) => {
+      alert("Error submitting safe test: " + error.message);
+    });
+}
+window.runMinimalIdf = runMinimalIdf;
+
+// ----------------------------
 // Test AI Connectivity (Layer 4 Check)
 // ----------------------------
 // ----------------------------
