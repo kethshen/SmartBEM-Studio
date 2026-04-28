@@ -397,10 +397,11 @@ function viewIDF(jobId) {
     })
     .catch((error) => {
       console.error("Error fetching Diff URL:", error);
-      // Fallback: If diff.html doesn't exist (e.g. old job), try opening in.idf directly
-      alert("Diff view not found. Trying raw file...");
-      const idfPath = `jobs/${jobId}/in.idf`;
-      storage.ref(idfPath).getDownloadURL().then(u => window.open(u, "_blank"));
+      // Fallback: If diff.html doesn't exist, try opening the raw generated IDF directly
+      const idfPath = `jobs/${jobId}/${jobId}_in.idf`;
+      storage.ref(idfPath).getDownloadURL().then(u => window.open(u, "_blank")).catch(e => {
+        alert("IDF file not found on server.");
+      });
 
       if (btn) btn.innerText = "📄 View Generated IDF";
     });

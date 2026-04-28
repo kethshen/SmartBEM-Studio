@@ -114,7 +114,9 @@ def run_simulation_job(job_id, idf_path, epw_path, config=None, output_dir_base=
                 # Generate Plot
                 img_path = os.path.join(run_dir, f"{key}.png")
                 plt.figure(figsize=(10, 6))
-                plt.plot(df["timestamp"], df["value"], label=var_name)
+                # plt.plot(df["timestamp"], df["value"], label=var_name)
+                plt.plot(range(len(df)), df["value"], label=var_name)
+
                 plt.title(f"{var_name} - Job {job_id}")
                 plt.xlabel("Time")
                 plt.ylabel("Value")
@@ -130,6 +132,7 @@ def run_simulation_job(job_id, idf_path, epw_path, config=None, output_dir_base=
         except Exception as e:
             print(f"[{job_id}] Error plotting {var_name}: {e}")
     
-    # 8. Add SQL to results
+    # 8. Add SQL and IDF to results
+    results["idf"] = idf_path
         
     return results
