@@ -134,5 +134,74 @@ def run_simulation_job(job_id, idf_path, epw_path, config=None, output_dir_base=
     
     # 8. Add SQL and IDF to results
     results["idf"] = idf_path
+    
+    # 9. Generate HTML Summary of IDF objects
+    try:
+        with open(idf_path, 'r', encoding='utf-8') as f:
+            lines = f.readlines()
+        
+        objects = []
+        current_type = None
+        current_name = None
+        
+        for line in lines:
+            line = line.strip()
+            if line.startswith('!') or not line:
+                continue
+                
+            if '!' in line:
+                line = line[:line.index('!')].strip()
+                
+            if not current_type:
+                if line.endswith(','):
+                    current_type = line[:-1].strip()
+                elif line.endswith(';'):
+                    objects.append({"type": line[:-1].strip(), "name": "N/A"})
+                    current_type = None
+            elif not current_name:
+                if line.endswith(',') or line.endswith(';'):
+                    current_name = line[:-1].strip()
+                    objects.append({"type": current_type, "name": current_name})
+                    if line.endswith(';'):
+                        current_type = None
+                        current_name = None
+            else:
+                if line.endswith(';'):
+                    current_type = None
+                    current_name = None
+                    
+        grouped = {}
+        for obj in objects:
+            t = obj["type"]
+            n = obj["name"]
+            if t not in grouped:
+                grouped[t] = []
+            if n != "N/A" and n:
+                grouped[t].append(n)
+                
+        html = f'''<html><head><title>IDF Object Summary</title><style>
+        body{{font-family: -apple-system, sans-serif; padding: 40px; background: #f8f9fa;}}
+        .card{{background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 20px; break-inside: avoid;}}
+        h1{{color: #1a73e8;}} h2{{color: #333; font-size: 1.1em; border-bottom: 1px solid #eee; padding-bottom: 5px;}}
+        ul{{list-style-type: none; padding-left: 0;}} li{{padding: 5px 0; color: #555;}}
+        </style></head><body><h1>IDF Component Summary</h1><p style="color:gray">Job ID: {job_id}</p><div style="column-count: 2; column-gap: 40px;">'''
+        
+        for t in sorted(grouped.keys()):
+            names = grouped[t]
+            if names:
+                html += f'<div class="card"><h2>{t} <span style="color:gray; font-weight:normal; font-size:0.8em;">({len(names)})</span></h2><ul>'
+                for name in names:
+                    html += f'<li>{name}</li>'
+                html += '</ul></div>'
+        html += '</div></body></html>'
+        
+        summary_path = os.path.join(run_dir, "summary.html")
+        with open(summary_path, 'w', encoding='utf-8') as f:
+            f.write(html)
+            
+        results["summary"] = summary_path
+        print(f"[{job_id}] Successfully generated summary.html")
+    except Exception as e:
+        print(f"[{job_id}] Error generating summary: {e}")
         
     return results

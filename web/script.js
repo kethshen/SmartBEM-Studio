@@ -320,17 +320,16 @@ function showJobDetails(jobId, data) {
 
   // Handle "View IDF" Button Visibility
   const btnView = document.getElementById("btnViewIDF");
-  if (btnView) {
-    if (data.status === "done" || data.status === "running") { // Allow viewing even if running if file exists (optional, keeping safe)
-      // Actually only show if 'done' for now to ensure file exists, or if we track idf generation separately
-      if (data.status === "done") {
-        btnView.style.display = "block";
-        btnView.onclick = () => viewIDF(jobId);
-      } else {
-        btnView.style.display = "none";
-      }
+  const btnSummary = document.getElementById("btnViewIDFSummary");
+  if (btnView && btnSummary) {
+    if (data.status === "done") {
+      btnView.style.display = "block";
+      btnView.onclick = () => viewIDF(jobId);
+      btnSummary.style.display = "block";
+      btnSummary.onclick = () => viewIDFSummary(jobId);
     } else {
       btnView.style.display = "none";
+      btnSummary.style.display = "none";
     }
   }
 
@@ -345,7 +344,7 @@ function showJobDetails(jobId, data) {
   plots.forEach(plotDef => {
     const imgInfo = document.getElementById(plotDef.imgId);
     const msgInfo = document.getElementById(plotDef.msgId);
-    
+
     if (!imgInfo || !msgInfo) return;
 
     if (data.status === "done") {
@@ -408,6 +407,26 @@ function viewIDF(jobId) {
 }
 
 // ----------------------------
+// View IDF Summary (Backend Generated)
+// ----------------------------
+function viewIDFSummary(jobId) {
+  const summaryPath = `jobs/${jobId}/summary.html`;
+  const btn = document.getElementById("btnViewIDFSummary");
+  if (btn) btn.innerText = "Opening...";
+
+  storage.ref(summaryPath).getDownloadURL()
+    .then((url) => {
+      window.open(url, "_blank");
+      if (btn) btn.innerText = "📋 View Object Summary";
+    })
+    .catch((error) => {
+      console.error("Error fetching Summary URL:", error);
+      alert("Summary not available. This is likely an older job generated before the summary feature was added. Please run a new job!");
+      if (btn) btn.innerText = "📋 View Object Summary";
+    });
+}
+
+// ----------------------------
 // Auto-Init on Page Load
 // ----------------------------
 window.addEventListener("load", () => {
@@ -423,6 +442,7 @@ window.submitDescription = submitDescription;
 window.testAIConnection = testAIConnection;
 window.loadRuns = loadJobs; // Alias for backward compatibility if HTML buttons haven't changed yet
 window.testAIConnection = testAIConnection;
-window.loadRuns = loadJobs; // Alias for backward compatibility if HTML buttons haven't changed yet
+window.loadRuns = loadJobs; // Alias for backward compatibility
 window.toggleSidebar = toggleSidebar;
 window.viewIDF = viewIDF;
+window.viewIDFSummary = viewIDFSummary;
