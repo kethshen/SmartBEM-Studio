@@ -70,9 +70,25 @@ class AIPipelines:
         try:
             with open(os.path.join(os.path.dirname(__file__), "index.json"), 'r', encoding='utf-8') as f:
                 index_data = json.load(f)
-            construction_menu = list(index_data.get("Construction", {}).keys())
+            
+            # --- PASS 1: The Planner (Extract Keywords) ---
+            print(f"[AI RAG] Running Pass 1 (Planner) to extract keywords...")
+            keywords = self._generate_search_keywords(nlp_text, model_type)
+            print(f"[AI RAG] Extracted Keywords: {keywords}")
+
+            # --- RETRIEVER: Filter the Massive Menu ---
+            all_constructions = list(index_data.get("Construction", {}).keys())
+            
+            # Simple scoring function: How many keywords are in the construction name?
+            def score_item(item_name):
+                return sum(1 for kw in keywords if kw.lower() in item_name.lower())
+                
+            # Sort by score and take the top 15 most relevant walls/roofs!
+            construction_menu = sorted(all_constructions, key=score_item, reverse=True)[:15]
+            print(f"[AI RAG] Filtered Menu down to 15 items: {construction_menu}")
+
         except Exception as e:
-            print(f"Warning: Could not load index.json: {e}")
+            print(f"Warning: Could not load index.json or RAG failed: {e}")
             construction_menu = ["Composite 2x4 Wood Stud R11"]
 
         # 2. Construct Prompt for JSON
@@ -201,8 +217,8 @@ class AIPipelines:
             raise ValueError("Ollama python package is not installed. Please install it in Colab: !pip install ollama")
             
         try:
-            # Using gemma4:e2b per the youtube tutorial script
-            response = ollama.chat(model='gemma4:e2b', messages=[
+            # Using gemma3:4b since it successfully downloaded to your drive!
+            response = ollama.chat(model='gemma3:4b', messages=[
                 {"role": "system", "content": system},
                 {"role": "user", "content": user}
             ])
@@ -210,6 +226,33 @@ class AIPipelines:
             return self._sanitize_output(content)
         except Exception as e:
             return f"! Analysis Error: Ollama Local Exception -> {str(e)}"
+
+    def _generate_search_keywords(self, nlp_text, model_type):
+        """Pass 1: Asks the AI to extract or infer search keywords."""
+        system_prompt = (
+            "You are a Keyword Extractor for an EnergyPlus RAG system.\n"
+            "Analyze the user's prompt about a building and extract a dynamic list of search keywords related to building materials and walls.\n"
+            "RULE 1: If the user mentions specific materials (e.g., 'steel', 'wood stud', 'brick'), extract exactly those words.\n"
+            "RULE 2: If the prompt is vague (e.g., 'normal building'), infer generic terms: 'standard', 'wood', 'brick', 'insulation'.\n"
+            "RULE 3: Return ONLY a comma-separated list of keywords. NO markdown. NO explanations."
+        )
+        try:
+            if model_type == "openai":
+                response = self._call_openai(system_prompt, nlp_text)
+            elif model_type == "gemini":
+                response = self._call_gemini(system_prompt, nlp_text)
+            elif model_type == "huggingface":
+                response = self._call_huggingface(system_prompt, nlp_text)
+            elif model_type == "ollama":
+                response = self._call_ollama(system_prompt, nlp_text)
+            else:
+                return ["office", "wood", "standard"]
+            
+            keywords = [k.strip() for k in response.split(",") if k.strip()]
+            return keywords if keywords else ["office", "wood", "standard"]
+        except Exception as e:
+            print(f"[AI Planner] Keyword Extraction Failed: {e}")
+            return ["office", "wood", "standard"]
 
     def _sanitize_output(self, text):
         """Removes markdown wrappers if present."""
