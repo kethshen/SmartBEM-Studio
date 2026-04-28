@@ -101,6 +101,8 @@ class AIPipelines:
                 json_output = self._call_gemini(system_prompt, user_prompt)
             elif model_type == "huggingface":
                 json_output = self._call_huggingface(system_prompt, user_prompt)
+            elif model_type == "ollama":
+                json_output = self._call_ollama(system_prompt, user_prompt)
             else:
                 return f"! Error: Unknown model type '{model_type}'"
             
@@ -191,6 +193,23 @@ class AIPipelines:
             return self._sanitize_output(content)
         except Exception as e:
             return f"! Analysis Error: HuggingFace API Exception -> {str(e)}"
+
+    def _call_ollama(self, system, user):
+        try:
+            import ollama
+        except ImportError:
+            raise ValueError("Ollama python package is not installed. Please install it in Colab: !pip install ollama")
+            
+        try:
+            # Using gemma3:4b per your confirmation
+            response = ollama.chat(model='gemma3:4b', messages=[
+                {"role": "system", "content": system},
+                {"role": "user", "content": user}
+            ])
+            content = response['message']['content']
+            return self._sanitize_output(content)
+        except Exception as e:
+            return f"! Analysis Error: Ollama Local Exception -> {str(e)}"
 
     def _sanitize_output(self, text):
         """Removes markdown wrappers if present."""
