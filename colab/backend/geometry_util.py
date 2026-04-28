@@ -1,12 +1,13 @@
 import os
 
-def generate_zone_geometry(L, W, H, zone_name="ZONE ONE"):
+def generate_zone_geometry(L, W, H, wwr=0.0, zone_name="ZONE ONE"):
     """
     Generates standard CCW EnergyPlus vertices for a rectangular zone.
     L = Length (X-axis)
     W = Width (Y-axis)
     H = Height (Z-axis)
     """
+    import math
     idf_str = ""
     
     # Zone Object
@@ -44,6 +45,39 @@ def generate_zone_geometry(L, W, H, zone_name="ZONE ONE"):
     {v4[0]:.2f}, {v4[1]:.2f}, {v4[2]:.2f};  !- X,Y,Z ==> Vertex 4
 """
 
+    def make_window(wall_name, v1, v4, wall_width, wall_height, wwr_val):
+        if wwr_val <= 0 or wwr_val >= 1: return ""
+        win_w = wall_width * math.sqrt(wwr_val)
+        win_h = wall_height * math.sqrt(wwr_val)
+        w_off = (wall_width - win_w) / 2.0
+        h_off = (wall_height - win_h) / 2.0
+        
+        def interpolate(pA, pB, frac):
+            return (pA[0] + (pB[0]-pA[0])*frac, pA[1] + (pB[1]-pA[1])*frac, pA[2] + (pB[2]-pA[2])*frac)
+            
+        win_br_x, win_br_y, win_br_z = interpolate(v1, v4, w_off / wall_width)
+        win_bl_x, win_bl_y, win_bl_z = interpolate(v1, v4, (w_off + win_w) / wall_width)
+        
+        z_bottom = v1[2] + h_off
+        z_top = z_bottom + win_h
+        
+        return f"""
+  FenestrationSurface:Detailed,
+    {wall_name}_Window,      !- Name
+    Window,                  !- Surface Type
+    {{WINDOW_CONSTR}},         !- Construction Name
+    {wall_name},             !- Building Surface Name
+    ,                        !- Outside Boundary Condition Object
+    0.5,                     !- View Factor to Ground
+    ,                        !- Frame and Divider Name
+    1,                       !- Multiplier
+    4,                       !- Number of Vertices
+    {win_br_x:.2f}, {win_br_y:.2f}, {z_bottom:.2f},  !- X,Y,Z ==> Vertex 1
+    {win_br_x:.2f}, {win_br_y:.2f}, {z_top:.2f},  !- X,Y,Z ==> Vertex 2
+    {win_bl_x:.2f}, {win_bl_y:.2f}, {z_top:.2f},  !- X,Y,Z ==> Vertex 3
+    {win_bl_x:.2f}, {win_bl_y:.2f}, {z_bottom:.2f};  !- X,Y,Z ==> Vertex 4
+"""
+
     # Using placeholder text that our backend Assembler will string-replace later.
     wall_constr = "{EXTERIOR_WALL_CONSTR}"
     roof_constr = "{ROOF_CONSTR}"
@@ -51,24 +85,30 @@ def generate_zone_geometry(L, W, H, zone_name="ZONE ONE"):
     
     # CCW Vertices viewed from OUTSIDE
     # Wall South (Facing -Y)
-    idf_str += make_surface("Wall_South", "Wall", wall_constr, "Outdoors", "SunExposed", "WindExposed", 
-                       (L, 0, 0), (L, 0, H), (0, 0, H), (0, 0, 0))
+    v1, v2, v3, v4 = (L, 0, 0), (L, 0, H), (0, 0, H), (0, 0, 0)
+    idf_str += make_surface("Wall_South", "Wall", wall_constr, "Outdoors", "SunExposed", "WindExposed", v1, v2, v3, v4)
+    idf_str += make_window("Wall_South", v1, v4, L, H, wwr)
+    
     # Wall East (Facing +X)
-    idf_str += make_surface("Wall_East", "Wall", wall_constr, "Outdoors", "SunExposed", "WindExposed", 
-                       (L, W, 0), (L, W, H), (L, 0, H), (L, 0, 0))
+    v1, v2, v3, v4 = (L, W, 0), (L, W, H), (L, 0, H), (L, 0, 0)
+    idf_str += make_surface("Wall_East", "Wall", wall_constr, "Outdoors", "SunExposed", "WindExposed", v1, v2, v3, v4)
+    idf_str += make_window("Wall_East", v1, v4, W, H, wwr)
+    
     # Wall North (Facing +Y)
-    idf_str += make_surface("Wall_North", "Wall", wall_constr, "Outdoors", "SunExposed", "WindExposed", 
-                       (0, W, 0), (0, W, H), (L, W, H), (L, W, 0))
+    v1, v2, v3, v4 = (0, W, 0), (0, W, H), (L, W, H), (L, W, 0)
+    idf_str += make_surface("Wall_North", "Wall", wall_constr, "Outdoors", "SunExposed", "WindExposed", v1, v2, v3, v4)
+    idf_str += make_window("Wall_North", v1, v4, L, H, wwr)
+    
     # Wall West (Facing -X)
-    idf_str += make_surface("Wall_West", "Wall", wall_constr, "Outdoors", "SunExposed", "WindExposed", 
-                       (0, 0, 0), (0, 0, H), (0, W, H), (0, W, 0))
+    v1, v2, v3, v4 = (0, 0, 0), (0, 0, H), (0, W, H), (0, W, 0)
+    idf_str += make_surface("Wall_West", "Wall", wall_constr, "Outdoors", "SunExposed", "WindExposed", v1, v2, v3, v4)
+    idf_str += make_window("Wall_West", v1, v4, W, H, wwr)
     
     # Roof (Facing +Z)
     idf_str += make_surface("Roof", "Roof", roof_constr, "Outdoors", "SunExposed", "WindExposed", 
                        (0, W, H), (0, 0, H), (L, 0, H), (L, W, H))
                        
     # Floor (Facing -Z)
-    # Viewed from below (outside), X is Right, Y is Up. CCW = (0,0)->(L,0)->(L,W)->(0,W).
     idf_str += make_surface("Floor", "Floor", floor_constr, "Ground", "NoSun", "NoWind", 
                        (0, 0, 0), (L, 0, 0), (L, W, 0), (0, W, 0))
                        
