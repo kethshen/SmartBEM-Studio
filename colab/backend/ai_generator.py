@@ -201,8 +201,8 @@ class AIPipelines:
             raise ValueError("Ollama python package is not installed. Please install it in Colab: !pip install ollama")
             
         try:
-            # Using gemma3:4b per your confirmation
-            response = ollama.chat(model='gemma3:4b', messages=[
+            # Using gemma4:e2b per the youtube tutorial script
+            response = ollama.chat(model='gemma4:e2b', messages=[
                 {"role": "system", "content": system},
                 {"role": "user", "content": user}
             ])
