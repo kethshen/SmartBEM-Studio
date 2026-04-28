@@ -47,10 +47,11 @@
           <div>
             <h3 style="font-size: 1rem; margin-bottom: 0.5rem;">Components</h3>
             <ul style="list-style-type: disc; margin-left: 1.5rem; color: var(--text-secondary); line-height: 1.6;">
-              <li><strong>Web Interface (Layer 1):</strong> Experiment configuration & NLP input.</li>
-              <li><strong>Cloud Coordination (Layer 2):</strong> Firebase Firestore & Storage.</li>
-              <li><strong>AI Engine (Layer 3):</strong> LLM-based IDF generation.</li>
-              <li><strong>Simulation Backend (Layer 4/5):</strong> Google Colab executing EnergyPlus & EKF.</li>
+              <li><strong>Web Interface (Layer 1):</strong> NLP input, simulation config &amp; result dashboard.</li>
+              <li><strong>Cloud Coordination (Layer 2):</strong> Firebase Firestore &amp; Storage.</li>
+              <li><strong>Backend Worker (Layer 3):</strong> Google Colab GPU runtime polling for jobs.</li>
+              <li><strong>Agentic AI Pipeline (Layer 4):</strong> Two-pass RAG with local Ollama <code>gemma3:4b</code>.</li>
+              <li><strong>Simulation Engine (Layer 5):</strong> EnergyPlus execution &amp; post-processing.</li>
             </ul>
           </div>
 
@@ -59,14 +60,36 @@
             <h4 style="font-size: 0.85rem; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.5rem;">
               Data Flow</h4>
             <pre style="font-family: var(--font-mono); font-size: 0.85rem; color: var(--text-primary);">
-User -> Web UI -> Firebase
+User -> nlp.html -> script.js
+           |
+     submitDescription()
+           v
+    Firebase Firestore
+     (status: queued)
            |
            v
-      Google Colab
-   (AI -> IDF -> Sim)
+  Colab Polling Loop
+           |
+   +-------+-------+
+   |               |
+ Pass 1          Pass 2
+(Planner)      (Builder)
+   |               |
+   +-------+-------+
+           |
+    IDF Assembly
+  (geometry + materials)
            |
            v
-Firebase -> Web UI (Plots)
+  EnergyPlus Engine
+           |
+           v
+  Upload to Storage
+  (plots, summary.html)
+           |
+           v
+  Browser <- Firestore
+  (results.html)
                         </pre>
           </div>
         </div>
@@ -91,6 +114,11 @@ Firebase -> Web UI (Plots)
             <strong>Academic Focus</strong>
             <p style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.5rem;">Transparent data flow for
               research validation.</p>
+          </div>
+          <div style="padding: 1rem; border: 1px solid var(--border-subtle); border-radius: var(--radius-sm);">
+            <strong>Template + Injection</strong>
+            <p style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.5rem;">AI outputs structured JSON;
+              all IDF syntax is handled deterministically via Base.idf placeholders.</p>
           </div>
         </div>
       </section>

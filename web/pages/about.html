@@ -40,13 +40,15 @@
                 </div>
 
                 <p style="font-size: 1.1rem; font-weight: 500; color: var(--text-primary); margin-bottom: 0.5rem;">
-                    "Intelligent HVAC Modeling, Estimation & Control"
+                    "Intelligent HVAC Modeling, Estimation &amp; Control"
                 </p>
 
                 <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">
                     This platform bridges the gap between theoretical modeling and practical HVAC control by
-                    establishing an AI-assisted framework for EnergyPlus simulation and online parameter estimation
-                    (EKF).
+                    establishing an AI-assisted framework for EnergyPlus simulation. Users describe buildings
+                    in natural language, and a two-pass Agentic RAG pipeline (powered by a local Ollama
+                    <code>gemma3:4b</code> model) autonomously generates valid IDF files, executes thermal
+                    simulations on a Google Colab GPU, and returns time-series result plots to a web dashboard.
                 </p>
 
                 <div
@@ -84,6 +86,29 @@
                         <div>
                             <div style="font-weight: 600; font-size: 1rem;">Dr. D.H.S. Maithripala</div>
                             <div style="font-size: 0.85rem; color: var(--text-secondary);">Project Supervisor</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div
+                    style="margin-top: 2rem; padding-top: 1rem; border-top: 1px solid var(--border-subtle);">
+                    <h3
+                        style="font-size: 1rem; color: var(--text-primary); margin-bottom: 1rem;">Technology Stack</h3>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.75rem;">
+                        <div style="padding: 0.75rem; background: var(--bg-app); border-radius: var(--radius-sm); border: 1px solid var(--border-subtle); font-size: 0.85rem; color: var(--text-secondary);">
+                            <strong style="color: var(--text-primary);">Frontend:</strong> HTML, CSS, JavaScript
+                        </div>
+                        <div style="padding: 0.75rem; background: var(--bg-app); border-radius: var(--radius-sm); border: 1px solid var(--border-subtle); font-size: 0.85rem; color: var(--text-secondary);">
+                            <strong style="color: var(--text-primary);">Cloud:</strong> Firebase Firestore &amp; Storage
+                        </div>
+                        <div style="padding: 0.75rem; background: var(--bg-app); border-radius: var(--radius-sm); border: 1px solid var(--border-subtle); font-size: 0.85rem; color: var(--text-secondary);">
+                            <strong style="color: var(--text-primary);">AI:</strong> Ollama gemma3:4b (local LLM)
+                        </div>
+                        <div style="padding: 0.75rem; background: var(--bg-app); border-radius: var(--radius-sm); border: 1px solid var(--border-subtle); font-size: 0.85rem; color: var(--text-secondary);">
+                            <strong style="color: var(--text-primary);">Backend:</strong> Google Colab (Python)
+                        </div>
+                        <div style="padding: 0.75rem; background: var(--bg-app); border-radius: var(--radius-sm); border: 1px solid var(--border-subtle); font-size: 0.85rem; color: var(--text-secondary);">
+                            <strong style="color: var(--text-primary);">Simulation:</strong> EnergyPlus 24.1
                         </div>
                     </div>
                 </div>

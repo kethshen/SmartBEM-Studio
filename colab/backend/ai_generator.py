@@ -98,7 +98,18 @@ class AIPipelines:
             "Your task is to analyze the user's natural language request and output a JSON dictionary containing the building parameters.\n"
             "CRITICAL RULES:\n"
             "1. OUTPUT FORMAT: Return ONLY valid JSON. No markdown wrappers, no explanations.\n"
-            "2. Required JSON keys: 'length' (float), 'width' (float), 'height' (float), 'wall_construction' (string), 'roof_construction' (string).\n"
+            "2. Required JSON keys:\n"
+            "   - 'length' (float), 'width' (float), 'height' (float)\n"
+            "   - 'wall_construction' (string), 'roof_construction' (string)\n"
+            "   - 'wwr' (float between 0 and 1, Window-to-Wall Ratio. Default 0.0)\n"
+            "   - 'people_density' (float, m2/person. Default 10.0)\n"
+            "   - 'light_density' (float, W/m2. Default 10.0)\n"
+            "   - 'equipment_density' (float, W/m2. Default 10.0)\n"
+            "   - 'ventilation_ach' (float. Default 0.5)\n"
+            "   - 'infiltration_ach' (float. Default 0.5)\n"
+            "   - 'heat_set_occ' (float, Celsius. Default 21.0), 'heat_set_unocc' (float, Celsius. Default 15.0)\n"
+            "   - 'cool_set_occ' (float, Celsius. Default 24.0), 'cool_set_unocc' (float, Celsius. Default 28.0)\n"
+            "   - 'window_u_factor' (float. Default 3.0), 'window_shgc' (float. Default 0.5)\n"
             "3. For the construction keys, you MUST pick the closest matching name from this exact menu array:\n"
             f"{construction_menu}\n"
         )
@@ -132,11 +143,25 @@ class AIPipelines:
             H = params.get("height", 3.0)
             wall_name = params.get("wall_construction", "Composite 2x4 Wood Stud R11")
             roof_name = params.get("roof_construction", "Composite 2x4 Wood Stud R11")
+            wwr = params.get("wwr", 0.0)
+            
+            # Thermodynamic defaults
+            people = params.get("people_density", 10.0)
+            lights = params.get("light_density", 10.0)
+            equip = params.get("equipment_density", 10.0)
+            vent = params.get("ventilation_ach", 0.5)
+            infil = params.get("infiltration_ach", 0.5)
+            heat_occ = params.get("heat_set_occ", 21.0)
+            heat_unocc = params.get("heat_set_unocc", 15.0)
+            cool_occ = params.get("cool_set_occ", 24.0)
+            cool_unocc = params.get("cool_set_unocc", 28.0)
+            win_u = params.get("window_u_factor", 3.0)
+            win_shgc = params.get("window_shgc", 0.5)
 
-            print(f"[AI Assembler] AI Selected -> L:{L}, W:{W}, Wall:{wall_name}")
+            print(f"[AI Assembler] AI Selected -> L:{L}, W:{W}, Wall:{wall_name}, WWR:{wwr}, U:{win_u}")
 
-            # 5. Build Geometry
-            geometry_idf = geometry_util.generate_zone_geometry(L, W, H)
+            # 5. Build Geometry (Now passing WWR)
+            geometry_idf = geometry_util.generate_zone_geometry(L, W, H, wwr)
             
             # 6. Extract Dependencies
             extracted_blocks = {}
@@ -150,10 +175,26 @@ class AIPipelines:
             
             final_idf += geometry_idf
 
-            # 8. Replace placeholder constructions inside the geometry with the AI's selection
+            # 8. Replace placeholder constructions and thermodynamics inside the geometry and Base
             final_idf = final_idf.replace("{EXTERIOR_WALL_CONSTR}", wall_name)
             final_idf = final_idf.replace("{ROOF_CONSTR}", roof_name)
             final_idf = final_idf.replace("{FLOOR_CONSTR}", wall_name) # Simplified for now
+            
+            # Base.idf replaces
+            final_idf = final_idf.replace("{PEOPLE_DENSITY}", str(people))
+            final_idf = final_idf.replace("{LIGHT_DENSITY}", str(lights))
+            final_idf = final_idf.replace("{EQUIP_DENSITY}", str(equip))
+            final_idf = final_idf.replace("{INFILTRATION_ACH}", str(infil))
+            final_idf = final_idf.replace("{VENTILATION_ACH}", str(vent))
+            
+            # Setpoints and Windows
+            final_idf = final_idf.replace("{HEAT_OCC}", str(heat_occ))
+            final_idf = final_idf.replace("{HEAT_UNOCC}", str(heat_unocc))
+            final_idf = final_idf.replace("{COOL_OCC}", str(cool_occ))
+            final_idf = final_idf.replace("{COOL_UNOCC}", str(cool_unocc))
+            final_idf = final_idf.replace("{WINDOW_U_FACTOR}", str(win_u))
+            final_idf = final_idf.replace("{WINDOW_SHGC}", str(win_shgc))
+            final_idf = final_idf.replace("{WINDOW_CONSTR}", "Theoretical Glass [167]")
 
             return final_idf
 

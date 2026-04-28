@@ -46,5 +46,5 @@ SmartHVAC-Studio/
 
 **Supervisor:** [Dr. D.H.S. Maithripala (@mugalan)](https://github.com/mugalan)
 
-Faculty of Engineering, University of Peradeniya, 
+Faculty of Engineering, University of Peradeniya,
 Sri Lanka.

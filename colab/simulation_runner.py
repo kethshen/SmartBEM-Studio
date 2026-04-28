@@ -143,32 +143,38 @@ def run_simulation_job(job_id, idf_path, epw_path, config=None, output_dir_base=
         objects = []
         current_type = None
         current_name = None
+        current_fields = []
         
-        for line in lines:
-            line = line.strip()
+        for raw_line in lines:
+            line = raw_line.strip()
             if line.startswith('!') or not line:
                 continue
                 
+            line_no_comment = line
             if '!' in line:
-                line = line[:line.index('!')].strip()
+                line_no_comment = line[:line.index('!')].strip()
                 
             if not current_type:
-                if line.endswith(','):
-                    current_type = line[:-1].strip()
-                elif line.endswith(';'):
-                    objects.append({"type": line[:-1].strip(), "name": "N/A"})
+                if line_no_comment.endswith(','):
+                    current_type = line_no_comment[:-1].strip()
+                elif line_no_comment.endswith(';'):
+                    objects.append({"type": line_no_comment[:-1].strip(), "name": "N/A", "fields": []})
                     current_type = None
             elif not current_name:
-                if line.endswith(',') or line.endswith(';'):
-                    current_name = line[:-1].strip()
-                    objects.append({"type": current_type, "name": current_name})
-                    if line.endswith(';'):
+                if line_no_comment.endswith(',') or line_no_comment.endswith(';'):
+                    current_name = line_no_comment[:-1].strip()
+                    if line_no_comment.endswith(';'):
+                        objects.append({"type": current_type, "name": current_name, "fields": []})
                         current_type = None
                         current_name = None
             else:
-                if line.endswith(';'):
+                # We are parsing fields
+                current_fields.append(line)
+                if line_no_comment.endswith(';'):
+                    objects.append({"type": current_type, "name": current_name, "fields": list(current_fields)})
                     current_type = None
                     current_name = None
+                    current_fields = []
                     
         grouped = {}
         for obj in objects:
@@ -177,21 +183,37 @@ def run_simulation_job(job_id, idf_path, epw_path, config=None, output_dir_base=
             if t not in grouped:
                 grouped[t] = []
             if n != "N/A" and n:
-                grouped[t].append(n)
+                grouped[t].append(obj)
                 
         html = f'''<html><head><title>IDF Object Summary</title><style>
         body{{font-family: -apple-system, sans-serif; padding: 40px; background: #f8f9fa;}}
         .card{{background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 20px; break-inside: avoid;}}
         h1{{color: #1a73e8;}} h2{{color: #333; font-size: 1.1em; border-bottom: 1px solid #eee; padding-bottom: 5px;}}
-        ul{{list-style-type: none; padding-left: 0;}} li{{padding: 5px 0; color: #555;}}
+        ul{{list-style-type: none; padding-left: 0;}} li{{padding: 8px 0; border-bottom: 1px solid #f0f0f0;}}
+        details{{margin-top: 5px;}} summary{{cursor: pointer; color: #1a73e8; font-weight: 500; outline: none; list-style: none; display: flex; align-items: center;}}
+        summary::-webkit-details-marker {{display: none;}}
+        summary::before {{content: "▶ "; font-size: 0.8em; margin-right: 5px; color: #888; transition: transform 0.2s;}}
+        details[open] summary::before {{transform: rotate(90deg);}}
+        .fields-list{{background: #fafafa; padding: 10px 15px; border-radius: 4px; margin-top: 5px; font-family: monospace; font-size: 0.9em; color: #555;}}
+        .fields-list div{{padding: 2px 0;}}
         </style></head><body><h1>IDF Component Summary</h1><p style="color:gray">Job ID: {job_id}</p><div style="column-count: 2; column-gap: 40px;">'''
         
         for t in sorted(grouped.keys()):
-            names = grouped[t]
-            if names:
-                html += f'<div class="card"><h2>{t} <span style="color:gray; font-weight:normal; font-size:0.8em;">({len(names)})</span></h2><ul>'
-                for name in names:
-                    html += f'<li>{name}</li>'
+            objs = grouped[t]
+            if objs:
+                html += f'<div class="card"><h2>{t} <span style="color:gray; font-weight:normal; font-size:0.8em;">({len(objs)})</span></h2><ul>'
+                for obj in objs:
+                    n = obj["name"]
+                    fields = obj["fields"]
+                    if not fields:
+                        html += f'<li>{n}</li>'
+                    else:
+                        html += f'<li><details><summary>{n}</summary><div class="fields-list">'
+                        for f in fields:
+                            # Safely escape HTML characters like < and >
+                            f_clean = f.replace("<", "&lt;").replace(">", "&gt;")
+                            html += f'<div>{f_clean}</div>'
+                        html += '</div></details></li>'
                 html += '</ul></div>'
         html += '</div></body></html>'
         
