@@ -30,6 +30,10 @@ daily summary/
 Research/
 3. ME420_Evaluation scheme.pdf
 Datasets/
+colab/RunFiles/
+colab/sim_runs/
+EKF/Datasets for EKF/
+Example IDF files/
 
 #idf
 in.idf
@@ -41,3 +45,7 @@ in.idf
 *.toc
 *.fls
 *.fdb_latexmk
+
+#drive mount
+.tmp.driveupload
+.tmp.drivedownload

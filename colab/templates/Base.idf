@@ -107,6 +107,118 @@
     Counterclockwise,        !- Vertex Entry Direction
     World;                   !- Coordinate System
 
+  Zone,
+    ZONE ONE,                !- Name
+    0,                       !- Direction of Relative North {deg}
+    0,                       !- X Origin {m}
+    0,                       !- Y Origin {m}
+    0,                       !- Z Origin {m}
+    1,                       !- Type
+    1,                       !- Multiplier
+    2.7000,                  !- Ceiling Height {m}
+    129.6;                   !- Volume {m3}
+
+  BuildingSurface:Detailed,
+    SURFACE NORTH,           !- Name
+    Wall,                    !- Surface Type
+    GenericConstruction,     !- Construction Name
+    ZONE ONE,                !- Zone Name
+    ,                        !- Space Name
+    Outdoors,                !- Outside Boundary Condition
+    ,                        !- Outside Boundary Condition Object
+    SunExposed,              !- Sun Exposure
+    WindExposed,             !- Wind Exposure
+    0.50,                    !- View Factor to Ground
+    4,                       !- Number of Vertices
+    8.00,6.00,2.70,  !- X,Y,Z ==> Vertex 1 {m}
+    8.00,6.00,0,  !- X,Y,Z ==> Vertex 2 {m}
+    0,6.00,0,  !- X,Y,Z ==> Vertex 3 {m}
+    0,6.00,2.70;  !- X,Y,Z ==> Vertex 4 {m}
+
+  BuildingSurface:Detailed,
+    ZONE SURFACE EAST,       !- Name
+    Wall,                    !- Surface Type
+    GenericConstruction,     !- Construction Name
+    ZONE ONE,                !- Zone Name
+    ,                        !- Space Name
+    Outdoors,                !- Outside Boundary Condition
+    ,                        !- Outside Boundary Condition Object
+    SunExposed,              !- Sun Exposure
+    WindExposed,             !- Wind Exposure
+    0.50,                    !- View Factor to Ground
+    4,                       !- Number of Vertices
+    8.00,0,2.70,  !- X,Y,Z ==> Vertex 1 {m}
+    8.00,0,0,  !- X,Y,Z ==> Vertex 2 {m}
+    8.00,6.00,0,  !- X,Y,Z ==> Vertex 3 {m}
+    8.00,6.00,2.70;  !- X,Y,Z ==> Vertex 4 {m}
+
+  BuildingSurface:Detailed,
+    ZONE SURFACE SOUTH,      !- Name
+    Wall,                    !- Surface Type
+    GenericConstruction,     !- Construction Name
+    ZONE ONE,                !- Zone Name
+    ,                        !- Space Name
+    Outdoors,                !- Outside Boundary Condition
+    ,                        !- Outside Boundary Condition Object
+    SunExposed,              !- Sun Exposure
+    WindExposed,             !- Wind Exposure
+    0.50,                    !- View Factor to Ground
+    4,                       !- Number of Vertices
+    0,0,2.70,  !- X,Y,Z ==> Vertex 1 {m}
+    0,0,0,  !- X,Y,Z ==> Vertex 2 {m}
+    8.00,0,0,  !- X,Y,Z ==> Vertex 3 {m}
+    8.00,0,2.70;  !- X,Y,Z ==> Vertex 4 {m}
+
+  BuildingSurface:Detailed,
+    ZONE SURFACE WEST,       !- Name
+    Wall,                    !- Surface Type
+    GenericConstruction,     !- Construction Name
+    ZONE ONE,                !- Zone Name
+    ,                        !- Space Name
+    Outdoors,                !- Outside Boundary Condition
+    ,                        !- Outside Boundary Condition Object
+    SunExposed,              !- Sun Exposure
+    WindExposed,             !- Wind Exposure
+    0.50,                    !- View Factor to Ground
+    4,                       !- Number of Vertices
+    0,6.00,2.70,  !- X,Y,Z ==> Vertex 1 {m}
+    0,6.00,0,  !- X,Y,Z ==> Vertex 2 {m}
+    0,0,0,  !- X,Y,Z ==> Vertex 3 {m}
+    0,0,2.70;  !- X,Y,Z ==> Vertex 4 {m}
+
+  BuildingSurface:Detailed,
+    ZONE SURFACE FLOOR,      !- Name
+    Floor,                   !- Surface Type
+    GenericConstruction,     !- Construction Name
+    ZONE ONE,                !- Zone Name
+    ,                        !- Space Name
+    Ground,                  !- Outside Boundary Condition
+    ,                        !- Outside Boundary Condition Object
+    NoSun,                   !- Sun Exposure
+    NoWind,                  !- Wind Exposure
+    0,                       !- View Factor to Ground
+    4,                       !- Number of Vertices
+    0,0,0,  !- X,Y,Z ==> Vertex 1 {m}
+    0,6.00,0,  !- X,Y,Z ==> Vertex 2 {m}
+    8.00,6.00,0,  !- X,Y,Z ==> Vertex 3 {m}
+    8.00,0,0;  !- X,Y,Z ==> Vertex 4 {m}
+
+  BuildingSurface:Detailed,
+    ZONE SURFACE ROOF,       !- Name
+    Roof,                    !- Surface Type
+    GenericConstruction,     !- Construction Name
+    ZONE ONE,                !- Zone Name
+    ,                        !- Space Name
+    Outdoors,                !- Outside Boundary Condition
+    ,                        !- Outside Boundary Condition Object
+    SunExposed,              !- Sun Exposure
+    WindExposed,             !- Wind Exposure
+    0,                       !- View Factor to Ground
+    4,                       !- Number of Vertices
+    0,6.00,2.70,  !- X,Y,Z ==> Vertex 1 {m}
+    0,0,2.70,  !- X,Y,Z ==> Vertex 2 {m}
+    8.00,0,2.70,  !- X,Y,Z ==> Vertex 3 {m}
+    8.00,6.00,2.70;  !- X,Y,Z ==> Vertex 4 {m}
 
   ScheduleTypeLimits,
     Any Number;              !- Name

@@ -93,35 +93,43 @@ def run_simulation_job(job_id, idf_path, epw_path, config=None, output_dir_base=
     xp = EPlusSqlExplorer(sql_path)
     
     # Extract Key Variables for Plotting
-    # We prefer "Zone Air Temperature" as the primary metric
-    plot_var = "Zone Air Temperature"
-    
-    # Try to extract the first variable from the user list if available
-    if user_vars:
-        plot_var = user_vars[0]
+    plot_vars = {
+        "plot": "Zone Air Temperature",
+        "plot_ekf": "System Node Mass Flow Rate",
+        "plot_weather": "Site Outdoor Air Drybulb Temperature",
+        "plot_energy": "DistrictHeatingWater:Facility"
+    }
 
-    df = xp.auto_extract_series(plot_var, to_kwh=False) # Keep as C or kg/s (don't convert to kWh unless energy)
+    for key, var_name in plot_vars.items():
+        try:
+            df = xp.auto_extract_series(var_name, to_kwh=False, include_design_days=True)
+            
+            if df is not None and not df.empty:
+                # Save Raw Data for primary plot
+                if key == "plot":
+                    csv_path = os.path.join(run_dir, "results.csv")
+                    df.to_csv(csv_path, index=False)
+                    results["csv"] = csv_path
+                
+                # Generate Plot
+                img_path = os.path.join(run_dir, f"{key}.png")
+                plt.figure(figsize=(10, 6))
+                plt.plot(df["timestamp"], df["value"], label=var_name)
+                plt.title(f"{var_name} - Job {job_id}")
+                plt.xlabel("Time")
+                plt.ylabel("Value")
+                plt.legend()
+                plt.grid(True)
+                plt.tight_layout()
+                plt.savefig(img_path)
+                plt.close() # Close figure to free memory
+                
+                results[key] = img_path
+            else:
+                print(f"[{job_id}] Warning: No data found for {var_name}")
+        except Exception as e:
+            print(f"[{job_id}] Error plotting {var_name}: {e}")
     
-    csv_path = os.path.join(run_dir, "results.csv")
-    img_path = os.path.join(run_dir, "plot.png")
-    
-    if df is not None and not df.empty:
-        # Save Raw Data
-        df.to_csv(csv_path, index=False)
-        results["csv"] = csv_path
-        
-        # Generate Plot
-        plt.figure(figsize=(10, 6))
-        plt.plot(df["timestamp"], df["value"], label=plot_var)
-        plt.title(f"{plot_var} - Job {job_id}")
-        plt.xlabel("Time")
-        plt.ylabel("Value")
-        plt.legend()
-        plt.grid(True)
-        plt.savefig(img_path)
-        plt.close()
-        results["plot"] = img_path
-    else:
-        print(f"[{job_id}] Warning: No data found for {plot_var}")
+    # 8. Add SQL to results
         
     return results

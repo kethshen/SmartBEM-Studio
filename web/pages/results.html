@@ -159,33 +159,50 @@
           <h4 style="font-size: 0.9rem; font-weight: 600; margin-bottom: 0.5rem;">Zone Temperature Plot</h4>
           <div class="plot-placeholder">
             <img id="zonePlot"
-              style="max-width: 100%; max-height: 200px; display: none; border-radius: var(--radius-sm);"
-              alt="Result Plot">
+              style="width: 100%; height: auto; object-fit: contain; display: none; border-radius: var(--radius-sm); cursor: pointer; transition: transform 0.2s;"
+              onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'"
+              onclick="window.open(this.src, '_blank')"
+              alt="Result Plot" title="Click to enlarge">
             <p id="zonePlotMsg">Select a 'Done' job.</p>
           </div>
         </div>
 
-        <!-- Plot 2: EKF (Placeholder) -->
+        <!-- Plot 2: EKF (Mass Flow) -->
         <div class="plot-card">
-          <h4 style="font-size: 0.9rem; font-weight: 600; margin-bottom: 0.5rem;">EKF Estimation</h4>
+          <h4 style="font-size: 0.9rem; font-weight: 600; margin-bottom: 0.5rem;">Mass Flow Rate</h4>
           <div class="plot-placeholder">
-            (Coming Soon)
+            <img id="ekfPlot"
+              style="width: 100%; height: auto; object-fit: contain; display: none; border-radius: var(--radius-sm); cursor: pointer; transition: transform 0.2s;"
+              onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'"
+              onclick="window.open(this.src, '_blank')"
+              alt="Result Plot" title="Click to enlarge">
+            <p id="ekfPlotMsg">Select a 'Done' job.</p>
           </div>
         </div>
 
-        <!-- Plot 3: Weather (Placeholder) -->
+        <!-- Plot 3: Weather -->
         <div class="plot-card">
           <h4 style="font-size: 0.9rem; font-weight: 600; margin-bottom: 0.5rem;">Weather Data</h4>
           <div class="plot-placeholder">
-            (Coming Soon)
+            <img id="weatherPlot"
+              style="width: 100%; height: auto; object-fit: contain; display: none; border-radius: var(--radius-sm); cursor: pointer; transition: transform 0.2s;"
+              onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'"
+              onclick="window.open(this.src, '_blank')"
+              alt="Result Plot" title="Click to enlarge">
+            <p id="weatherPlotMsg">Select a 'Done' job.</p>
           </div>
         </div>
 
-        <!-- Plot 4: Energy (Placeholder) -->
+        <!-- Plot 4: Energy -->
         <div class="plot-card">
           <h4 style="font-size: 0.9rem; font-weight: 600; margin-bottom: 0.5rem;">Energy Consumption</h4>
           <div class="plot-placeholder">
-            (Coming Soon)
+            <img id="energyPlot"
+              style="width: 100%; height: auto; object-fit: contain; display: none; border-radius: var(--radius-sm); cursor: pointer; transition: transform 0.2s;"
+              onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'"
+              onclick="window.open(this.src, '_blank')"
+              alt="Result Plot" title="Click to enlarge">
+            <p id="energyPlotMsg">Select a 'Done' job.</p>
           </div>
         </div>
 

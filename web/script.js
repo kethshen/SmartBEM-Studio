@@ -335,37 +335,45 @@ function showJobDetails(jobId, data) {
   }
 
   // Handle Results Visualization
-  const imgInfo = document.getElementById("zonePlot");
-  const msgInfo = document.getElementById("zonePlotMsg");
+  const plots = [
+    { key: "plot", imgId: "zonePlot", msgId: "zonePlotMsg", fallbackText: "Zone Temperature" },
+    { key: "plot_ekf", imgId: "ekfPlot", msgId: "ekfPlotMsg", fallbackText: "Mass Flow Rate" },
+    { key: "plot_weather", imgId: "weatherPlot", msgId: "weatherPlotMsg", fallbackText: "Weather Data" },
+    { key: "plot_energy", imgId: "energyPlot", msgId: "energyPlotMsg", fallbackText: "Energy Consumption" }
+  ];
 
-  if (!imgInfo) return;
+  plots.forEach(plotDef => {
+    const imgInfo = document.getElementById(plotDef.imgId);
+    const msgInfo = document.getElementById(plotDef.msgId);
+    
+    if (!imgInfo || !msgInfo) return;
 
-  if (data.status === "done") {
-    // Load real results from Storage
-    const plotPath = `jobs/${jobId}/plot.png`;
-    msgInfo.innerText = "Loading plot...";
+    if (data.status === "done") {
+      const plotPath = `jobs/${jobId}/${plotDef.key}.png`;
+      msgInfo.innerText = "Loading...";
 
-    storage.ref(plotPath).getDownloadURL()
-      .then((url) => {
-        imgInfo.src = url;
-        msgInfo.innerText = "";
-        imgInfo.style.display = "block";
-      })
-      .catch((e) => {
-        console.log("No plot found yet:", e);
-        imgInfo.style.display = "none";
-        msgInfo.innerText = "Plot pending or not generated.";
-      });
-  } else if (data.status === "error") {
-    imgInfo.style.display = "none";
-    msgInfo.innerText = "Job failed: " + (data.errorMessage || "Unknown error");
-    msgInfo.style.color = "var(--error)";
-  } else {
-    imgInfo.style.display = "none";
-    msgInfo.innerText = "Simulation in progress... (" + data.status + ")";
+      storage.ref(plotPath).getDownloadURL()
+        .then((url) => {
+          imgInfo.src = url;
+          msgInfo.innerText = "";
+          imgInfo.style.display = "block";
+        })
+        .catch((e) => {
+          console.log(`No ${plotDef.key} found yet:`, e);
+          imgInfo.style.display = "none";
+          msgInfo.innerText = `${plotDef.fallbackText} not available.`;
+        });
+    } else if (data.status === "error") {
+      imgInfo.style.display = "none";
+      msgInfo.innerText = "Job failed.";
+      msgInfo.style.color = "var(--error)";
+    } else {
+      imgInfo.style.display = "none";
+      msgInfo.innerText = "Simulation in progress...";
+      msgInfo.style.color = "var(--text-secondary)";
+    }
     msgInfo.style.color = "var(--text-secondary)";
-  }
-  msgInfo.style.color = "var(--text-secondary)";
+  });
 }
 
 
