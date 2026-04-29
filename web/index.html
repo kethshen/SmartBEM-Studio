@@ -37,37 +37,42 @@
           EKF-based estimation.</p>
       </header>
 
-      <div class="grid-2">
-        <section class="card">
-          <div class="card-header">
-            <h2 class="card-title">Getting Started</h2>
-          </div>
-          <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">
-            Start by describing your building in natural language. Our AI will generate the energy model and run
-            simulations in the cloud.
-          </p>
-          <a href="pages/nlp.html" class="btn btn-primary">
-            Go to Simulation Setup &rarr;
-          </a>
-        </section>
+      <div class="grid-2" style="display: grid; grid-template-columns: 3fr 2fr; gap: 2rem; align-items: start;">
+        <!-- Left Column: Cards -->
+        <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+          <!-- Card 1: AI Modeling -->
+          <section class="card" style="margin: 0;">
+            <div class="card-header">
+              <h2 class="card-title">✨ Agentic AI Modeling</h2>
+            </div>
+            <p style="color: var(--text-secondary); margin-bottom: 1.5rem; line-height: 1.6;">
+              Transform natural language descriptions into functional EnergyPlus building models. Our two-pass RAG pipeline autonomously handles complex geometries, material selections, and HVAC configurations.
+            </p>
+            <a href="pages/nlp.html" class="btn btn-primary">
+              Launch AI Simulator &rarr;
+            </a>
+          </section>
 
-        <section class="card"
-          style="min-height: 200px; display: flex; align-items: center; justify-content: center; background: var(--bg-app); border: 1px dashed var(--border-subtle);">
-          <!-- Placeholder Card -->
-          <span style="color: var(--text-muted); font-size: 0.9rem;">(Content Coming Soon)</span>
+          <!-- Card 2: EKF Estimation -->
+          <section class="card" style="margin: 0;">
+            <div class="card-header">
+              <h2 class="card-title">📈 EKF Parameter Estimation</h2>
+            </div>
+            <p style="color: var(--text-secondary); margin-bottom: 1.5rem; line-height: 1.6;">
+              Bridge the gap between theoretical models and real-world behavior. Utilizing an 8-state Extended Kalman Filter, we estimate unknown thermal parameters and recover live occupancy from sensor data.
+            </p>
+            <a href="pages/ekf.html" class="btn btn-primary" style="background-color: #0d904f;">
+              Explore EKF Analytics &rarr;
+            </a>
+          </section>
+        </div>
+
+        <!-- Right Column: Image -->
+        <section class="card" style="padding: 0; overflow: hidden; display: flex; height: 100%;">
+          <img src="simone-hutsch-l8fyK9RS-OU-unsplash.jpg" alt="Building Architecture"
+            style="width: 100%; height: 100%; object-fit: cover; min-height: 350px;">
         </section>
       </div>
-
-      <section class="card mt-4">
-        <div class="card-header">
-          <h2 class="card-title">Project Overview</h2>
-        </div>
-        <div style="color: var(--text-secondary);">
-          <p><strong>Goal:</strong> Validate the feasibility of using LLMs to generate valid IDF models for EnergyPlus.
-          </p>
-          <p><strong>Architecture:</strong> 5-Layer Design (Frontend, Firebase, Colab, AI, EnergyPlus).</p>
-        </div>
-      </section>
 
     </main>
   </div>
