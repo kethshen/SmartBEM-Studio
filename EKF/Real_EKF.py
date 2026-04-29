@@ -10,6 +10,13 @@ Naming convention:  _prev, _pred, _est  (from practice demos)
 
 import numpy as np
 import pandas as pd
+import sys
+
+SAVE_MODE = '--save' in sys.argv
+if SAVE_MODE:
+    import matplotlib
+    matplotlib.use('Agg')
+
 import matplotlib.pyplot as plt
 from datetime import datetime, timedelta
 import os
@@ -265,62 +272,80 @@ def main():
     t_hrs = elapsed / 3600.0
 
     # ========================= PLOTS =========================
-    fig, axs = plt.subplots(4, 3, figsize=(16, 14))
-    axs = axs.flatten()
+    RESULTS_DIR = os.path.join(SCRIPT_DIR, 'results')
+    if SAVE_MODE:
+        os.makedirs(RESULTS_DIR, exist_ok=True)
 
-    # --- row 1: measured states ---
-    axs[0].plot(t_hrs, T_z_meas, 'b-', alpha=0.4, lw=0.5, label="Measured")
-    axs[0].plot(t_hrs, est_arr[:, I_Tz], 'r-', lw=1, label="EKF")
-    axs[0].set_title("$T_z$ (Zone Temp)")
-    axs[0].set_ylabel("°C"); axs[0].legend()
+    # ---- Limit time range to avoid late-time outliers ----
+    T_MAX_HRS = 120
+    mask = t_hrs <= T_MAX_HRS
+    t_plot = t_hrs[mask]
 
-    axs[1].plot(t_hrs, c_z_meas, 'b-', alpha=0.4, lw=0.5, label="Measured")
-    axs[1].plot(t_hrs, est_arr[:, I_cz], 'r-', lw=1, label="EKF")
-    axs[1].set_title("$c_z$ (Zone CO₂)")
-    axs[1].set_ylabel("ppm"); axs[1].legend()
+    # Slice all plot data to the mask
+    T_z_meas_p   = T_z_meas[mask]
+    c_z_meas_p   = c_z_meas[mask]
+    N_true_p     = N_true[mask]
+    N_est_p      = N_est_arr[mask]
+    T_o_p        = T_o_arr[mask]
+    est_p        = est_arr[mask]
+    Cs_p         = Cs_arr[mask]
+    UA_p         = UA_arr[mask]
 
-    axs[2].plot(t_hrs, N_true, 'g-', alpha=0.5, lw=0.8, label="True N")
-    axs[2].plot(t_hrs, N_est_arr, 'r-', lw=1, label="EKF N")
-    axs[2].set_title("Occupancy $N$ (recovered vs truth)")
-    axs[2].set_ylabel("persons"); axs[2].legend()
+    # Define all 12 plots: (filename, title, ylabel, traces[])
+    plot_defs = [
+        ('01_zone_temp.png', 'Zone Temperature', 'deg C', [
+            {'y': T_z_meas_p, 'style': '.', 'color': '#2ca02c', 'alpha': 0.7, 'lw': 0, 'ms': 1.5, 'label': 'Measured'},
+            {'y': est_p[:, I_Tz], 'style': '--', 'color': '#ff7f0e', 'alpha': 0.7, 'lw': 1.2, 'label': 'EKF'}]),
+        ('02_zone_co2.png', 'Zone CO2', 'ppm', [
+            {'y': c_z_meas_p, 'style': '.', 'color': '#2ca02c', 'alpha': 0.7, 'lw': 0, 'ms': 1.5, 'label': 'Measured'},
+            {'y': est_p[:, I_cz], 'style': '--', 'color': '#ff7f0e', 'alpha': 0.7, 'lw': 1.2, 'label': 'EKF'}]),
+        ('03_occupancy.png', 'Occupancy N (recovered vs truth)', 'persons', [
+            {'y': N_true_p, 'style': '.', 'color': '#2ca02c', 'alpha': 0.7, 'lw': 0, 'ms': 1.5, 'label': 'True N'},
+            {'y': N_est_p, 'style': '--', 'color': '#ff7f0e', 'alpha': 0.7, 'lw': 1.2, 'label': 'EKF N'}]),
+        ('04_outdoor_temp.png', 'Outdoor Temperature (input)', 'deg C', [
+            {'y': T_o_p, 'style': '--', 'color': '#ff7f0e', 'alpha': 0.7, 'lw': 1.2, 'label': 'T_o (EPW)'}]),
+        ('05_alpha_o.png', 'alpha_o (heat leak + infiltration)', '1/s', [
+            {'y': est_p[:, I_ao], 'style': '--', 'color': '#ff7f0e', 'alpha': 0.7, 'lw': 1.2, 'label': 'alpha_o'}]),
+        ('06_alpha_s.png', 'alpha_s (airflow effect on temp)', '1/(kg.s)', [
+            {'y': est_p[:, I_as], 'style': '--', 'color': '#ff7f0e', 'alpha': 0.7, 'lw': 1.2, 'label': 'alpha_s'}]),
+        ('07_alpha_e.png', 'alpha_e (internal heat gains)', 'deg C/s', [
+            {'y': est_p[:, I_ae], 'style': '--', 'color': '#ff7f0e', 'alpha': 0.7, 'lw': 1.2, 'label': 'alpha_e'}]),
+        ('08_beta_o.png', 'beta_o (infiltration CO2)', '1/s', [
+            {'y': est_p[:, I_bo], 'style': '--', 'color': '#ff7f0e', 'alpha': 0.7, 'lw': 1.2, 'label': 'beta_o'}]),
+        ('09_beta_s.png', 'beta_s (air capacity)', '1/kg', [
+            {'y': est_p[:, I_bs], 'style': '--', 'color': '#ff7f0e', 'alpha': 0.7, 'lw': 1.2, 'label': 'beta_s'}]),
+        ('10_gamma_e.png', 'gamma_e (CO2 source)', 'ppm/s', [
+            {'y': est_p[:, I_ge], 'style': '--', 'color': '#ff7f0e', 'alpha': 0.7, 'lw': 1.2, 'label': 'gamma_e'}]),
+        ('11_thermal_cap.png', 'C_s (thermal capacitance)', 'J/K', [
+            {'y': Cs_p, 'style': '--', 'color': '#ff7f0e', 'alpha': 0.7, 'lw': 1.2, 'label': 'C_s'}]),
+        ('12_UA.png', 'UA (heat transfer coeff)', 'W/K', [
+            {'y': UA_p, 'style': '--', 'color': '#ff7f0e', 'alpha': 0.7, 'lw': 1.2, 'label': 'UA'}]),
+    ]
 
-    # --- row 2: α parameters ---
-    axs[3].plot(t_hrs, est_arr[:, I_ao], 'r-', lw=1)
-    axs[3].set_title(r"$\alpha_o$  (heat leak + infiltration)")
-
-    axs[4].plot(t_hrs, est_arr[:, I_as], 'r-', lw=1)
-    axs[4].set_title(r"$\alpha_s$  (airflow → temp)")
-
-    axs[5].plot(t_hrs, est_arr[:, I_ae], 'r-', lw=1)
-    axs[5].set_title(r"$\alpha_e$  (internal heat)")
-
-    # --- row 3: β / γ parameters ---
-    axs[6].plot(t_hrs, est_arr[:, I_bo], 'r-', lw=1)
-    axs[6].set_title(r"$\beta_o$  (infiltration CO₂)")
-
-    axs[7].plot(t_hrs, est_arr[:, I_bs], 'r-', lw=1)
-    axs[7].set_title(r"$\beta_s$  (air capacity)")
-
-    axs[8].plot(t_hrs, est_arr[:, I_ge], 'r-', lw=1)
-    axs[8].set_title(r"$\gamma_e$  (CO₂ source)")
-
-    # --- row 4: derived physical parameters ---
-    axs[9].plot(t_hrs, Cs_arr, 'k-', lw=1)
-    axs[9].set_title("$C_s$ (thermal cap.)"); axs[9].set_ylabel("J/K")
-
-    axs[10].plot(t_hrs, m_inf_arr, 'k-', lw=1)
-    axs[10].set_title("$m_{inf}$ (infiltration)"); axs[10].set_ylabel("kg/s")
-
-    axs[11].plot(t_hrs, UA_arr, 'k-', lw=1)
-    axs[11].set_title("$UA$ (heat transfer)"); axs[11].set_ylabel("W/K")
-
-    for ax in axs:
-        ax.set_xlabel("Time [hours]")
+    for fname, title, ylabel, traces in plot_defs:
+        fig, ax = plt.subplots(figsize=(8, 4))
+        for tr in traces:
+            kwargs = dict(alpha=tr.get('alpha', 1), lw=tr.get('lw', 1),
+                          label=tr.get('label', ''))
+            if 'color' in tr:
+                kwargs['color'] = tr['color']
+            if 'ms' in tr:
+                kwargs['markersize'] = tr['ms']
+            ax.plot(t_plot, tr['y'], tr['style'], **kwargs)
+        ax.set_title(title)
+        ax.set_xlabel('Time [hours]')
+        ax.set_ylabel(ylabel)
+        ax.legend()
         ax.grid(True, alpha=0.3)
+        plt.tight_layout()
+        if SAVE_MODE:
+            fig.savefig(os.path.join(RESULTS_DIR, fname), dpi=150, bbox_inches='tight')
+            plt.close(fig)
 
-    plt.suptitle("SmartHVAC — 8-State EKF on Real Data", fontsize=14, y=1.01)
-    plt.tight_layout()
-    plt.show()
+    if SAVE_MODE:
+        print(f"    Saved 12 plots to {RESULTS_DIR}")
+    else:
+        plt.show()
 
 
 if __name__ == "__main__":

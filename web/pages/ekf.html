@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EKF - SmartHVAC Studio</title>
+  <link rel="stylesheet" href="../style.css">
+  <style>
+    .ekf-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1.25rem;
+      margin-top: 1.5rem;
+    }
+
+    .ekf-plot-card {
+      background: var(--bg-card);
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-subtle);
+      padding: 1rem;
+      transition: var(--transition-fast);
+    }
+
+    .ekf-plot-card:hover {
+      box-shadow: var(--shadow-md);
+      transform: translateY(-1px);
+    }
+
+    .ekf-plot-card h4 {
+      font-size: 0.85rem;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+      color: var(--text-primary);
+    }
+
+    .ekf-plot-card img {
+      width: 100%;
+      height: auto;
+      border-radius: var(--radius-sm);
+      background: var(--bg-app);
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+
+    .ekf-plot-card img:hover {
+      transform: scale(1.02);
+    }
+
+    .ekf-plot-card .placeholder {
+      width: 100%;
+      min-height: 180px;
+      background: var(--bg-app);
+      border: 1px dashed var(--border-subtle);
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+    }
+
+    .ekf-controls {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .ekf-status {
+      padding: 0.35rem 0.75rem;
+      border-radius: var(--radius-full);
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+
+    .status-idle {
+      background: #f1f5f9;
+      color: #64748b;
+    }
+
+    .status-done {
+      background: #dcfce7;
+      color: #166534;
+    }
+
+    .status-error {
+      background: #fee2e2;
+      color: #b91c1c;
+    }
+
+    .btn-secondary {
+      background-color: var(--bg-card);
+      color: var(--text-primary);
+      border: 1px solid var(--border-subtle);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .btn-secondary:hover {
+      background-color: var(--bg-app);
+      transform: translateY(-1px);
+    }
+  </style>
+</head>
+
+<body>
+  <div class="dashboard-container">
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+      <div class="brand">
+        <span>&#9889; SmartHVAC</span>
+      </div>
+      <ul class="nav-links">
+        <li><a href="../index.html" class="nav-link"><span>Home</span></a></li>
+        <li><a href="nlp.html" class="nav-link"><span>Simulation Setup</span></a></li>
+        <li><a href="results.html" class="nav-link"><span>Results</span></a></li>
+        <li><a href="ekf.html" class="nav-link active"><span>EKF</span></a></li>
+        <li><a href="architecture.html" class="nav-link"><span>Architecture</span></a></li>
+        <li><a href="about.html" class="nav-link"><span>About</span></a></li>
+      </ul>
+      <button class="sidebar-toggle" onclick="toggleSidebar()">
+        &lsaquo;
+      </button>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+      <header class="page-header" style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+          <h1 class="page-title">EKF &mdash; Unknown Parameter Estimation</h1>
+          <p class="page-subtitle">8-State Extended Kalman Filter on real sensor data. Run in Colab, view results here.
+          </p>
+        </div>
+        <div class="ekf-controls">
+          <a id="btnRunEKF" href="#" target="_blank" class="btn btn-primary" onclick="openColab()">
+            &#9654; Run EKF in Colab
+          </a>
+          <button class="btn btn-secondary" onclick="loadPlots()">
+            &#8635; Refresh Plots
+          </button>
+          <span id="ekfStatus" class="ekf-status status-idle">Idle</span>
+        </div>
+      </header>
+
+      <!-- Info Card -->
+      <section class="card" style="margin-bottom: 1rem;">
+        <div class="card-header">
+          <h2 class="card-title">How It Works</h2>
+        </div>
+        <p style="color: var(--text-secondary); font-size: 0.9rem; line-height: 1.6;">
+          <strong>1.</strong> Click <em>"Run EKF in Colab"</em> to open the standalone EKF notebook.
+          <strong>2.</strong> Run all cells &mdash; results save to Google Drive as 12 PNG plots.
+          <strong>3.</strong> Click <em>"Refresh Plots"</em> to load the latest results below.
+          <br>
+          <strong>States:</strong> [&alpha;<sub>o</sub>, &alpha;<sub>s</sub>, &alpha;<sub>e</sub>,
+          &beta;<sub>o</sub>, &beta;<sub>s</sub>, &gamma;<sub>e</sub>, T<sub>z</sub>, c<sub>z</sub>]
+          &nbsp;&bull;&nbsp;
+          <strong>Data:</strong> Kaggle Room Occupancy + EPW weather
+        </p>
+      </section>
+
+      <!-- 6x2 Plot Grid -->
+      <h3 style="font-size: 1.15rem; font-weight: 600; margin-top: 1.5rem; color: var(--text-primary);">
+        EKF Results (6 &times; 2 Grid)
+      </h3>
+
+      <div class="ekf-grid" id="ekfGrid">
+        <!-- JS populates this -->
+      </div>
+
+    </main>
+  </div>
+
+  <!-- Self-contained script — NO imports from script.js -->
+  <script>
+    // ---- Sidebar toggle (duplicated here to stay independent) ----
+    function toggleSidebar() {
+      const container = document.querySelector('.dashboard-container');
+      const sidebar = document.querySelector('.sidebar');
+      if (container && sidebar) {
+        container.classList.toggle('sidebar-collapsed');
+        sidebar.classList.toggle('collapsed');
+      }
+    }
+
+    // ---- Configuration ----
+    // Relative path to EKF results (works if served via Live Server or file://)
+    const RESULTS_BASE = '/EKF/results';
+
+    // Colab notebook URL — update this after uploading EKF_Runner.ipynb to Colab
+    const COLAB_URL = 'https://drive.google.com/file/d/1yYarat7NHYzpYrLB3CsrVgB0tbspnAt-/view?usp=sharing';
+
+    // Plot definitions: filename, display title
+    const PLOTS = [
+      { file: '01_zone_temp.png', title: 'Zone Temperature (Measured vs EKF)' },
+      { file: '02_zone_co2.png', title: 'Zone CO\u2082 (Measured vs EKF)' },
+      { file: '03_occupancy.png', title: 'Occupancy N (Recovered vs Truth)' },
+      { file: '04_outdoor_temp.png', title: 'Outdoor Temperature (Input)' },
+      { file: '05_alpha_o.png', title: '\u03B1\u2092 \u2014 Heat Leak + Infiltration' },
+      { file: '06_alpha_s.png', title: '\u03B1\u209B \u2014 Airflow Effect on Temp' },
+      { file: '07_alpha_e.png', title: '\u03B1\u2091 \u2014 Internal Heat Gains' },
+      { file: '08_beta_o.png', title: '\u03B2\u2092 \u2014 Infiltration CO\u2082' },
+      { file: '09_beta_s.png', title: '\u03B2\u209B \u2014 Air Capacity' },
+      { file: '10_gamma_e.png', title: '\u03B3\u2091 \u2014 CO\u2082 Source Rate' },
+      { file: '11_thermal_cap.png', title: 'C\u209B \u2014 Thermal Capacitance' },
+      { file: '12_UA.png', title: 'UA \u2014 Heat Transfer Coefficient' },
+    ];
+
+    // ---- Build grid on load ----
+    function buildGrid() {
+      const grid = document.getElementById('ekfGrid');
+      grid.innerHTML = '';
+      PLOTS.forEach((p, i) => {
+        const card = document.createElement('div');
+        card.className = 'ekf-plot-card';
+        card.innerHTML = `
+          <h4>${p.title}</h4>
+          <div class="placeholder" id="ph_${i}">No results yet. Run EKF first.</div>
+          <img id="img_${i}" style="display:none;" alt="${p.title}"
+               onclick="window.open(this.src, '_blank')" title="Click to enlarge">
+        `;
+        grid.appendChild(card);
+      });
+    }
+
+    // ---- Load plots from local results folder ----
+    function loadPlots() {
+      const status = document.getElementById('ekfStatus');
+      status.textContent = 'Loading...';
+      status.className = 'ekf-status status-idle';
+
+      let loaded = 0;
+      let failed = 0;
+
+      PLOTS.forEach((p, i) => {
+        const img = document.getElementById(`img_${i}`);
+        const ph = document.getElementById(`ph_${i}`);
+        const url = `${RESULTS_BASE}/${p.file}?t=${Date.now()}`; // cache bust
+
+        // Test if image exists by loading it
+        const testImg = new Image();
+        testImg.onload = () => {
+          img.src = url;
+          img.style.display = 'block';
+          ph.style.display = 'none';
+          loaded++;
+          checkDone();
+        };
+        testImg.onerror = () => {
+          img.style.display = 'none';
+          ph.style.display = 'flex';
+          ph.textContent = 'Plot not found. Run EKF first.';
+          failed++;
+          checkDone();
+        };
+        testImg.src = url;
+      });
+
+      function checkDone() {
+        if (loaded + failed === PLOTS.length) {
+          if (loaded === PLOTS.length) {
+            status.textContent = `Done - ${loaded} plots loaded`;
+            status.className = 'ekf-status status-done';
+          } else if (loaded > 0) {
+            status.textContent = `Partial - ${loaded}/${PLOTS.length}`;
+            status.className = 'ekf-status status-idle';
+          } else {
+            status.textContent = 'No results found';
+            status.className = 'ekf-status status-error';
+          }
+        }
+      }
+    }
+
+    // ---- Open Colab notebook ----
+    function openColab() {
+      window.open(COLAB_URL, '_blank');
+    }
+
+    // ---- Init ----
+    window.addEventListener('load', () => {
+      buildGrid();
+      loadPlots(); // try loading on page open
+    });
+  </script>
+</body>
+
+</html>
