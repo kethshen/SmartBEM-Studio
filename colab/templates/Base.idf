@@ -107,118 +107,11 @@
     Counterclockwise,        !- Vertex Entry Direction
     World;                   !- Coordinate System
 
-  Zone,
-    ZONE ONE,                !- Name
-    0,                       !- Direction of Relative North {deg}
-    0,                       !- X Origin {m}
-    0,                       !- Y Origin {m}
-    0,                       !- Z Origin {m}
-    1,                       !- Type
-    1,                       !- Multiplier
-    2.7000,                  !- Ceiling Height {m}
-    129.6;                   !- Volume {m3}
-
-  BuildingSurface:Detailed,
-    SURFACE NORTH,           !- Name
-    Wall,                    !- Surface Type
-    GenericConstruction,     !- Construction Name
-    ZONE ONE,                !- Zone Name
-    ,                        !- Space Name
-    Outdoors,                !- Outside Boundary Condition
-    ,                        !- Outside Boundary Condition Object
-    SunExposed,              !- Sun Exposure
-    WindExposed,             !- Wind Exposure
-    0.50,                    !- View Factor to Ground
-    4,                       !- Number of Vertices
-    8.00,6.00,2.70,  !- X,Y,Z ==> Vertex 1 {m}
-    8.00,6.00,0,  !- X,Y,Z ==> Vertex 2 {m}
-    0,6.00,0,  !- X,Y,Z ==> Vertex 3 {m}
-    0,6.00,2.70;  !- X,Y,Z ==> Vertex 4 {m}
-
-  BuildingSurface:Detailed,
-    ZONE SURFACE EAST,       !- Name
-    Wall,                    !- Surface Type
-    GenericConstruction,     !- Construction Name
-    ZONE ONE,                !- Zone Name
-    ,                        !- Space Name
-    Outdoors,                !- Outside Boundary Condition
-    ,                        !- Outside Boundary Condition Object
-    SunExposed,              !- Sun Exposure
-    WindExposed,             !- Wind Exposure
-    0.50,                    !- View Factor to Ground
-    4,                       !- Number of Vertices
-    8.00,0,2.70,  !- X,Y,Z ==> Vertex 1 {m}
-    8.00,0,0,  !- X,Y,Z ==> Vertex 2 {m}
-    8.00,6.00,0,  !- X,Y,Z ==> Vertex 3 {m}
-    8.00,6.00,2.70;  !- X,Y,Z ==> Vertex 4 {m}
-
-  BuildingSurface:Detailed,
-    ZONE SURFACE SOUTH,      !- Name
-    Wall,                    !- Surface Type
-    GenericConstruction,     !- Construction Name
-    ZONE ONE,                !- Zone Name
-    ,                        !- Space Name
-    Outdoors,                !- Outside Boundary Condition
-    ,                        !- Outside Boundary Condition Object
-    SunExposed,              !- Sun Exposure
-    WindExposed,             !- Wind Exposure
-    0.50,                    !- View Factor to Ground
-    4,                       !- Number of Vertices
-    0,0,2.70,  !- X,Y,Z ==> Vertex 1 {m}
-    0,0,0,  !- X,Y,Z ==> Vertex 2 {m}
-    8.00,0,0,  !- X,Y,Z ==> Vertex 3 {m}
-    8.00,0,2.70;  !- X,Y,Z ==> Vertex 4 {m}
-
-  BuildingSurface:Detailed,
-    ZONE SURFACE WEST,       !- Name
-    Wall,                    !- Surface Type
-    GenericConstruction,     !- Construction Name
-    ZONE ONE,                !- Zone Name
-    ,                        !- Space Name
-    Outdoors,                !- Outside Boundary Condition
-    ,                        !- Outside Boundary Condition Object
-    SunExposed,              !- Sun Exposure
-    WindExposed,             !- Wind Exposure
-    0.50,                    !- View Factor to Ground
-    4,                       !- Number of Vertices
-    0,6.00,2.70,  !- X,Y,Z ==> Vertex 1 {m}
-    0,6.00,0,  !- X,Y,Z ==> Vertex 2 {m}
-    0,0,0,  !- X,Y,Z ==> Vertex 3 {m}
-    0,0,2.70;  !- X,Y,Z ==> Vertex 4 {m}
-
-  BuildingSurface:Detailed,
-    ZONE SURFACE FLOOR,      !- Name
-    Floor,                   !- Surface Type
-    GenericConstruction,     !- Construction Name
-    ZONE ONE,                !- Zone Name
-    ,                        !- Space Name
-    Ground,                  !- Outside Boundary Condition
-    ,                        !- Outside Boundary Condition Object
-    NoSun,                   !- Sun Exposure
-    NoWind,                  !- Wind Exposure
-    0,                       !- View Factor to Ground
-    4,                       !- Number of Vertices
-    0,0,0,  !- X,Y,Z ==> Vertex 1 {m}
-    0,6.00,0,  !- X,Y,Z ==> Vertex 2 {m}
-    8.00,6.00,0,  !- X,Y,Z ==> Vertex 3 {m}
-    8.00,0,0;  !- X,Y,Z ==> Vertex 4 {m}
-
-  BuildingSurface:Detailed,
-    ZONE SURFACE ROOF,       !- Name
-    Roof,                    !- Surface Type
-    GenericConstruction,     !- Construction Name
-    ZONE ONE,                !- Zone Name
-    ,                        !- Space Name
-    Outdoors,                !- Outside Boundary Condition
-    ,                        !- Outside Boundary Condition Object
-    SunExposed,              !- Sun Exposure
-    WindExposed,             !- Wind Exposure
-    0,                       !- View Factor to Ground
-    4,                       !- Number of Vertices
-    0,6.00,2.70,  !- X,Y,Z ==> Vertex 1 {m}
-    0,0,2.70,  !- X,Y,Z ==> Vertex 2 {m}
-    8.00,0,2.70,  !- X,Y,Z ==> Vertex 3 {m}
-    8.00,6.00,2.70;  !- X,Y,Z ==> Vertex 4 {m}
+! ==========================================================================
+! GEOMETRY IS NOT INCLUDED IN THIS TEMPLATE.
+! geometry_util.py generates Zone, Walls, Roof, Floor, and Windows
+! dynamically and appends them to this template during IDF assembly.
+! ==========================================================================
 
   ScheduleTypeLimits,
     Any Number;              !- Name
@@ -262,10 +155,10 @@
     OFFICE_PEOPLE,           !- Name
     ZONE ONE,                !- Zone or ZoneList Name
     ALWAYS_ON,               !- Number of People Schedule Name
-    People,                  !- Number of People Calculation Method
-    0,                       !- Number of People
+    Area/Person,             !- Number of People Calculation Method
+    ,                        !- Number of People
     ,                        !- People per Zone Floor Area {person/m2}
-    ,                        !- Zone Floor Area per Person {m2/person}
+    {PEOPLE_DENSITY},        !- Zone Floor Area per Person {m2/person}
     0.3,                     !- Fraction Radiant
     ,                        !- Sensible Heat Fraction
     ACTIVITY_SCH;            !- Activity Level Schedule Name
@@ -274,9 +167,9 @@
     OFFICE_LIGHTS,           !- Name
     ZONE ONE,                !- Zone or ZoneList Name
     ALWAYS_ON,               !- Schedule Name
-    LightingLevel,           !- Design Level Calculation Method
-    0,                       !- Lighting Level {W}
-    ,                        !- Watts per Zone Floor Area {W/m2}
+    Watts/Area,              !- Design Level Calculation Method
+    ,                        !- Lighting Level {W}
+    {LIGHT_DENSITY},         !- Watts per Zone Floor Area {W/m2}
     ,                        !- Watts per Person {W/person}
     0,                       !- Return Air Fraction
     0.42,                    !- Fraction Radiant
@@ -287,9 +180,9 @@
     OFFICE_EQUIP,            !- Name
     ZONE ONE,                !- Zone or ZoneList Name
     ALWAYS_ON,               !- Schedule Name
-    EquipmentLevel,          !- Design Level Calculation Method
-    0,                       !- Design Level {W}
-    ,                        !- Watts per Zone Floor Area {W/m2}
+    Watts/Area,              !- Design Level Calculation Method
+    ,                        !- Design Level {W}
+    {EQUIP_DENSITY},         !- Watts per Zone Floor Area {W/m2}
     ,                        !- Watts per Person {W/person}
     0,                       !- Fraction Latent
     0.3,                     !- Fraction Radiant
@@ -352,8 +245,54 @@
 
   ThermostatSetpoint:DualSetpoint,
     Office Thermostat Dual SP Control,  !- Name
-    ALWAYS 20,               !- Heating Setpoint Temperature Schedule Name
-    ALWAYS 24;               !- Cooling Setpoint Temperature Schedule Name
+    HEATING_SETPOINT_SCH,    !- Heating Setpoint Temperature Schedule Name
+    COOLING_SETPOINT_SCH;    !- Cooling Setpoint Temperature Schedule Name
+
+  Schedule:Compact,
+    HEATING_SETPOINT_SCH,
+    Any Number,
+    Through: 12/31,
+    For: AllDays,
+    Until: 07:00, {HEAT_UNOCC},
+    Until: 18:00, {HEAT_OCC},
+    Until: 24:00, {HEAT_UNOCC};
+
+  Schedule:Compact,
+    COOLING_SETPOINT_SCH,
+    Any Number,
+    Through: 12/31,
+    For: AllDays,
+    Until: 07:00, {COOL_UNOCC},
+    Until: 18:00, {COOL_OCC},
+    Until: 24:00, {COOL_UNOCC};
+
+  ZoneInfiltration:DesignFlowRate,
+    ZONE ONE Infiltration,   !- Name
+    ZONE ONE,                !- Zone or ZoneList Name
+    ALWAYS_ON,               !- Schedule Name
+    AirChanges/Hour,         !- Design Flow Rate Calculation Method
+    ,                        !- Design Flow Rate {m3/s}
+    ,                        !- Flow per Zone Floor Area {m3/s-m2}
+    ,                        !- Flow per Exterior Surface Area {m3/s-m2}
+    {INFILTRATION_ACH};      !- Air Changes per Hour {1/hr}
+
+  DesignSpecification:OutdoorAir,
+    ZONE ONE OA,             !- Name
+    AirChanges/Hour,         !- Outdoor Air Method
+    0,                       !- Outdoor Air Flow per Person {m3/s-person}
+    0,                       !- Outdoor Air Flow per Zone Floor Area {m3/s-m2}
+    0,                       !- Outdoor Air Flow per Zone {m3/s}
+    {VENTILATION_ACH};       !- Outdoor Air Flow Air Changes per Hour {1/hr}
+
+  WindowMaterial:SimpleGlazingSystem,
+    Simple Window Glass,     !- Name
+    {WINDOW_U_FACTOR},       !- U-Factor
+    {WINDOW_SHGC},           !- Solar Heat Gain Coefficient
+    0.5;                     !- Visible Transmittance
+
+  Construction,
+    Theoretical Glass [167], !- Name
+    Simple Window Glass;     !- Outside Layer
 
   Output:Variable,*,Site Outdoor Air Drybulb Temperature,Hourly;
   Output:Variable,*,Zone Air System Sensible Cooling Energy,Hourly;
