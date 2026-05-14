@@ -40,6 +40,7 @@ docs/
 web/simone-hutsch-l8fyK9RS-OU-unsplash.jpg
 EKF/results/
 EKF/Exp setup/
+LLMv2/flan_t5_xxl_requirements.md
 
 #idf
 in.idf
