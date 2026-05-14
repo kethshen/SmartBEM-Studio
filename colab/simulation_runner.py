@@ -60,7 +60,9 @@ def run_simulation_job(job_id, idf_path, epw_path, config=None, output_dir_base=
         util.ensure_output_variables([
             {"name": "Zone Air Temperature", "key": "*", "freq": "Hourly"},
             {"name": "System Node Mass Flow Rate", "key": "*", "freq": "Hourly"},
-            {"name": "Site Outdoor Air Drybulb Temperature", "key": "Environment", "freq": "Hourly"}
+            {"name": "Site Outdoor Air Drybulb Temperature", "key": "Environment", "freq": "Hourly"},
+            {"name": "Zone Air System Sensible Cooling Energy", "key": "*", "freq": "Hourly"},
+            {"name": "Zone Air System Sensible Heating Energy", "key": "*", "freq": "Hourly"}
         ])
 
     # 6. Run Simulation
@@ -97,7 +99,7 @@ def run_simulation_job(job_id, idf_path, epw_path, config=None, output_dir_base=
         "plot": "Zone Air Temperature",
         "plot_ekf": "System Node Mass Flow Rate",
         "plot_weather": "Site Outdoor Air Drybulb Temperature",
-        "plot_energy": "DistrictHeatingWater:Facility"
+        "plot_energy": "Electricity:Facility"
     }
 
     for key, var_name in plot_vars.items():

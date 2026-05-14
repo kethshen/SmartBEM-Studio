@@ -110,6 +110,10 @@ class AIPipelines:
             "   - 'heat_set_occ' (float, Celsius. Default 21.0), 'heat_set_unocc' (float, Celsius. Default 15.0)\n"
             "   - 'cool_set_occ' (float, Celsius. Default 24.0), 'cool_set_unocc' (float, Celsius. Default 28.0)\n"
             "   - 'window_u_factor' (float. Default 3.0), 'window_shgc' (float. Default 0.5)\n"
+            "   - 'hvac_type' (string): The HVAC system type. Pick from: 'ideal_loads', 'ptac', 'psz_ac'.\n"
+            "     - 'ideal_loads': Simplified perfect system, best for envelope studies (DEFAULT if user doesn't mention HVAC).\n"
+            "     - 'ptac': Packaged Terminal Air Conditioner with DX cooling and electric heating. Best for hotels, small rooms, apartments.\n"
+            "     - 'psz_ac': Packaged Single Zone AC with gas furnace heating and DX cooling. Best for retail, small commercial, warehouses.\n"
             "3. For the construction keys, you MUST pick the closest matching name from this exact menu array:\n"
             f"{construction_menu}\n"
         )
@@ -157,8 +161,15 @@ class AIPipelines:
             cool_unocc = params.get("cool_set_unocc", 28.0)
             win_u = params.get("window_u_factor", 3.0)
             win_shgc = params.get("window_shgc", 0.5)
+            hvac_type = params.get("hvac_type", "ideal_loads")
 
-            print(f"[AI Assembler] AI Selected -> L:{L}, W:{W}, Wall:{wall_name}, WWR:{wwr}, U:{win_u}")
+            # Validate hvac_type against allowed options
+            allowed_hvac = ["ideal_loads", "ptac", "psz_ac"]
+            if hvac_type not in allowed_hvac:
+                print(f"[AI Assembler] Unknown hvac_type '{hvac_type}', falling back to ideal_loads")
+                hvac_type = "ideal_loads"
+
+            print(f"[AI Assembler] AI Selected -> L:{L}, W:{W}, Wall:{wall_name}, WWR:{wwr}, U:{win_u}, HVAC:{hvac_type}")
 
             # 5. Build Geometry (Now passing WWR)
             geometry_idf = geometry_util.generate_zone_geometry(L, W, H, wwr)
@@ -167,6 +178,24 @@ class AIPipelines:
             extracted_blocks = {}
             idf_extractor.resolve_dependencies("Construction", wall_name, extracted_blocks)
             idf_extractor.resolve_dependencies("Construction", roof_name, extracted_blocks)
+
+            # 6.5 Load HVAC Template
+            hvac_idf_block = ""
+            hvac_template_dir = os.path.join(os.path.dirname(__file__), "..", "templates", "hvac")
+            hvac_template_path = os.path.join(hvac_template_dir, f"{hvac_type}.idf")
+            if os.path.exists(hvac_template_path):
+                with open(hvac_template_path, "r", encoding="utf-8") as hf:
+                    hvac_idf_block = hf.read()
+                # Replace zone name placeholder in HVAC template
+                hvac_idf_block = hvac_idf_block.replace("{ZONE_NAME}", "ZONE ONE")
+                print(f"[AI Assembler] Loaded HVAC template: {hvac_type}.idf ({len(hvac_idf_block)} chars)")
+            else:
+                print(f"[AI Assembler] WARNING: HVAC template not found at {hvac_template_path}, falling back to ideal_loads")
+                fallback_path = os.path.join(hvac_template_dir, "ideal_loads.idf")
+                if os.path.exists(fallback_path):
+                    with open(fallback_path, "r", encoding="utf-8") as hf:
+                        hvac_idf_block = hf.read()
+                    hvac_idf_block = hvac_idf_block.replace("{ZONE_NAME}", "ZONE ONE")
 
             # 7. Stitch it all together
             final_idf = self.base_idf + "\n\n"
@@ -179,6 +208,9 @@ class AIPipelines:
             final_idf = final_idf.replace("{EXTERIOR_WALL_CONSTR}", wall_name)
             final_idf = final_idf.replace("{ROOF_CONSTR}", roof_name)
             final_idf = final_idf.replace("{FLOOR_CONSTR}", wall_name) # Simplified for now
+            
+            # Inject HVAC system block
+            final_idf = final_idf.replace("{HVAC_SYSTEM_BLOCK}", hvac_idf_block)
             
             # Base.idf replaces
             final_idf = final_idf.replace("{PEOPLE_DENSITY}", str(people))
