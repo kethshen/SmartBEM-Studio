@@ -36,7 +36,7 @@ def generate_3d_html(idf_path, output_path):
                 continue
             
             name = fields[1]
-            surf_type = fields[2] if obj_type == "BuildingSurface:Detailed" else "Window"
+            surf_type = fields[2]
             
             num_vert_idx = 11 if obj_type == "BuildingSurface:Detailed" else 9
             try:
@@ -65,14 +65,16 @@ def generate_3d_html(idf_path, output_path):
         "Wall": "rgba(200, 200, 200, 0.4)",  # Transparent gray
         "Roof": "rgba(150, 50, 50, 0.5)",    # Transparent dark red
         "Floor": "rgba(100, 100, 100, 0.6)", # Solid gray
-        "Window": "rgba(50, 150, 255, 0.6)"  # Transparent blue
+        "Window": "rgba(50, 150, 255, 0.6)", # Transparent blue
+        "Door": "rgba(139, 69, 19, 0.8)"     # Solid brown
     }
     
     line_colors = {
         "Wall": "rgb(50, 50, 50)",
         "Roof": "rgb(100, 20, 20)",
         "Floor": "rgb(30, 30, 30)",
-        "Window": "rgb(20, 100, 200)"
+        "Window": "rgb(20, 100, 200)",
+        "Door": "rgb(80, 40, 10)"
     }
 
     for surf in surfaces:

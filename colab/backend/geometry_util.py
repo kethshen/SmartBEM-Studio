@@ -1,6 +1,12 @@
 import os
 
-def generate_zone_geometry(L, W, H, wwr_s=0.0, wwr_n=0.0, wwr_e=0.0, wwr_w=0.0, zone_name="ZONE ONE"):
+def generate_zone_geometry(
+    L, W, H, 
+    wwr_s=0.0, wwr_n=0.0, wwr_e=0.0, wwr_w=0.0, 
+    wall_s="{EXTERIOR_WALL_CONSTR}", wall_n="{EXTERIOR_WALL_CONSTR}", 
+    wall_e="{EXTERIOR_WALL_CONSTR}", wall_w="{EXTERIOR_WALL_CONSTR}",
+    door_s="", door_n="", door_e="", door_w="",
+    zone_name="ZONE ONE"):
     """
     Generates standard CCW EnergyPlus vertices for a rectangular zone.
     L = Length (X-axis)
@@ -78,31 +84,71 @@ def generate_zone_geometry(L, W, H, wwr_s=0.0, wwr_n=0.0, wwr_e=0.0, wwr_w=0.0, 
     {win_bl_x:.2f}, {win_bl_y:.2f}, {z_bottom:.2f};  !- X,Y,Z ==> Vertex 4
 """
 
-    # Using placeholder text that our backend Assembler will string-replace later.
-    wall_constr = "{EXTERIOR_WALL_CONSTR}"
+    def make_door(wall_name, v1, v4, wall_width, door_str):
+        if not door_str or "x" not in door_str: return ""
+        try:
+            parts = door_str.lower().split("x")
+            door_w = float(parts[0])
+            door_h = float(parts[1])
+        except:
+            return "" # Invalid format
+            
+        w_off = (wall_width - door_w) / 2.0
+        
+        def interpolate(pA, pB, frac):
+            return (pA[0] + (pB[0]-pA[0])*frac, pA[1] + (pB[1]-pA[1])*frac, pA[2] + (pB[2]-pA[2])*frac)
+            
+        win_br_x, win_br_y, win_br_z = interpolate(v1, v4, w_off / wall_width)
+        win_bl_x, win_bl_y, win_bl_z = interpolate(v1, v4, (w_off + door_w) / wall_width)
+        
+        z_bottom = v1[2] # Floor level
+        z_top = z_bottom + door_h
+        
+        return f"""
+  FenestrationSurface:Detailed,
+    {wall_name}_Door,      !- Name
+    Door,                  !- Surface Type
+    {{EXTERIOR_DOOR_CONSTR}},  !- Construction Name
+    {wall_name},             !- Building Surface Name
+    ,                        !- Outside Boundary Condition Object
+    0.5,                     !- View Factor to Ground
+    ,                        !- Frame and Divider Name
+    1,                       !- Multiplier
+    4,                       !- Number of Vertices
+    {win_br_x:.2f}, {win_br_y:.2f}, {z_bottom:.2f},  !- X,Y,Z ==> Vertex 1
+    {win_br_x:.2f}, {win_br_y:.2f}, {z_top:.2f},  !- X,Y,Z ==> Vertex 2
+    {win_bl_x:.2f}, {win_bl_y:.2f}, {z_top:.2f},  !- X,Y,Z ==> Vertex 3
+    {win_bl_x:.2f}, {win_bl_y:.2f}, {z_bottom:.2f};  !- X,Y,Z ==> Vertex 4
+"""
+
+    # Using placeholder text that our backend Assembler will string-replace later for roof and floor
     roof_constr = "{ROOF_CONSTR}"
     floor_constr = "{FLOOR_CONSTR}"
     
     # CCW Vertices viewed from OUTSIDE
     # Wall South (Facing -Y)
     v1, v2, v3, v4 = (L, 0, 0), (L, 0, H), (0, 0, H), (0, 0, 0)
-    idf_str += make_surface("Wall_South", "Wall", wall_constr, "Outdoors", "SunExposed", "WindExposed", v1, v2, v3, v4)
+    idf_str += make_surface("Wall_South", "Wall", wall_s, "Outdoors", "SunExposed", "WindExposed", v1, v2, v3, v4)
     idf_str += make_window("Wall_South", v1, v4, L, H, wwr_s)
+    idf_str += make_door("Wall_South", v1, v4, L, door_s)
     
     # Wall East (Facing +X)
     v1, v2, v3, v4 = (L, W, 0), (L, W, H), (L, 0, H), (L, 0, 0)
-    idf_str += make_surface("Wall_East", "Wall", wall_constr, "Outdoors", "SunExposed", "WindExposed", v1, v2, v3, v4)
+    idf_str += make_surface("Wall_East", "Wall", wall_e, "Outdoors", "SunExposed", "WindExposed", v1, v2, v3, v4)
     idf_str += make_window("Wall_East", v1, v4, W, H, wwr_e)
+    idf_str += make_door("Wall_East", v1, v4, W, door_e)
     
     # Wall North (Facing +Y)
     v1, v2, v3, v4 = (0, W, 0), (0, W, H), (L, W, H), (L, W, 0)
-    idf_str += make_surface("Wall_North", "Wall", wall_constr, "Outdoors", "SunExposed", "WindExposed", v1, v2, v3, v4)
+    idf_str += make_surface("Wall_North", "Wall", wall_n, "Outdoors", "SunExposed", "WindExposed", v1, v2, v3, v4)
     idf_str += make_window("Wall_North", v1, v4, L, H, wwr_n)
+    idf_str += make_door("Wall_North", v1, v4, L, door_n)
     
     # Wall West (Facing -X)
     v1, v2, v3, v4 = (0, 0, 0), (0, 0, H), (0, W, H), (0, W, 0)
-    idf_str += make_surface("Wall_West", "Wall", wall_constr, "Outdoors", "SunExposed", "WindExposed", v1, v2, v3, v4)
+    idf_str += make_surface("Wall_West", "Wall", wall_w, "Outdoors", "SunExposed", "WindExposed", v1, v2, v3, v4)
     idf_str += make_window("Wall_West", v1, v4, W, H, wwr_w)
+    idf_str += make_door("Wall_West", v1, v4, W, door_w)
     
     # Roof (Facing +Z)
     idf_str += make_surface("Roof", "Roof", roof_constr, "Outdoors", "SunExposed", "WindExposed", 

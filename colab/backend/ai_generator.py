@@ -100,8 +100,10 @@ class AIPipelines:
             "1. OUTPUT FORMAT: Return ONLY valid JSON. No markdown wrappers, no explanations.\n"
             "2. Required JSON keys:\n"
             "   - 'length' (float), 'width' (float), 'height' (float)\n"
-            "   - 'wall_construction' (string), 'roof_construction' (string)\n"
+            "   - 'wall_construction' (string, default global wall). 'wall_constr_south', 'wall_constr_north', 'wall_constr_east', 'wall_constr_west' (strings, specific wall constructions. Pick EXACTLY from menu. If not specified, leave empty or same as global)\n"
+            "   - 'roof_construction' (string)\n"
             "   - 'wwr_south', 'wwr_north', 'wwr_east', 'wwr_west' (floats between 0 and 1, Window-to-Wall Ratios for each face. Default 0.0. If user gives a single global WWR, set all 4 to that value. If they specify certain walls, apply only to those and set others to 0.0.)\n"
+            "   - 'door_south', 'door_north', 'door_east', 'door_west' (strings, door dimensions like '1x2.5' or empty string '' if no door on that wall. Default '')\n"
             "   - 'people_density' (float, m2/person. Default 10.0)\n"
             "   - 'light_density' (float, W/m2. Default 10.0)\n"
             "   - 'equipment_density' (float, W/m2. Default 10.0)\n"
@@ -145,7 +147,13 @@ class AIPipelines:
             L = params.get("length", 10.0)
             W = params.get("width", 10.0)
             H = params.get("height", 3.0)
-            wall_name = params.get("wall_construction", "Composite 2x4 Wood Stud R11")
+            # Wall and Roof Parsing
+            global_wall = params.get("wall_construction", "Composite 2x4 Wood Stud R11")
+            wall_s = params.get("wall_constr_south", global_wall) or global_wall
+            wall_n = params.get("wall_constr_north", global_wall) or global_wall
+            wall_e = params.get("wall_constr_east", global_wall) or global_wall
+            wall_w = params.get("wall_constr_west", global_wall) or global_wall
+            
             roof_name = params.get("roof_construction", "Composite 2x4 Wood Stud R11")
             
             # WWR Parsing
@@ -154,6 +162,12 @@ class AIPipelines:
             wwr_n = params.get("wwr_north", global_wwr)
             wwr_e = params.get("wwr_east", global_wwr)
             wwr_w = params.get("wwr_west", global_wwr)
+            
+            # Door Parsing
+            door_s = params.get("door_south", "")
+            door_n = params.get("door_north", "")
+            door_e = params.get("door_east", "")
+            door_w = params.get("door_west", "")
             
             # Thermodynamic defaults
             people = params.get("people_density", 10.0)
@@ -175,14 +189,20 @@ class AIPipelines:
                 print(f"[AI Assembler] Unknown hvac_type '{hvac_type}', falling back to ideal_loads")
                 hvac_type = "ideal_loads"
 
-            print(f"[AI Assembler] AI Selected -> L:{L}, W:{W}, Wall:{wall_name}, WWR_S:{wwr_s}, WWR_N:{wwr_n}, U:{win_u}, HVAC:{hvac_type}")
+            print(f"[AI Assembler] AI Selected -> L:{L}, W:{W}, Wall_S:{wall_s}, WWR_S:{wwr_s}, Door_S:'{door_s}', HVAC:{hvac_type}")
 
-            # 5. Build Geometry (Now passing directional WWRs)
-            geometry_idf = geometry_util.generate_zone_geometry(L, W, H, wwr_s, wwr_n, wwr_e, wwr_w)
+            # 5. Build Geometry (Now passing directional WWRs, Materials, and Doors)
+            geometry_idf = geometry_util.generate_zone_geometry(
+                L, W, H, 
+                wwr_s, wwr_n, wwr_e, wwr_w,
+                wall_s, wall_n, wall_e, wall_w,
+                door_s, door_n, door_e, door_w
+            )
             
             # 6. Extract Dependencies
             extracted_blocks = {}
-            idf_extractor.resolve_dependencies("Construction", wall_name, extracted_blocks)
+            for w_name in set([wall_s, wall_n, wall_e, wall_w]):
+                idf_extractor.resolve_dependencies("Construction", w_name, extracted_blocks)
             idf_extractor.resolve_dependencies("Construction", roof_name, extracted_blocks)
 
             # 6.5 Load HVAC Template
@@ -211,12 +231,33 @@ class AIPipelines:
             final_idf += geometry_idf
 
             # 8. Replace placeholder constructions and thermodynamics inside the geometry and Base
-            final_idf = final_idf.replace("{EXTERIOR_WALL_CONSTR}", wall_name)
+            final_idf = final_idf.replace("{EXTERIOR_WALL_CONSTR}", global_wall)
             final_idf = final_idf.replace("{ROOF_CONSTR}", roof_name)
-            final_idf = final_idf.replace("{FLOOR_CONSTR}", wall_name) # Simplified for now
+            final_idf = final_idf.replace("{FLOOR_CONSTR}", global_wall) # Simplified for now
             
             # Inject HVAC system block
             final_idf = final_idf.replace("{HVAC_SYSTEM_BLOCK}", hvac_idf_block)
+            
+            # Inject generic door construction
+            door_constr_block = """
+  Material,
+    Generic_Door_Material,   !- Name
+    Smooth,                  !- Roughness
+    0.05,                    !- Thickness {m}
+    0.15,                    !- Conductivity {W/m-K}
+    600,                     !- Density {kg/m3}
+    1000,                    !- Specific Heat {J/kg-K}
+    0.9,                     !- Thermal Absorptance
+    0.7,                     !- Solar Absorptance
+    0.7;                     !- Visible Absorptance
+
+  Construction,
+    Generic_Door_Constr,     !- Name
+    Generic_Door_Material;   !- Outside Layer
+"""
+            final_idf = final_idf.replace("{EXTERIOR_DOOR_CONSTR}", "Generic_Door_Constr")
+            if "Generic_Door_Constr" in final_idf and "Generic_Door_Material" not in final_idf:
+                final_idf += door_constr_block
             
             # Base.idf replaces
             final_idf = final_idf.replace("{PEOPLE_DENSITY}", str(people))
