@@ -101,7 +101,7 @@ class AIPipelines:
             "2. Required JSON keys:\n"
             "   - 'length' (float), 'width' (float), 'height' (float)\n"
             "   - 'wall_construction' (string), 'roof_construction' (string)\n"
-            "   - 'wwr' (float between 0 and 1, Window-to-Wall Ratio. Default 0.0)\n"
+            "   - 'wwr_south', 'wwr_north', 'wwr_east', 'wwr_west' (floats between 0 and 1, Window-to-Wall Ratios for each face. Default 0.0. If user gives a single global WWR, set all 4 to that value. If they specify certain walls, apply only to those and set others to 0.0.)\n"
             "   - 'people_density' (float, m2/person. Default 10.0)\n"
             "   - 'light_density' (float, W/m2. Default 10.0)\n"
             "   - 'equipment_density' (float, W/m2. Default 10.0)\n"
@@ -147,7 +147,13 @@ class AIPipelines:
             H = params.get("height", 3.0)
             wall_name = params.get("wall_construction", "Composite 2x4 Wood Stud R11")
             roof_name = params.get("roof_construction", "Composite 2x4 Wood Stud R11")
-            wwr = params.get("wwr", 0.0)
+            
+            # WWR Parsing
+            global_wwr = params.get("wwr", 0.0) # Fallback if AI hallucinates old key
+            wwr_s = params.get("wwr_south", global_wwr)
+            wwr_n = params.get("wwr_north", global_wwr)
+            wwr_e = params.get("wwr_east", global_wwr)
+            wwr_w = params.get("wwr_west", global_wwr)
             
             # Thermodynamic defaults
             people = params.get("people_density", 10.0)
@@ -169,10 +175,10 @@ class AIPipelines:
                 print(f"[AI Assembler] Unknown hvac_type '{hvac_type}', falling back to ideal_loads")
                 hvac_type = "ideal_loads"
 
-            print(f"[AI Assembler] AI Selected -> L:{L}, W:{W}, Wall:{wall_name}, WWR:{wwr}, U:{win_u}, HVAC:{hvac_type}")
+            print(f"[AI Assembler] AI Selected -> L:{L}, W:{W}, Wall:{wall_name}, WWR_S:{wwr_s}, WWR_N:{wwr_n}, U:{win_u}, HVAC:{hvac_type}")
 
-            # 5. Build Geometry (Now passing WWR)
-            geometry_idf = geometry_util.generate_zone_geometry(L, W, H, wwr)
+            # 5. Build Geometry (Now passing directional WWRs)
+            geometry_idf = geometry_util.generate_zone_geometry(L, W, H, wwr_s, wwr_n, wwr_e, wwr_w)
             
             # 6. Extract Dependencies
             extracted_blocks = {}

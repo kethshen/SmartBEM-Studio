@@ -1,6 +1,6 @@
 import os
 
-def generate_zone_geometry(L, W, H, wwr=0.0, zone_name="ZONE ONE"):
+def generate_zone_geometry(L, W, H, wwr_s=0.0, wwr_n=0.0, wwr_e=0.0, wwr_w=0.0, zone_name="ZONE ONE"):
     """
     Generates standard CCW EnergyPlus vertices for a rectangular zone.
     L = Length (X-axis)
@@ -87,22 +87,22 @@ def generate_zone_geometry(L, W, H, wwr=0.0, zone_name="ZONE ONE"):
     # Wall South (Facing -Y)
     v1, v2, v3, v4 = (L, 0, 0), (L, 0, H), (0, 0, H), (0, 0, 0)
     idf_str += make_surface("Wall_South", "Wall", wall_constr, "Outdoors", "SunExposed", "WindExposed", v1, v2, v3, v4)
-    idf_str += make_window("Wall_South", v1, v4, L, H, wwr)
+    idf_str += make_window("Wall_South", v1, v4, L, H, wwr_s)
     
     # Wall East (Facing +X)
     v1, v2, v3, v4 = (L, W, 0), (L, W, H), (L, 0, H), (L, 0, 0)
     idf_str += make_surface("Wall_East", "Wall", wall_constr, "Outdoors", "SunExposed", "WindExposed", v1, v2, v3, v4)
-    idf_str += make_window("Wall_East", v1, v4, W, H, wwr)
+    idf_str += make_window("Wall_East", v1, v4, W, H, wwr_e)
     
     # Wall North (Facing +Y)
     v1, v2, v3, v4 = (0, W, 0), (0, W, H), (L, W, H), (L, W, 0)
     idf_str += make_surface("Wall_North", "Wall", wall_constr, "Outdoors", "SunExposed", "WindExposed", v1, v2, v3, v4)
-    idf_str += make_window("Wall_North", v1, v4, L, H, wwr)
+    idf_str += make_window("Wall_North", v1, v4, L, H, wwr_n)
     
     # Wall West (Facing -X)
     v1, v2, v3, v4 = (0, 0, 0), (0, 0, H), (0, W, H), (0, W, 0)
     idf_str += make_surface("Wall_West", "Wall", wall_constr, "Outdoors", "SunExposed", "WindExposed", v1, v2, v3, v4)
-    idf_str += make_window("Wall_West", v1, v4, W, H, wwr)
+    idf_str += make_window("Wall_West", v1, v4, W, H, wwr_w)
     
     # Roof (Facing +Z)
     idf_str += make_surface("Roof", "Roof", roof_constr, "Outdoors", "SunExposed", "WindExposed", 
@@ -117,6 +117,6 @@ def generate_zone_geometry(L, W, H, wwr=0.0, zone_name="ZONE ONE"):
 if __name__ == "__main__":
     # Test
     print("Testing Geometry generation for a 10m x 8m x 3m house.")
-    geometry_idf = generate_zone_geometry(L=10, W=8, H=3)
+    geometry_idf = generate_zone_geometry(L=10, W=8, H=3, wwr_s=0.2, wwr_n=0.1)
     print(geometry_idf)
     print("Successfully Generated 6 BuildingSurfaces and 1 Zone object!")
