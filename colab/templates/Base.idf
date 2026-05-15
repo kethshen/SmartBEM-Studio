@@ -154,7 +154,7 @@
   People,
     OFFICE_PEOPLE,           !- Name
     ZONE ONE,                !- Zone or ZoneList Name
-    ALWAYS_ON,               !- Number of People Schedule Name
+    {OCCUPANCY_SCH},         !- Number of People Schedule Name
     Area/Person,             !- Number of People Calculation Method
     ,                        !- Number of People
     ,                        !- People per Zone Floor Area {person/m2}
@@ -166,7 +166,7 @@
   Lights,
     OFFICE_LIGHTS,           !- Name
     ZONE ONE,                !- Zone or ZoneList Name
-    ALWAYS_ON,               !- Schedule Name
+    {LIGHTING_SCH},          !- Schedule Name
     Watts/Area,              !- Design Level Calculation Method
     ,                        !- Lighting Level {W}
     {LIGHT_DENSITY},         !- Watts per Zone Floor Area {W/m2}
@@ -179,7 +179,7 @@
   ElectricEquipment,
     OFFICE_EQUIP,            !- Name
     ZONE ONE,                !- Zone or ZoneList Name
-    ALWAYS_ON,               !- Schedule Name
+    {EQUIPMENT_SCH},         !- Schedule Name
     Watts/Area,              !- Design Level Calculation Method
     ,                        !- Design Level {W}
     {EQUIP_DENSITY},         !- Watts per Zone Floor Area {W/m2}
@@ -208,23 +208,7 @@
     HEATING_SETPOINT_SCH,    !- Heating Setpoint Temperature Schedule Name
     COOLING_SETPOINT_SCH;    !- Cooling Setpoint Temperature Schedule Name
 
-  Schedule:Compact,
-    HEATING_SETPOINT_SCH,
-    Any Number,
-    Through: 12/31,
-    For: AllDays,
-    Until: 07:00, {HEAT_UNOCC},
-    Until: 18:00, {HEAT_OCC},
-    Until: 24:00, {HEAT_UNOCC};
-
-  Schedule:Compact,
-    COOLING_SETPOINT_SCH,
-    Any Number,
-    Through: 12/31,
-    For: AllDays,
-    Until: 07:00, {COOL_UNOCC},
-    Until: 18:00, {COOL_OCC},
-    Until: 24:00, {COOL_UNOCC};
+{SCHEDULES_BLOCK}
 
   ZoneInfiltration:DesignFlowRate,
     ZONE ONE Infiltration,   !- Name

@@ -112,6 +112,10 @@ class AIPipelines:
             "   - 'heat_set_occ' (float, Celsius. Default 21.0), 'heat_set_unocc' (float, Celsius. Default 15.0)\n"
             "   - 'cool_set_occ' (float, Celsius. Default 24.0), 'cool_set_unocc' (float, Celsius. Default 28.0)\n"
             "   - 'window_u_factor' (float. Default 3.0), 'window_shgc' (float. Default 0.5)\n"
+            "   - 'occ_weekday_start', 'occ_weekday_end', 'occ_weekend_start', 'occ_weekend_end' (integers 0-24 for occupancy. Default 0, 24, 0, 24. If closed on weekends, set weekend start and end to 0)\n"
+            "   - 'light_weekday_start', 'light_weekday_end', 'light_weekend_start', 'light_weekend_end' (integers 0-24 for lights. Default 0, 24, 0, 24)\n"
+            "   - 'equip_weekday_start', 'equip_weekday_end', 'equip_weekend_start', 'equip_weekend_end' (integers 0-24 for equipment. Default 0, 24, 0, 24)\n"
+            "   - 'hvac_weekday_start', 'hvac_weekday_end', 'hvac_weekend_start', 'hvac_weekend_end' (integers 0-24 for HVAC. Default 7, 18, 7, 18)\n"
             "   - 'hvac_type' (string): The HVAC system type. Pick from: 'ideal_loads', 'ptac', 'psz_ac'.\n"
             "     - 'ideal_loads': Simplified perfect system, best for envelope studies (DEFAULT if user doesn't mention HVAC).\n"
             "     - 'ptac': Packaged Terminal Air Conditioner with DX cooling and electric heating. Best for hotels, small rooms, apartments.\n"
@@ -182,6 +186,73 @@ class AIPipelines:
             win_u = params.get("window_u_factor", 3.0)
             win_shgc = params.get("window_shgc", 0.5)
             hvac_type = params.get("hvac_type", "ideal_loads")
+            
+            # Schedule Parsing
+            occ_wd_start = params.get("occ_weekday_start", 0)
+            occ_wd_end = params.get("occ_weekday_end", 24)
+            occ_we_start = params.get("occ_weekend_start", 0)
+            occ_we_end = params.get("occ_weekend_end", 24)
+            
+            lgt_wd_start = params.get("light_weekday_start", 0)
+            lgt_wd_end = params.get("light_weekday_end", 24)
+            lgt_we_start = params.get("light_weekend_start", 0)
+            lgt_we_end = params.get("light_weekend_end", 24)
+            
+            eqp_wd_start = params.get("equip_weekday_start", 0)
+            eqp_wd_end = params.get("equip_weekday_end", 24)
+            eqp_we_start = params.get("equip_weekend_start", 0)
+            eqp_we_end = params.get("equip_weekend_end", 24)
+            
+            hvac_wd_start = params.get("hvac_weekday_start", 7)
+            hvac_wd_end = params.get("hvac_weekday_end", 18)
+            hvac_we_start = params.get("hvac_weekend_start", 7)
+            hvac_we_end = params.get("hvac_weekend_end", 18)
+            
+            def make_compact_schedule(name, val_off, val_on, wd_s, wd_e, we_s, we_e):
+                wd_s = max(0, min(24, int(wd_s)))
+                wd_e = max(0, min(24, int(wd_e)))
+                we_s = max(0, min(24, int(we_s)))
+                we_e = max(0, min(24, int(we_e)))
+                
+                def day_lines(start, end):
+                    """Return a list of 'Until: HH:00, value' strings for one day-type."""
+                    if start == 0 and end == 0:
+                        return [f"    Until: 24:00, {val_off}"]
+                    elif start == 0 and end == 24:
+                        return [f"    Until: 24:00, {val_on}"]
+                    else:
+                        parts = []
+                        if start > 0:
+                            parts.append(f"    Until: {start:02d}:00, {val_off}")
+                        parts.append(f"    Until: {end:02d}:00, {val_on}")
+                        if end < 24:
+                            parts.append(f"    Until: 24:00, {val_off}")
+                        return parts
+                
+                wd_lines = day_lines(wd_s, wd_e)
+                we_lines = day_lines(we_s, we_e)
+                
+                # Build fields list — all get commas except the very last which gets semicolon
+                fields = []
+                fields.append(f"    {name}")
+                fields.append("    Any Number")
+                fields.append("    Through: 12/31")
+                fields.append("    For: Weekdays SummerDesignDay WinterDesignDay CustomDay1 CustomDay2")
+                fields.extend(wd_lines)
+                fields.append("    For: Weekends Holidays AllOtherDays")
+                fields.extend(we_lines)
+                
+                # Join with comma-newline, last field gets semicolon
+                body = ",\n".join(fields[:-1]) + ",\n" + fields[-1] + ";\n"
+                
+                return "\n  Schedule:Compact,\n" + body + "\n"
+
+            schedules_block = ""
+            schedules_block += make_compact_schedule("OCCUPANCY_SCH", 0, 1, occ_wd_start, occ_wd_end, occ_we_start, occ_we_end)
+            schedules_block += make_compact_schedule("LIGHTING_SCH", 0, 1, lgt_wd_start, lgt_wd_end, lgt_we_start, lgt_we_end)
+            schedules_block += make_compact_schedule("EQUIPMENT_SCH", 0, 1, eqp_wd_start, eqp_wd_end, eqp_we_start, eqp_we_end)
+            schedules_block += make_compact_schedule("HEATING_SETPOINT_SCH", heat_unocc, heat_occ, hvac_wd_start, hvac_wd_end, hvac_we_start, hvac_we_end)
+            schedules_block += make_compact_schedule("COOLING_SETPOINT_SCH", cool_unocc, cool_occ, hvac_wd_start, hvac_wd_end, hvac_we_start, hvac_we_end)
 
             # Validate hvac_type against allowed options
             allowed_hvac = ["ideal_loads", "ptac", "psz_ac"]
@@ -273,6 +344,15 @@ class AIPipelines:
             final_idf = final_idf.replace("{COOL_UNOCC}", str(cool_unocc))
             final_idf = final_idf.replace("{WINDOW_U_FACTOR}", str(win_u))
             final_idf = final_idf.replace("{WINDOW_SHGC}", str(win_shgc))
+            
+            # Inject generated schedules
+            final_idf = final_idf.replace("{SCHEDULES_BLOCK}", schedules_block)
+            
+            # Replace schedule name placeholders in People/Lights/Equipment objects
+            final_idf = final_idf.replace("{OCCUPANCY_SCH}", "OCCUPANCY_SCH")
+            final_idf = final_idf.replace("{LIGHTING_SCH}", "LIGHTING_SCH")
+            final_idf = final_idf.replace("{EQUIPMENT_SCH}", "EQUIPMENT_SCH")
+            
             final_idf = final_idf.replace("{WINDOW_CONSTR}", "Theoretical Glass [167]")
 
             return final_idf
