@@ -321,15 +321,21 @@ function showJobDetails(jobId, data) {
   // Handle "View IDF" Button Visibility
   const btnView = document.getElementById("btnViewIDF");
   const btnSummary = document.getElementById("btnViewIDFSummary");
+  const btn3D = document.getElementById("btnView3D");
   if (btnView && btnSummary) {
     if (data.status === "done") {
       btnView.style.display = "block";
       btnView.onclick = () => viewIDF(jobId);
       btnSummary.style.display = "block";
       btnSummary.onclick = () => viewIDFSummary(jobId);
+      if (btn3D) {
+        btn3D.style.display = "block";
+        btn3D.onclick = () => view3DGeometry(jobId);
+      }
     } else {
       btnView.style.display = "none";
       btnSummary.style.display = "none";
+      if (btn3D) btn3D.style.display = "none";
     }
   }
 
@@ -427,6 +433,26 @@ function viewIDFSummary(jobId) {
 }
 
 // ----------------------------
+// View 3D Geometry (Backend Generated)
+// ----------------------------
+function view3DGeometry(jobId) {
+  const geometryPath = `jobs/${jobId}/geometry.html`;
+  const btn = document.getElementById("btnView3D");
+  if (btn) btn.innerText = "Opening...";
+
+  storage.ref(geometryPath).getDownloadURL()
+    .then((url) => {
+      window.open(url, "_blank");
+      if (btn) btn.innerText = "🧊 View 3D Model";
+    })
+    .catch((error) => {
+      console.error("Error fetching 3D Geometry URL:", error);
+      alert("3D Geometry not available for this job.");
+      if (btn) btn.innerText = "🧊 View 3D Model";
+    });
+}
+
+// ----------------------------
 // Auto-Init on Page Load
 // ----------------------------
 window.addEventListener("load", () => {
@@ -446,3 +472,4 @@ window.loadRuns = loadJobs; // Alias for backward compatibility
 window.toggleSidebar = toggleSidebar;
 window.viewIDF = viewIDF;
 window.viewIDFSummary = viewIDFSummary;
+window.view3DGeometry = view3DGeometry;

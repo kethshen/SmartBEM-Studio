@@ -28,6 +28,7 @@ def run_simulation_job(job_id, idf_path, epw_path, config=None, output_dir_base=
     # Lazy import to avoid loading pyenergyplus before bootstrap
     from eplus.eplus_util import EPlusUtil
     from eplus.sql_explorer import EPlusSqlExplorer
+    from backend import visualizer
     
     # 2. Setup Run Directory
     run_dir = os.path.join(output_dir_base, job_id)
@@ -228,4 +229,13 @@ def run_simulation_job(job_id, idf_path, epw_path, config=None, output_dir_base=
     except Exception as e:
         print(f"[{job_id}] Error generating summary: {e}")
         
+    # 10. Generate 3D HTML
+    try:
+        geometry_path = os.path.join(run_dir, "geometry.html")
+        if visualizer.generate_3d_html(idf_path, geometry_path):
+            results["geometry"] = geometry_path
+            print(f"[{job_id}] Successfully generated geometry.html")
+    except Exception as e:
+        print(f"[{job_id}] Error generating 3D geometry: {e}")
+
     return results
