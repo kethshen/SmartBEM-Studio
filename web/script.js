@@ -319,23 +319,20 @@ function showJobDetails(jobId, data) {
   if (elPath) elPath.innerText = data.resultPath || "Waiting...";
 
   // Handle "View IDF" Button Visibility
+  const actionContainer = document.getElementById("actionButtonsContainer");
   const btnView = document.getElementById("btnViewIDF");
   const btnSummary = document.getElementById("btnViewIDFSummary");
   const btn3D = document.getElementById("btnView3D");
-  if (btnView && btnSummary) {
+  if (actionContainer && btnView && btnSummary) {
     if (data.status === "done") {
-      btnView.style.display = "block";
+      actionContainer.style.display = "flex";
       btnView.onclick = () => viewIDF(jobId);
-      btnSummary.style.display = "block";
       btnSummary.onclick = () => viewIDFSummary(jobId);
       if (btn3D) {
-        btn3D.style.display = "block";
         btn3D.onclick = () => view3DGeometry(jobId);
       }
     } else {
-      btnView.style.display = "none";
-      btnSummary.style.display = "none";
-      if (btn3D) btn3D.style.display = "none";
+      actionContainer.style.display = "none";
     }
   }
 

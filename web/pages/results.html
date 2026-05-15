@@ -115,7 +115,7 @@
             <h2 class="card-title">Selected Job Details</h2>
           </div>
 
-          <div id="runDetails" style="flex: 1; display: flex; flex-direction: column; justify-content: center;">
+          <div id="runDetails" style="flex: 1; display: flex; flex-direction: column; justify-content: center; overflow: hidden;">
             <!-- Placeholder when nothing selected -->
             <div id="detailPlaceholder" style="text-align: center; color: var(--text-secondary);">
               Select a job from the list to view details.
@@ -123,7 +123,7 @@
 
             <!-- Real Details (Hidden by default or populated) -->
             <div id="detailContent"
-              style="display: none; grid-template-columns: auto 1fr; gap: 1rem; font-size: 0.95rem;">
+              style="display: none; grid-template-columns: auto 1fr; gap: 1rem; font-size: 0.95rem; overflow-y: auto; max-height: 100%; padding-right: 0.5rem; align-items: start;">
               <span style="color: var(--text-secondary); font-weight: 500;">Description:</span>
               <span id="detailDescription" style="font-weight: 600;">-</span>
 
@@ -136,26 +136,26 @@
               <span style="color: var(--text-secondary); font-weight: 500;">Output Path:</span>
               <span id="detailPath"
                 style="font-family: var(--font-mono); font-size: 0.85rem; word-break: break-all;">-</span>
-
-              <!-- New View IDF Button -->
-              <span style="grid-column: 1 / -1; margin-top: 1rem; display: flex; gap: 1rem;">
-                <button id="btnViewIDF" class="btn btn-secondary" style="flex: 1; display: none;"
-                  onclick="viewIDF()">
-                  📄 View Full IDF Text
-                </button>
-                <button id="btnViewIDFSummary" class="btn btn-secondary" style="flex: 1; display: none;"
-                  onclick="viewIDFSummary()">
-                  📋 View Object Summary
-                </button>
-                <button id="btnView3D" class="btn btn-secondary" style="flex: 1; display: none;"
-                  onclick="view3DGeometry()">
-                  🧊 View 3D Model
-                </button>
-              </span>
             </div>
           </div>
         </section>
 
+      </div>
+
+      <!-- Row 1.5: Action Buttons -->
+      <div id="actionButtonsContainer" style="display: none; margin-top: 1.5rem; gap: 1rem; width: 100%; flex-direction: row;">
+        <button id="btnViewIDF" class="btn btn-primary" style="flex: 1;"
+          onclick="viewIDF()">
+          View Full IDF Text
+        </button>
+        <button id="btnViewIDFSummary" class="btn btn-primary" style="flex: 1;"
+          onclick="viewIDFSummary()">
+          View Object Summary
+        </button>
+        <button id="btnView3D" class="btn btn-primary" style="flex: 1;"
+          onclick="view3DGeometry()">
+          View 3D Model
+        </button>
       </div>
 
       <!-- Row 2: Result Plots (Grid) -->
