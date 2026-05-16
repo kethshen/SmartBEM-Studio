@@ -111,7 +111,7 @@ def generate_zone_geometry(
     {win_bl_x:.2f}, {win_bl_y:.2f}, {z_bottom:.2f};  !- X,Y,Z ==> Vertex 4
 """
 
-    def make_door(wall_name, v1, v4, wall_width, door_data):
+    def make_door(wall_name, v1, v4, wall_width, wall_height, door_data):
         if not door_data: return ""
         
         if isinstance(door_data, dict):
@@ -119,6 +119,8 @@ def generate_zone_geometry(
             door_h = door_data.get("height", 2.0)
             offset_x = door_data.get("offset_x", 0)
             ref_x = door_data.get("ref_x", "center")
+            offset_z = door_data.get("offset_z", 0)
+            ref_z = door_data.get("ref_z", "bottom")
             
             if ref_x == "left":
                 w_off = wall_width - door_w - offset_x
@@ -126,6 +128,13 @@ def generate_zone_geometry(
                 w_off = offset_x
             else:
                 w_off = (wall_width - door_w) / 2.0
+                
+            if ref_z == "bottom":
+                h_off = offset_z
+            elif ref_z == "top":
+                h_off = wall_height - door_h - offset_z
+            else:
+                h_off = 0 # Default doors to floor level if center or unspecified
         else:
             # Fallback for old string format '1x2.5'
             if "x" not in str(door_data): return ""
@@ -136,6 +145,7 @@ def generate_zone_geometry(
             except:
                 return "" # Invalid format
             w_off = (wall_width - door_w) / 2.0
+            h_off = 0
         
         def interpolate(pA, pB, frac):
             return (pA[0] + (pB[0]-pA[0])*frac, pA[1] + (pB[1]-pA[1])*frac, pA[2] + (pB[2]-pA[2])*frac)
@@ -143,7 +153,7 @@ def generate_zone_geometry(
         win_br_x, win_br_y, win_br_z = interpolate(v1, v4, w_off / wall_width)
         win_bl_x, win_bl_y, win_bl_z = interpolate(v1, v4, (w_off + door_w) / wall_width)
         
-        z_bottom = v1[2] # Floor level
+        z_bottom = v1[2] + h_off
         z_top = z_bottom + door_h
         
         return f"""
@@ -172,25 +182,25 @@ def generate_zone_geometry(
     v1, v2, v3, v4 = (L, 0, 0), (L, 0, H), (0, 0, H), (0, 0, 0)
     idf_str += make_surface("Wall_South", "Wall", wall_s, "Outdoors", "SunExposed", "WindExposed", v1, v2, v3, v4)
     idf_str += make_window("Wall_South", v1, v4, L, H, wwr_s, window_s)
-    idf_str += make_door("Wall_South", v1, v4, L, door_s)
+    idf_str += make_door("Wall_South", v1, v4, L, H, door_s)
     
     # Wall East (Facing +X)
     v1, v2, v3, v4 = (L, W, 0), (L, W, H), (L, 0, H), (L, 0, 0)
     idf_str += make_surface("Wall_East", "Wall", wall_e, "Outdoors", "SunExposed", "WindExposed", v1, v2, v3, v4)
     idf_str += make_window("Wall_East", v1, v4, W, H, wwr_e, window_e)
-    idf_str += make_door("Wall_East", v1, v4, W, door_e)
+    idf_str += make_door("Wall_East", v1, v4, W, H, door_e)
     
     # Wall North (Facing +Y)
     v1, v2, v3, v4 = (0, W, 0), (0, W, H), (L, W, H), (L, W, 0)
     idf_str += make_surface("Wall_North", "Wall", wall_n, "Outdoors", "SunExposed", "WindExposed", v1, v2, v3, v4)
     idf_str += make_window("Wall_North", v1, v4, L, H, wwr_n, window_n)
-    idf_str += make_door("Wall_North", v1, v4, L, door_n)
+    idf_str += make_door("Wall_North", v1, v4, L, H, door_n)
     
     # Wall West (Facing -X)
     v1, v2, v3, v4 = (0, 0, 0), (0, 0, H), (0, W, H), (0, W, 0)
     idf_str += make_surface("Wall_West", "Wall", wall_w, "Outdoors", "SunExposed", "WindExposed", v1, v2, v3, v4)
     idf_str += make_window("Wall_West", v1, v4, W, H, wwr_w, window_w)
-    idf_str += make_door("Wall_West", v1, v4, W, door_w)
+    idf_str += make_door("Wall_West", v1, v4, W, H, door_w)
     
     # Roof (Facing +Z)
     idf_str += make_surface("Roof", "Roof", roof_constr, "Outdoors", "SunExposed", "WindExposed", 
