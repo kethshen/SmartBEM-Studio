@@ -103,7 +103,8 @@ class AIPipelines:
             "   - 'wall_construction' (string, default global wall). 'wall_constr_south', 'wall_constr_north', 'wall_constr_east', 'wall_constr_west' (strings, specific wall constructions. Pick EXACTLY from menu. If not specified, leave empty or same as global)\n"
             "   - 'roof_construction' (string)\n"
             "   - 'wwr_south', 'wwr_north', 'wwr_east', 'wwr_west' (floats between 0 and 1, Window-to-Wall Ratios for each face. Default 0.0. If user gives a single global WWR, set all 4 to that value. If they specify certain walls, apply only to those and set others to 0.0.)\n"
-            "   - 'door_south', 'door_north', 'door_east', 'door_west' (strings, door dimensions like '1x2.5' or empty string '' if no door on that wall. Default '')\n"
+            "   - 'window_south', 'window_north', 'window_east', 'window_west' (objects for custom windows overriding WWR. Schema: {\"width\": float, \"height\": float, \"offset_x\": float, \"ref_x\": \"left\"|\"right\"|\"center\", \"offset_z\": float, \"ref_z\": \"top\"|\"bottom\"|\"center\"} or null. Default null)\n"
+            "   - 'door_south', 'door_north', 'door_east', 'door_west' (objects for custom doors. Schema: {\"width\": float, \"height\": float, \"offset_x\": float, \"ref_x\": \"left\"|\"right\"|\"center\"} or null. Default null)\n"
             "   - 'people_density' (float, m2/person. Default 10.0)\n"
             "   - 'light_density' (float, W/m2. Default 10.0)\n"
             "   - 'equipment_density' (float, W/m2. Default 10.0)\n"
@@ -166,12 +167,16 @@ class AIPipelines:
             wwr_n = params.get("wwr_north", global_wwr)
             wwr_e = params.get("wwr_east", global_wwr)
             wwr_w = params.get("wwr_west", global_wwr)
-            
-            # Door Parsing
-            door_s = params.get("door_south", "")
-            door_n = params.get("door_north", "")
-            door_e = params.get("door_east", "")
-            door_w = params.get("door_west", "")
+
+            window_s = params.get("window_south", None)
+            window_n = params.get("window_north", None)
+            window_e = params.get("window_east", None)
+            window_w = params.get("window_west", None)
+
+            door_s = params.get("door_south", None)
+            door_n = params.get("door_north", None)
+            door_e = params.get("door_east", None)
+            door_w = params.get("door_west", None)
             
             # Thermodynamic defaults
             people = params.get("people_density", 10.0)
@@ -260,14 +265,15 @@ class AIPipelines:
                 print(f"[AI Assembler] Unknown hvac_type '{hvac_type}', falling back to ideal_loads")
                 hvac_type = "ideal_loads"
 
-            print(f"[AI Assembler] AI Selected -> L:{L}, W:{W}, Wall_S:{wall_s}, WWR_S:{wwr_s}, Door_S:'{door_s}', HVAC:{hvac_type}")
+            print(f"[AI Assembler] AI Selected -> L:{L}, W:{W}, Wall_S:{wall_s}, WWR_S:{wwr_s}, Door_S:{door_s}, HVAC:{hvac_type}")
 
-            # 5. Build Geometry (Now passing directional WWRs, Materials, and Doors)
+            # 5. Build Geometry (Now passing directional WWRs, Materials, and custom Windows/Doors)
             geometry_idf = geometry_util.generate_zone_geometry(
                 L, W, H, 
                 wwr_s, wwr_n, wwr_e, wwr_w,
                 wall_s, wall_n, wall_e, wall_w,
-                door_s, door_n, door_e, door_w
+                door_s, door_n, door_e, door_w,
+                window_s, window_n, window_e, window_w
             )
             
             # 6. Extract Dependencies
