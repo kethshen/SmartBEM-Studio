@@ -14,6 +14,79 @@ console.log("Firebase initialized (5-Layer Architecture Mode)");
 document.body.classList.add('js-loaded'); // Mark for CSS if needed
 
 // ----------------------------
+// Weather Index (Global)
+// ----------------------------
+let weatherIndex = []; // Populated on page load from weather_index.json
+
+function loadWeatherIndex() {
+  fetch('../data/weather_index.json')
+    .then(res => res.json())
+    .then(data => {
+      weatherIndex = data;
+      console.log(`[Weather] Loaded ${data.length} stations.`);
+      populateWeatherDatalist();
+    })
+    .catch(err => console.warn('[Weather] Could not load index:', err));
+}
+
+function populateWeatherDatalist() {
+  const datalist = document.getElementById('weatherDatalist');
+  if (!datalist) return;
+  datalist.innerHTML = '';
+  weatherIndex.forEach(entry => {
+    const opt = document.createElement('option');
+    opt.value = entry.title;
+    datalist.appendChild(opt);
+  });
+
+  // When user selects a value, resolve it to the epw_url
+  const searchInput = document.getElementById('weatherSearch');
+  if (searchInput) {
+    searchInput.addEventListener('change', () => {
+      const selected = weatherIndex.find(e => e.title === searchInput.value);
+      const hiddenUrl = document.getElementById('weatherEpwUrl');
+      if (selected && hiddenUrl) {
+        hiddenUrl.value = selected.epw_url;
+        console.log('[Weather] Selected:', selected.title, selected.epw_url);
+      } else if (hiddenUrl) {
+        hiddenUrl.value = ''; // Clear if no match
+      }
+    });
+  }
+}
+
+// ----------------------------
+// Custom EPW Upload to Firebase Storage
+// ----------------------------
+function handleEpwUpload(inputEl) {
+  const file = inputEl.files[0];
+  if (!file) return;
+
+  const statusEl = document.getElementById('epwUploadStatus');
+  if (statusEl) statusEl.textContent = 'Uploading...';
+
+  const timestamp = Date.now();
+  const storagePath = `weather_uploads/${timestamp}_${file.name}`;
+  const storageRef = storage.ref(storagePath);
+
+  storageRef.put(file).then(snapshot => {
+    console.log('[Weather] Uploaded custom EPW to:', storagePath);
+    // Store the Firebase Storage path as the epw_url
+    const hiddenUrl = document.getElementById('weatherEpwUrl');
+    if (hiddenUrl) hiddenUrl.value = `firebase_storage:${storagePath}`;
+    // Clear the search box and show the uploaded filename
+    const searchInput = document.getElementById('weatherSearch');
+    if (searchInput) searchInput.value = `Custom: ${file.name}`;
+    if (statusEl) statusEl.textContent = `Uploaded: ${file.name}`;
+    statusEl.style.color = 'var(--success, green)';
+  }).catch(err => {
+    console.error('[Weather] Upload failed:', err);
+    if (statusEl) statusEl.textContent = 'Upload failed!';
+    statusEl.style.color = 'var(--error, red)';
+  });
+}
+
+// ----------------------------
 // TEST: Firestore write
 // ----------------------------
 // Added 'silent' parameter to suppress alerts for background checks
@@ -79,7 +152,8 @@ function submitDescription() {
     simulationConfig: {
       ...JSON.parse(localStorage.getItem("smartHVAC_config") || "{}"),
       run_type: document.getElementById("simType") ? document.getElementById("simType").value : "design_day",
-      weather_file: document.getElementById("weatherFile") ? document.getElementById("weatherFile").value : "USA_IL_Chicago-OHare.Intl.AP.725300_TMY3.epw"
+      weather_file: "USA_IL_Chicago-OHare.Intl.AP.725300_TMY3.epw", // Default fallback
+      epw_url: document.getElementById("weatherEpwUrl") ? document.getElementById("weatherEpwUrl").value : ""
     },
     resultPath: null,
     errorMessage: null
@@ -457,6 +531,10 @@ window.addEventListener("load", () => {
   if (document.getElementById("runsTable")) {
     loadJobs();
   }
+  // If we are on the NLP page, load the weather index
+  if (document.getElementById("weatherSearch")) {
+    loadWeatherIndex();
+  }
 });
 
 // Expose functions to global scope for HTML onclick
@@ -470,3 +548,4 @@ window.toggleSidebar = toggleSidebar;
 window.viewIDF = viewIDF;
 window.viewIDFSummary = viewIDFSummary;
 window.view3DGeometry = view3DGeometry;
+window.handleEpwUpload = handleEpwUpload;

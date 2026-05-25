@@ -42,7 +42,9 @@ EKF/results/
 EKF/Exp setup/
 colab/RunFiles (1)/
 colab/sim_runs (1)/
-
+graphify-out/
+.agents/
+colab/weather/
 
 #idf
 in.idf

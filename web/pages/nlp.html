@@ -128,13 +128,28 @@
                     </div>
 
                     <div class="form-group">
-                        <label for="weatherFile">Weather Location</label>
-                        <select id="weatherFile">
-                            <option value="USA_IL_Chicago-OHare.Intl.AP.725300_TMY3.epw">Chicago, USA</option>
-                            <option value="GBR_London.Gatwick.037760_IWEC.epw">London, UK</option>
-                            <option value="USA_CA_San.Francisco.Intl.AP.724940_TMY3.epw">San Francisco, USA</option>
-                        </select>
+                        <label for="weatherSearch">Weather Location</label>
+                        <input type="text" id="weatherSearch" list="weatherDatalist"
+                            placeholder="Search 3000+ locations (e.g. Tokyo, Colombo, Chicago...)"
+                            autocomplete="off"
+                            style="width: 100%; padding: 0.6rem; border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); background: var(--bg-app); color: var(--text-primary);">
+                        <datalist id="weatherDatalist"></datalist>
+                        <!-- Hidden field to store the selected EPW URL -->
+                        <input type="hidden" id="weatherEpwUrl" value="">
+
+                        <!-- Custom EPW Upload -->
+                        <div style="margin-top: 0.5rem; display: flex; align-items: center; gap: 0.75rem;">
+                            <label for="epwUpload" class="btn"
+                                style="padding: 0.3rem 0.8rem; font-size: 0.8rem; cursor: pointer; border: 1px dashed var(--primary); background: transparent; color: var(--primary); border-radius: var(--radius-sm);">
+                                📁 Upload Custom .epw
+                            </label>
+                            <input type="file" id="epwUpload" accept=".epw" style="display: none;"
+                                onchange="handleEpwUpload(this)">
+                            <span id="epwUploadStatus"
+                                style="font-size: 0.75rem; color: var(--text-muted);"></span>
+                        </div>
                     </div>
+
 
 
                     <div class="form-group">
