@@ -448,7 +448,6 @@ function showJobDetails(jobId, data) {
       msgInfo.innerText = "Simulation in progress...";
       msgInfo.style.color = "var(--text-secondary)";
     }
-    msgInfo.style.color = "var(--text-secondary)";
   });
 }
 
