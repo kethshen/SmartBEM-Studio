@@ -60,3 +60,7 @@ in.idf
 #drive mount
 .tmp.driveupload
 .tmp.drivedownload
+
+
+desktop.ini
+Desktop.ini
