@@ -449,10 +449,137 @@ function showJobDetails(jobId, data) {
       msgInfo.style.color = "var(--text-secondary)";
     }
   });
+
+  // Multi-zone inline temperature chart
+  if (data.status === "done") {
+    loadAndPlotZoneTemperatures(jobId);
+  }
 }
 
 
 // ----------------------------
+// Multi-Zone Temperature Chart
+// ----------------------------
+const ZONE_CHART_COLORS = [
+  'rgba(54,  162, 235, 1)',   // Blue
+  'rgba(255, 159,  64, 1)',   // Orange
+  'rgba( 75, 192, 100, 1)',   // Green
+  'rgba(255,  99, 132, 1)',   // Pink
+  'rgba(153, 102, 255, 1)',   // Purple
+  'rgba(255, 205,  86, 1)',   // Yellow
+  'rgba( 23, 190, 207, 1)',   // Teal
+  'rgba(188, 143,  52, 1)',   // Brown
+];
+
+let _multiZoneChart = null; // holds Chart.js instance so we can destroy on re-render
+
+function loadAndPlotZoneTemperatures(jobId) {
+  const csvPath = `jobs/${jobId}/results.csv`;
+  const container = document.getElementById('multiZoneChartContainer');
+
+  storage.ref(csvPath).getDownloadURL()
+    .then(url => fetch(url))
+    .then(res => res.text())
+    .then(csvText => {
+      // Parse CSV
+      const rows = csvText.trim().split('\n').map(r => r.split(','));
+      if (rows.length < 2) return;
+
+      const headers = rows[0].map(h => h.trim().replace(/"/g, ''));
+
+      // Find the time column (first column)
+      const timeCol = 0;
+
+      // Find ALL zone temperature columns — keys containing "Zone Air Temperature"
+      const tempCols = [];
+      headers.forEach((h, idx) => {
+        if (h.toLowerCase().includes('zone air temperature')) {
+          tempCols.push({ idx, label: h });
+        }
+      });
+
+      if (tempCols.length === 0) {
+        console.log('[MultiZone Chart] No zone temperature columns found in CSV.');
+        if (container) container.style.display = 'none';
+        return;
+      }
+
+      const timeLabels = rows.slice(1).map(r => r[timeCol] ? r[timeCol].trim() : '');
+
+      const datasets = tempCols.map((col, ci) => ({
+        label: col.label,
+        data: rows.slice(1).map(r => parseFloat(r[col.idx]) || null),
+        borderColor: ZONE_CHART_COLORS[ci % ZONE_CHART_COLORS.length],
+        backgroundColor: ZONE_CHART_COLORS[ci % ZONE_CHART_COLORS.length].replace(', 1)', ', 0.08)'),
+        borderWidth: 2,
+        pointRadius: 0,
+        tension: 0.3,
+        fill: false,
+      }));
+
+      // Show the container and set it up
+      if (!container) return;
+      container.style.display = 'block';
+      container.innerHTML = `
+        <div style="padding: 0.75rem 0 0.5rem;">
+          <h4 style="margin:0 0 0.5rem; color:var(--text-primary); font-size:0.95rem;">
+            🌡️ Zone Air Temperature Comparison
+          </h4>
+          <canvas id="multiZoneCanvas" style="max-height:320px;"></canvas>
+        </div>`;
+
+      const ctx = document.getElementById('multiZoneCanvas').getContext('2d');
+
+      // Destroy previous chart instance if it exists
+      if (_multiZoneChart) {
+        _multiZoneChart.destroy();
+        _multiZoneChart = null;
+      }
+
+      // Check if Chart.js is available; load it on-demand if not
+      const renderChart = () => {
+        _multiZoneChart = new Chart(ctx, {
+          type: 'line',
+          data: { labels: timeLabels, datasets },
+          options: {
+            responsive: true,
+            interaction: { mode: 'index', intersect: false },
+            plugins: {
+              legend: { position: 'top', labels: { boxWidth: 12, font: { size: 11 } } },
+              tooltip: { callbacks: {
+                label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y?.toFixed(2) ?? '-'} °C`
+              }}
+            },
+            scales: {
+              x: {
+                ticks: { maxRotation: 45, font: { size: 10 }, maxTicksLimit: 12 },
+                title: { display: true, text: 'Time', font: { size: 11 } }
+              },
+              y: {
+                title: { display: true, text: 'Temperature (°C)', font: { size: 11 } }
+              }
+            }
+          }
+        });
+      };
+
+      if (typeof Chart !== 'undefined') {
+        renderChart();
+      } else {
+        // Lazy-load Chart.js from CDN
+        const script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js';
+        script.onload = renderChart;
+        document.head.appendChild(script);
+      }
+    })
+    .catch(err => {
+      console.log('[MultiZone Chart] Could not load results CSV:', err);
+      if (container) container.style.display = 'none';
+    });
+}
+window.loadAndPlotZoneTemperatures = loadAndPlotZoneTemperatures;
+
 // ----------------------------
 // IDF Viewer Logic (Server-Side Diff)
 // ----------------------------

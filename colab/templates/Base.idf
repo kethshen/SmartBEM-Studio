@@ -22,6 +22,10 @@
     No,                      !- Do HVAC Sizing Simulation for Sizing Periods
     1;                       !- Maximum Number of HVAC Sizing Simulation Passes
 
+  Sizing:Parameters,
+    1.2,                     !- Heating Sizing Factor
+    1.2;                     !- Cooling Sizing Factor
+
   Site:Location,
     CHICAGO_IL_USA TMY2-94846,  !- Name
     41.78000,                !- Latitude {deg}

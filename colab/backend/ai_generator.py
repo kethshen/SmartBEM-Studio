@@ -98,7 +98,11 @@ class AIPipelines:
             "Your task is to analyze the user's natural language request and output a JSON dictionary containing the building parameters.\n"
             "CRITICAL RULES:\n"
             "1. OUTPUT FORMAT: Return ONLY valid JSON. No markdown wrappers, no explanations.\n"
-            "2. Required JSON keys:\n"
+            "2. ZONE DETECTION: If the user describes a SINGLE room/zone (e.g., 'a 10x8m office'), set 'is_multizone': false and return the SINGLE-ZONE schema. "
+            "If the user describes MULTIPLE rooms/zones (e.g., 'a living room with a bedroom to the north'), set 'is_multizone': true and return the MULTI-ZONE schema.\n\n"
+            "=== SINGLE-ZONE SCHEMA (is_multizone: false) ===\n"
+            "Required JSON keys:\n"
+            "   - 'is_multizone' (boolean, false)\n"
             "   - 'length' (float), 'width' (float), 'height' (float)\n"
             "   - 'wall_construction' (string, default global wall). 'wall_constr_south', 'wall_constr_north', 'wall_constr_east', 'wall_constr_west' (strings, specific wall constructions. Pick EXACTLY from menu. If not specified, leave empty or same as global)\n"
             "   - 'roof_construction' (string)\n"
@@ -120,7 +124,41 @@ class AIPipelines:
             "   - 'hvac_type' (string): The HVAC system type. Pick from: 'ideal_loads', 'ptac', 'psz_ac'.\n"
             "     - 'ideal_loads': Simplified perfect system, best for envelope studies (DEFAULT if user doesn't mention HVAC).\n"
             "     - 'ptac': Packaged Terminal Air Conditioner with DX cooling and electric heating. Best for hotels, small rooms, apartments.\n"
-            "     - 'psz_ac': Packaged Single Zone AC with gas furnace heating and DX cooling. Best for retail, small commercial, warehouses.\n"
+            "     - 'psz_ac': Packaged Single Zone AC with gas furnace heating and DX cooling. Best for retail, small commercial, warehouses.\n\n"
+            "=== MULTI-ZONE SCHEMA (is_multizone: true) ===\n"
+            "Required JSON keys:\n"
+            "   - 'is_multizone' (boolean, true)\n"
+            "   - 'zones' (array of zone objects). Each zone object has:\n"
+            "     - 'name' (string, short snake_case name e.g. 'LivingRoom', 'Bedroom')\n"
+            "     - 'length' (float, X-axis extent in meters)\n"
+            "     - 'width' (float, Y-axis extent in meters)\n"
+            "     - 'height' (float, Z-axis extent in meters)\n"
+            "     - 'relative_to' (string or null): name of the zone this one is attached to. null for the FIRST/anchor zone.\n"
+            "     - 'direction' (string or null): Which wall of 'relative_to' this zone attaches to. Pick from: 'North', 'South', 'East', 'West'. null for anchor zone.\n"
+            "     - 'wall_construction' (string, from menu)\n"
+            "     - 'roof_construction' (string, from menu)\n"
+            "     - 'wwr_south', 'wwr_north', 'wwr_east', 'wwr_west' (floats 0-1. Default 0.0)\n"
+            "     - 'window_south', 'window_north', 'window_east', 'window_west' (custom window objects or null)\n"
+            "     - 'door_south', 'door_north', 'door_east', 'door_west' (custom door objects or null)\n"
+            "     - 'people_density' (float, m2/person. Default 10.0)\n"
+            "     - 'light_density' (float, W/m2. Default 10.0)\n"
+            "     - 'equipment_density' (float, W/m2. Default 10.0)\n"
+            "     - 'ventilation_ach' (float. Default 0.5)\n"
+            "     - 'infiltration_ach' (float. Default 0.5)\n"
+            "     - 'hvac_type' (string): 'ideal_loads', 'ptac', or 'psz_ac'. Default 'ideal_loads'.\n"
+            "     - CRITICAL: DO NOT include any schedules, setpoints, window_u_factor, or window_shgc inside individual zone objects! Those are global root-level keys only. Repeating them inside zones will cause output truncation.\n"
+            "   - 'heat_set_occ', 'heat_set_unocc', 'cool_set_occ', 'cool_set_unocc' (floats, global setpoints shared across all zones)\n"
+            "   - 'window_u_factor', 'window_shgc' (floats, global)\n"
+            "   - 'occ_weekday_start', 'occ_weekday_end', 'occ_weekend_start', 'occ_weekend_end' (integers, global occupancy schedule)\n"
+            "   - 'light_weekday_start', 'light_weekday_end', 'light_weekend_start', 'light_weekend_end' (integers, global light schedule)\n"
+            "   - 'equip_weekday_start', 'equip_weekday_end', 'equip_weekend_start', 'equip_weekend_end' (integers, global equipment schedule)\n"
+            "   - 'hvac_weekday_start', 'hvac_weekday_end', 'hvac_weekend_start', 'hvac_weekend_end' (integers, global hvac schedule)\n\n"
+            "IMPORTANT MULTI-ZONE RULES:\n"
+            "   - The FIRST zone in the array is the ANCHOR zone (relative_to=null, direction=null).\n"
+            "   - All subsequent zones MUST reference an existing zone by name in 'relative_to'.\n"
+            "   - Adjacent zones share a wall. The shared dimension MUST match (e.g., if Bedroom is North of LivingRoom, both must have the same 'length').\n"
+            "   - DO NOT compute coordinates. Python will compute all coordinates from relative_to and direction.\n"
+            "   - CRITICAL: DO NOT duplicate/repeat schedule or setpoint fields (like occ_weekday_start, heat_set_occ, window_u_factor, etc.) inside the zone objects. Keep them strictly at the global root level only.\n\n"
             "3. For the construction keys, you MUST pick the closest matching name from this exact menu array:\n"
             f"{construction_menu}\n"
         )
@@ -148,7 +186,26 @@ class AIPipelines:
             json_output = json_output.replace("```json", "").replace("```", "").strip()
             
             # 4. Parse AI Parameters
-            params = json.loads(json_output)
+            try:
+                params = json.loads(json_output)
+            except json.JSONDecodeError as je:
+                print(f"[AI] Initial JSON parse failed: {je}. Attempting repair...")
+                try:
+                    params = self._repair_truncated_json(json_output)
+                    print("[AI] JSON successfully repaired and parsed!")
+                except Exception as re:
+                    print(f"[AI] Repair failed: {re}")
+                    raise je
+            
+            # ========== MULTI-ZONE vs SINGLE-ZONE ROUTER ==========
+            is_multizone = params.get("is_multizone", False)
+            
+            if is_multizone:
+                print("[AI Assembler] *** MULTI-ZONE mode detected ***")
+                return self._assemble_multizone_idf(params, config, construction_menu, index_data, idf_extractor)
+            
+            # ========== SINGLE-ZONE PATH (existing, untouched) ==========
+            print("[AI Assembler] Single-zone mode")
             L = params.get("length", 10.0)
             W = params.get("width", 10.0)
             H = params.get("height", 3.0)
@@ -214,10 +271,10 @@ class AIPipelines:
             hvac_we_end = params.get("hvac_weekend_end", 18)
             
             def make_compact_schedule(name, val_off, val_on, wd_s, wd_e, we_s, we_e):
-                wd_s = max(0, min(24, int(wd_s)))
-                wd_e = max(0, min(24, int(wd_e)))
-                we_s = max(0, min(24, int(we_s)))
-                we_e = max(0, min(24, int(we_e)))
+                wd_s = max(0, min(24, int(wd_s if wd_s is not None else 0)))
+                wd_e = max(0, min(24, int(wd_e if wd_e is not None else 24)))
+                we_s = max(0, min(24, int(we_s if we_s is not None else 0)))
+                we_e = max(0, min(24, int(we_e if we_e is not None else 24)))
                 
                 def day_lines(start, end):
                     """Return a list of 'Until: HH:00, value' strings for one day-type."""
@@ -424,10 +481,14 @@ class AIPipelines:
             
         try:
             # Using gemma3:4b since it successfully downloaded to your drive!
-            response = ollama.chat(model='gemma3:4b', messages=[
-                {"role": "system", "content": system},
-                {"role": "user", "content": user}
-            ])
+            response = ollama.chat(
+                model='gemma3:4b', 
+                messages=[
+                    {"role": "system", "content": system},
+                    {"role": "user", "content": user}
+                ],
+                options={"num_ctx": 8192, "num_predict": 4096}
+            )
             content = response['message']['content']
             return self._sanitize_output(content)
         except Exception as e:
@@ -471,6 +532,357 @@ class AIPipelines:
         if clean.endswith("```"):
             clean = clean[:-3]
         return clean.strip()
+
+    def _repair_truncated_json(self, s):
+        """Attempts to repair a truncated JSON string and parse it."""
+        s = s.strip()
+        try:
+            return json.loads(s)
+        except json.JSONDecodeError:
+            pass
+
+        def close_brackets(prefix):
+            open_stack = []
+            in_string = False
+            escaped = False
+            i = 0
+            while i < len(prefix):
+                c = prefix[i]
+                if escaped:
+                    escaped = False
+                    i += 1
+                    continue
+                if c == '\\':
+                    escaped = True
+                    i += 1
+                    continue
+                if c == '"':
+                    in_string = not in_string
+                    i += 1
+                    continue
+                if not in_string:
+                    if c == '{' or c == '[':
+                        open_stack.append(c)
+                    elif c == '}':
+                        if open_stack and open_stack[-1] == '{':
+                            open_stack.pop()
+                    elif c == ']':
+                        if open_stack and open_stack[-1] == '[':
+                            open_stack.pop()
+                i += 1
+                
+            closure = ""
+            if in_string:
+                closure += '"'
+                
+            for item in reversed(open_stack):
+                if item == '{':
+                    closure += '}'
+                elif item == '[':
+                    closure += ']'
+            return closure
+
+        search_limit = min(len(s), 1500)
+        for offset in range(search_limit):
+            length = len(s) - offset
+            prefix = s[:length]
+            closure = close_brackets(prefix)
+            candidate = prefix + closure
+            try:
+                return json.loads(candidate)
+            except json.JSONDecodeError:
+                continue
+                
+        raise ValueError("Could not repair JSON")
+
+    def _assemble_multizone_idf(self, params, config, construction_menu, index_data, idf_extractor):
+        """
+        Assembles a multi-zone IDF from the AI's JSON output.
+        Called when is_multizone is True.
+        """
+        import sys
+        sys.path.append(os.path.dirname(__file__))
+        import geometry_util
+
+        zones = params.get("zones", [])
+        if not zones:
+            return "! Error: Multi-zone mode selected but no zones array found in AI output."
+
+        print(f"[AI Assembler MZ] Processing {len(zones)} zones...")
+
+        # --- Global parameters (shared across zones) ---
+        heat_occ = params.get("heat_set_occ", 21.0)
+        heat_unocc = params.get("heat_set_unocc", 15.0)
+        cool_occ = params.get("cool_set_occ", 24.0)
+        cool_unocc = params.get("cool_set_unocc", 28.0)
+        win_u = params.get("window_u_factor", 3.0)
+        win_shgc = params.get("window_shgc", 0.5)
+
+        # Schedule Parsing (global)
+        occ_wd_start = params.get("occ_weekday_start", 0)
+        occ_wd_end = params.get("occ_weekday_end", 24)
+        occ_we_start = params.get("occ_weekend_start", 0)
+        occ_we_end = params.get("occ_weekend_end", 24)
+
+        lgt_wd_start = params.get("light_weekday_start", 0)
+        lgt_wd_end = params.get("light_weekday_end", 24)
+        lgt_we_start = params.get("light_weekend_start", 0)
+        lgt_we_end = params.get("light_weekend_end", 24)
+
+        eqp_wd_start = params.get("equip_weekday_start", 0)
+        eqp_wd_end = params.get("equip_weekday_end", 24)
+        eqp_we_start = params.get("equip_weekend_start", 0)
+        eqp_we_end = params.get("equip_weekend_end", 24)
+
+        hvac_wd_start = params.get("hvac_weekday_start", 7)
+        hvac_wd_end = params.get("hvac_weekday_end", 18)
+        hvac_we_start = params.get("hvac_weekend_start", 7)
+        hvac_we_end = params.get("hvac_weekend_end", 18)
+
+        # --- Schedules (same helper as single-zone) ---
+        def make_compact_schedule(name, val_off, val_on, wd_s, wd_e, we_s, we_e):
+            wd_s = max(0, min(24, int(wd_s if wd_s is not None else 0)))
+            wd_e = max(0, min(24, int(wd_e if wd_e is not None else 24)))
+            we_s = max(0, min(24, int(we_s if we_s is not None else 0)))
+            we_e = max(0, min(24, int(we_e if we_e is not None else 24)))
+
+            def day_lines(start, end):
+                if start == 0 and end == 0:
+                    return [f"    Until: 24:00, {val_off}"]
+                elif start == 0 and end == 24:
+                    return [f"    Until: 24:00, {val_on}"]
+                else:
+                    parts = []
+                    if start > 0:
+                        parts.append(f"    Until: {start:02d}:00, {val_off}")
+                    parts.append(f"    Until: {end:02d}:00, {val_on}")
+                    if end < 24:
+                        parts.append(f"    Until: 24:00, {val_off}")
+                    return parts
+
+            wd_lines = day_lines(wd_s, wd_e)
+            we_lines = day_lines(we_s, we_e)
+
+            fields = []
+            fields.append(f"    {name}")
+            fields.append("    Any Number")
+            fields.append("    Through: 12/31")
+            fields.append("    For: Weekdays SummerDesignDay WinterDesignDay CustomDay1 CustomDay2")
+            fields.extend(wd_lines)
+            fields.append("    For: Weekends Holidays AllOtherDays")
+            fields.extend(we_lines)
+
+            body = ",\n".join(fields[:-1]) + ",\n" + fields[-1] + ";\n"
+            return "\n  Schedule:Compact,\n" + body + "\n"
+
+        schedules_block = ""
+        schedules_block += make_compact_schedule("OCCUPANCY_SCH", 0, 1, occ_wd_start, occ_wd_end, occ_we_start, occ_we_end)
+        schedules_block += make_compact_schedule("LIGHTING_SCH", 0, 1, lgt_wd_start, lgt_wd_end, lgt_we_start, lgt_we_end)
+        schedules_block += make_compact_schedule("EQUIPMENT_SCH", 0, 1, eqp_wd_start, eqp_wd_end, eqp_we_start, eqp_we_end)
+        schedules_block += make_compact_schedule("HEATING_SETPOINT_SCH", heat_unocc, heat_occ, hvac_wd_start, hvac_wd_end, hvac_we_start, hvac_we_end)
+        schedules_block += make_compact_schedule("COOLING_SETPOINT_SCH", cool_unocc, cool_occ, hvac_wd_start, hvac_wd_end, hvac_we_start, hvac_we_end)
+
+        # --- Step 2: Resolve zone origins from relative layout ---
+        zone_origins = geometry_util.resolve_zone_origins(zones)
+        print(f"[AI Assembler MZ] Zone origins: {zone_origins}")
+
+        # --- Step 3: Generate multi-zone geometry with adjacencies ---
+        geometry_idf, adjacency_info = geometry_util.generate_multizone_geometry(zones, zone_origins)
+
+        # --- Step 4: Extract material dependencies ---
+        extracted_blocks = {}
+        all_wall_names = set()
+        for z in zones:
+            all_wall_names.add(z.get("wall_construction") or "Composite 2x4 Wood Stud R11")
+            all_wall_names.add(z.get("roof_construction") or "Composite 2x4 Wood Stud R11")
+        for w_name in all_wall_names:
+            idf_extractor.resolve_dependencies("Construction", w_name, extracted_blocks)
+
+        # --- Step 5: Load HVAC templates for each zone ---
+        hvac_idf_block = ""
+        hvac_template_dir = os.path.join(os.path.dirname(__file__), "..", "templates", "hvac")
+        for z in zones:
+            zone_hvac = z.get("hvac_type", "ideal_loads")
+            allowed_hvac = ["ideal_loads", "ptac", "psz_ac"]
+            if zone_hvac not in allowed_hvac:
+                zone_hvac = "ideal_loads"
+
+            hvac_template_path = os.path.join(hvac_template_dir, f"{zone_hvac}.idf")
+            if os.path.exists(hvac_template_path):
+                with open(hvac_template_path, "r", encoding="utf-8") as hf:
+                    zone_hvac_block = hf.read()
+                zone_hvac_block = zone_hvac_block.replace("{ZONE_NAME}", z["name"])
+                hvac_idf_block += zone_hvac_block + "\n"
+            else:
+                fallback_path = os.path.join(hvac_template_dir, "ideal_loads.idf")
+                if os.path.exists(fallback_path):
+                    with open(fallback_path, "r", encoding="utf-8") as hf:
+                        zone_hvac_block = hf.read()
+                    zone_hvac_block = zone_hvac_block.replace("{ZONE_NAME}", z["name"])
+                    hvac_idf_block += zone_hvac_block + "\n"
+
+        # --- Step 6: Generate per-zone People/Lights/Equipment/Infiltration/Ventilation/Thermostat ---
+        zone_objects_block = ""
+        for z in zones:
+            zn = z["name"]
+            z_people = z.get("people_density", 10.0)
+            z_lights = z.get("light_density", 10.0)
+            z_equip = z.get("equipment_density", 10.0)
+            z_infil = z.get("infiltration_ach", 0.5)
+            z_vent = z.get("ventilation_ach", 0.5)
+
+            zone_objects_block += f"""
+  People,
+    {zn}_PEOPLE,              !- Name
+    {zn},                     !- Zone or ZoneList Name
+    OCCUPANCY_SCH,            !- Number of People Schedule Name
+    Area/Person,              !- Number of People Calculation Method
+    ,                         !- Number of People
+    ,                         !- People per Zone Floor Area {{person/m2}}
+    {z_people},               !- Zone Floor Area per Person {{m2/person}}
+    0.3,                      !- Fraction Radiant
+    ,                         !- Sensible Heat Fraction
+    ACTIVITY_SCH;             !- Activity Level Schedule Name
+
+  Lights,
+    {zn}_LIGHTS,              !- Name
+    {zn},                     !- Zone or ZoneList Name
+    LIGHTING_SCH,             !- Schedule Name
+    Watts/Area,               !- Design Level Calculation Method
+    ,                         !- Lighting Level {{W}}
+    {z_lights},               !- Watts per Zone Floor Area {{W/m2}}
+    ,                         !- Watts per Person {{W/person}}
+    0,                        !- Return Air Fraction
+    0.42,                     !- Fraction Radiant
+    0.18,                     !- Fraction Visible
+    1;                        !- Fraction Replaceable
+
+  ElectricEquipment,
+    {zn}_EQUIP,               !- Name
+    {zn},                     !- Zone or ZoneList Name
+    EQUIPMENT_SCH,            !- Schedule Name
+    Watts/Area,               !- Design Level Calculation Method
+    ,                         !- Design Level {{W}}
+    {z_equip},                !- Watts per Zone Floor Area {{W/m2}}
+    ,                         !- Watts per Person {{W/person}}
+    0,                        !- Fraction Latent
+    0.3,                      !- Fraction Radiant
+    0,                        !- Fraction Lost
+    General;                  !- End-Use Subcategory
+
+  ZoneInfiltration:DesignFlowRate,
+    {zn}_Infiltration,        !- Name
+    {zn},                     !- Zone or ZoneList Name
+    ALWAYS_ON,                !- Schedule Name
+    AirChanges/Hour,          !- Design Flow Rate Calculation Method
+    ,                         !- Design Flow Rate {{m3/s}}
+    ,                         !- Flow per Zone Floor Area {{m3/s-m2}}
+    ,                         !- Flow per Exterior Surface Area {{m3/s-m2}}
+    {z_infil};                !- Air Changes per Hour {{1/hr}}
+
+  DesignSpecification:OutdoorAir,
+    {zn}_OA,                  !- Name
+    AirChanges/Hour,          !- Outdoor Air Method
+    0,                        !- Outdoor Air Flow per Person {{m3/s-person}}
+    0,                        !- Outdoor Air Flow per Zone Floor Area {{m3/s-m2}}
+    0,                        !- Outdoor Air Flow per Zone {{m3/s}}
+    {z_vent};                 !- Outdoor Air Flow Air Changes per Hour {{1/hr}}
+
+  ZoneControl:Thermostat,
+    {zn}_Thermostat,          !- Name
+    {zn},                     !- Zone or ZoneList Name
+    ALWAYS 4,                 !- Control Type Schedule Name
+    ThermostatSetpoint:DualSetpoint,  !- Control 1 Object Type
+    {zn}_DualSP;              !- Control 1 Name
+
+  ThermostatSetpoint:DualSetpoint,
+    {zn}_DualSP,              !- Name
+    HEATING_SETPOINT_SCH,     !- Heating Setpoint Temperature Schedule Name
+    COOLING_SETPOINT_SCH;     !- Cooling Setpoint Temperature Schedule Name
+"""
+
+        # --- Step 7: Stitch together the final IDF ---
+        # Use base template but strip the single-zone People/Lights/Equipment/Infiltration/Ventilation/Thermostat
+        # since we generate per-zone versions above
+        base_idf = self.base_idf
+        # Remove single-zone objects from Base.idf (they are replaced by per-zone ones)
+        # We do this by replacing them with empty strings
+        import re
+        # Remove People object
+        base_idf = re.sub(r'\n\s*People,.*?;', '', base_idf, flags=re.DOTALL)
+        # Remove Lights object
+        base_idf = re.sub(r'\n\s*Lights,.*?;', '', base_idf, flags=re.DOTALL)
+        # Remove ElectricEquipment object
+        base_idf = re.sub(r'\n\s*ElectricEquipment,.*?;', '', base_idf, flags=re.DOTALL)
+        # Remove ZoneInfiltration
+        base_idf = re.sub(r'\n\s*ZoneInfiltration:DesignFlowRate,.*?;', '', base_idf, flags=re.DOTALL)
+        # Remove DesignSpecification:OutdoorAir
+        base_idf = re.sub(r'\n\s*DesignSpecification:OutdoorAir,.*?;', '', base_idf, flags=re.DOTALL)
+        # Remove ZoneControl:Thermostat
+        base_idf = re.sub(r'\n\s*ZoneControl:Thermostat,.*?;', '', base_idf, flags=re.DOTALL)
+        # Remove ThermostatSetpoint:DualSetpoint
+        base_idf = re.sub(r'\n\s*ThermostatSetpoint:DualSetpoint,.*?;', '', base_idf, flags=re.DOTALL)
+
+        final_idf = base_idf + "\n\n"
+        for block in extracted_blocks.values():
+            final_idf += block + "\n\n"
+
+        final_idf += geometry_idf + "\n\n"
+        final_idf += zone_objects_block + "\n\n"
+
+        # Replace HVAC placeholder
+        final_idf = final_idf.replace("{HVAC_SYSTEM_BLOCK}", hvac_idf_block)
+
+        # Inject generic door construction if needed
+        door_constr_block = """
+  Material,
+    Generic_Door_Material,   !- Name
+    Smooth,                  !- Roughness
+    0.05,                    !- Thickness {m}
+    0.15,                    !- Conductivity {W/m-K}
+    600,                     !- Density {kg/m3}
+    1000,                    !- Specific Heat {J/kg-K}
+    0.9,                     !- Thermal Absorptance
+    0.7,                     !- Solar Absorptance
+    0.7;                     !- Visible Absorptance
+
+  Construction,
+    Generic_Door_Constr,     !- Name
+    Generic_Door_Material;   !- Outside Layer
+"""
+        final_idf = final_idf.replace("{EXTERIOR_DOOR_CONSTR}", "Generic_Door_Constr")
+        if "Generic_Door_Constr" in final_idf and "Generic_Door_Material" not in final_idf:
+            final_idf += door_constr_block
+
+        # Global replacements
+        global_wall = zones[0].get("wall_construction") or "Composite 2x4 Wood Stud R11"
+        roof_name = zones[0].get("roof_construction") or "Composite 2x4 Wood Stud R11"
+        final_idf = final_idf.replace("{EXTERIOR_WALL_CONSTR}", global_wall)
+        final_idf = final_idf.replace("{ROOF_CONSTR}", roof_name)
+        final_idf = final_idf.replace("{FLOOR_CONSTR}", global_wall)
+        final_idf = final_idf.replace("{WINDOW_CONSTR}", "Theoretical Glass [167]")
+
+        final_idf = final_idf.replace("{WINDOW_U_FACTOR}", str(win_u))
+        final_idf = final_idf.replace("{WINDOW_SHGC}", str(win_shgc))
+
+        final_idf = final_idf.replace("{SCHEDULES_BLOCK}", schedules_block)
+        final_idf = final_idf.replace("{OCCUPANCY_SCH}", "OCCUPANCY_SCH")
+        final_idf = final_idf.replace("{LIGHTING_SCH}", "LIGHTING_SCH")
+        final_idf = final_idf.replace("{EQUIPMENT_SCH}", "EQUIPMENT_SCH")
+
+        # Remove any remaining single-zone placeholders that are now unused
+        final_idf = final_idf.replace("{PEOPLE_DENSITY}", "10.0")
+        final_idf = final_idf.replace("{LIGHT_DENSITY}", "10.0")
+        final_idf = final_idf.replace("{EQUIP_DENSITY}", "10.0")
+        final_idf = final_idf.replace("{INFILTRATION_ACH}", "0.5")
+        final_idf = final_idf.replace("{VENTILATION_ACH}", "0.5")
+        final_idf = final_idf.replace("{HEAT_OCC}", str(heat_occ))
+        final_idf = final_idf.replace("{HEAT_UNOCC}", str(heat_unocc))
+        final_idf = final_idf.replace("{COOL_OCC}", str(cool_occ))
+        final_idf = final_idf.replace("{COOL_UNOCC}", str(cool_unocc))
+
+        print(f"[AI Assembler MZ] Final IDF: {len(final_idf)} chars, {len(zones)} zones")
+        return final_idf
 
     def test_connections(self, check_openai=True, check_gemini=True, check_hf=True):
         """Tests connectivity to APIs based on flags."""

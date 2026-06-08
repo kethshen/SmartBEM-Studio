@@ -1,360 +1,364 @@
 ! ============================================================================
 ! HVAC Template: Packaged Single Zone AC (PSZ-AC)
-! Description: A central air handling unit with gas furnace heating, DX cooling,
-!              outdoor air economizer, and constant volume fan. Common in retail
-!              stores, small commercial buildings, and warehouses.
-! Complexity: Medium (uses AirLoopHVAC but no plant loops)
-! Based on: EnergyPlus Example - SmOffPSZ.idf
+! Description: A dedicated central air handling unit with gas furnace heating,
+!              DX cooling, outdoor air economizer, and constant volume fan.
+!              One INSTANCE of this template is included PER ZONE.
+!              ALL object names are prefixed with {ZONE_NAME} so that the
+!              template can be duplicated N times without any name collisions.
+! Compatible: EnergyPlus 25.1+
 ! ============================================================================
 
-! --- Sizing ---
+! NOTE: Sizing:Parameters is intentionally EXCLUDED here.
+!       It is a global object and must appear exactly once in Base.idf.
 
-  Sizing:Parameters,
-    1.2,                     !- Heating Sizing Factor
-    1.2,                     !- Cooling Sizing Factor
-    ;                        !- Timesteps in Averaging Window
+! --- Zone Sizing ---
 
   Sizing:Zone,
-    {ZONE_NAME},             !- Zone or ZoneList Name
-    SupplyAirTemperature,    !- Zone Cooling Design Supply Air Temperature Input Method
-    12.8,                    !- Zone Cooling Design Supply Air Temperature {C}
-    ,                        !- Zone Cooling Design Supply Air Temperature Difference {deltaC}
-    SupplyAirTemperature,    !- Zone Heating Design Supply Air Temperature Input Method
-    40.0,                    !- Zone Heating Design Supply Air Temperature {C}
-    ,                        !- Zone Heating Design Supply Air Temperature Difference {deltaC}
-    0.008,                   !- Zone Cooling Design Supply Air Humidity Ratio {kgWater/kgDryAir}
-    0.008,                   !- Zone Heating Design Supply Air Humidity Ratio {kgWater/kgDryAir}
-    PSZ OA Spec,             !- Design Specification Outdoor Air Object Name
-    0.0,                     !- Zone Heating Sizing Factor
-    0.0;                     !- Zone Cooling Sizing Factor
+    {ZONE_NAME},                          !- Zone or ZoneList Name
+    SupplyAirTemperature,                 !- Zone Cooling Design Supply Air Temperature Input Method
+    12.8,                                 !- Zone Cooling Design Supply Air Temperature {C}
+    ,                                     !- Zone Cooling Design Supply Air Temperature Difference {deltaC}
+    SupplyAirTemperature,                 !- Zone Heating Design Supply Air Temperature Input Method
+    40.0,                                 !- Zone Heating Design Supply Air Temperature {C}
+    ,                                     !- Zone Heating Design Supply Air Temperature Difference {deltaC}
+    0.008,                                !- Zone Cooling Design Supply Air Humidity Ratio {kgWater/kgDryAir}
+    0.008,                                !- Zone Heating Design Supply Air Humidity Ratio {kgWater/kgDryAir}
+    {ZONE_NAME} PSZ OA Spec,             !- Design Specification Outdoor Air Object Name
+    0.0,                                  !- Zone Heating Sizing Factor
+    0.0;                                  !- Zone Cooling Sizing Factor
+
+! --- Outdoor Air Specification ---
 
   DesignSpecification:OutdoorAir,
-    PSZ OA Spec,             !- Name
-    flow/person,             !- Outdoor Air Method
-    0.00944,                 !- Outdoor Air Flow per Person {m3/s-person}
-    0.0,                     !- Outdoor Air Flow per Zone Floor Area {m3/s-m2}
-    0.0;                     !- Outdoor Air Flow per Zone {m3/s}
+    {ZONE_NAME} PSZ OA Spec,             !- Name
+    flow/person,                          !- Outdoor Air Method
+    0.00944,                              !- Outdoor Air Flow per Person {m3/s-person}
+    0.0,                                  !- Outdoor Air Flow per Zone Floor Area {m3/s-m2}
+    0.0;                                  !- Outdoor Air Flow per Zone {m3/s}
+
+! --- System Sizing ---
 
   Sizing:System,
-    PSZ Air Loop,            !- AirLoop Name
-    Sensible,                !- Type of Load to Size On
-    autosize,                !- Design Outdoor Air Flow Rate {m3/s}
-    0.3,                     !- Central Heating Maximum System Air Flow Ratio
-    7.0,                     !- Preheat Design Temperature {C}
-    0.008,                   !- Preheat Design Humidity Ratio {kgWater/kgDryAir}
-    11.0,                    !- Precool Design Temperature {C}
-    0.008,                   !- Precool Design Humidity Ratio {kgWater/kgDryAir}
-    12.8,                    !- Central Cooling Design Supply Air Temperature {C}
-    40.0,                    !- Central Heating Design Supply Air Temperature {C}
-    NonCoincident,           !- Type of Zone Sum to Use
-    No,                      !- 100% Outdoor Air in Cooling
-    No,                      !- 100% Outdoor Air in Heating
-    0.008,                   !- Central Cooling Design Supply Air Humidity Ratio {kgWater/kgDryAir}
-    0.008,                   !- Central Heating Design Supply Air Humidity Ratio {kgWater/kgDryAir}
-    DesignDay,               !- Cooling Supply Air Flow Rate Method
-    0,                       !- Cooling Supply Air Flow Rate {m3/s}
-    ,                        !- Cooling Supply Air Flow Rate Per Floor Area {m3/s-m2}
-    ,                        !- Cooling Fraction of Autosized Cooling Supply Air Flow Rate
-    ,                        !- Cooling Supply Air Flow Rate Per Unit Cooling Capacity {m3/s-W}
-    DesignDay,               !- Heating Supply Air Flow Rate Method
-    0,                       !- Heating Supply Air Flow Rate {m3/s}
-    ,                        !- Heating Supply Air Flow Rate Per Floor Area {m3/s-m2}
-    ,                        !- Heating Fraction of Autosized Heating Supply Air Flow Rate
-    ,                        !- Heating Fraction of Autosized Cooling Supply Air Flow Rate
-    ,                        !- Heating Supply Air Flow Rate Per Unit Heating Capacity {m3/s-W}
-    ;                        !- System Outdoor Air Method
+    {ZONE_NAME} PSZ Air Loop,            !- AirLoop Name
+    Sensible,                             !- Type of Load to Size On
+    autosize,                             !- Design Outdoor Air Flow Rate {m3/s}
+    0.3,                                  !- Central Heating Maximum System Air Flow Ratio
+    7.0,                                  !- Preheat Design Temperature {C}
+    0.008,                                !- Preheat Design Humidity Ratio {kgWater/kgDryAir}
+    11.0,                                 !- Precool Design Temperature {C}
+    0.008,                                !- Precool Design Humidity Ratio {kgWater/kgDryAir}
+    12.8,                                 !- Central Cooling Design Supply Air Temperature {C}
+    40.0,                                 !- Central Heating Design Supply Air Temperature {C}
+    NonCoincident,                        !- Type of Zone Sum to Use
+    No,                                   !- 100% Outdoor Air in Cooling
+    No,                                   !- 100% Outdoor Air in Heating
+    0.008,                                !- Central Cooling Design Supply Air Humidity Ratio {kgWater/kgDryAir}
+    0.008,                                !- Central Heating Design Supply Air Humidity Ratio {kgWater/kgDryAir}
+    DesignDay,                            !- Cooling Supply Air Flow Rate Method
+    0,                                    !- Cooling Supply Air Flow Rate {m3/s}
+    ,                                     !- Cooling Supply Air Flow Rate Per Floor Area {m3/s-m2}
+    ,                                     !- Cooling Fraction of Autosized Cooling Supply Air Flow Rate
+    ,                                     !- Cooling Supply Air Flow Rate Per Unit Cooling Capacity {m3/s-W}
+    DesignDay,                            !- Heating Supply Air Flow Rate Method
+    0,                                    !- Heating Supply Air Flow Rate {m3/s}
+    ,                                     !- Heating Supply Air Flow Rate Per Floor Area {m3/s-m2}
+    ,                                     !- Heating Fraction of Autosized Heating Supply Air Flow Rate
+    ,                                     !- Heating Fraction of Autosized Cooling Supply Air Flow Rate
+    ,                                     !- Heating Supply Air Flow Rate Per Unit Heating Capacity {m3/s-W}
+    ;                                     !- System Outdoor Air Method
 
-! --- Zone Equipment ---
+! --- Zone Equipment Connections ---
 
   ZoneHVAC:EquipmentConnections,
-    {ZONE_NAME},             !- Zone Name
-    {ZONE_NAME} PSZ Equipment,  !- Zone Conditioning Equipment List Name
-    {ZONE_NAME} PSZ Supply Inlet,  !- Zone Air Inlet Node or NodeList Name
-    ,                        !- Zone Air Exhaust Node or NodeList Name
-    {ZONE_NAME} Air Node,    !- Zone Air Node Name
-    {ZONE_NAME} Return Node; !- Zone Return Air Node or NodeList Name
+    {ZONE_NAME},                          !- Zone Name
+    {ZONE_NAME} PSZ Equipment,           !- Zone Conditioning Equipment List Name
+    {ZONE_NAME} PSZ Supply Inlet,        !- Zone Air Inlet Node or NodeList Name
+    ,                                     !- Zone Air Exhaust Node or NodeList Name
+    {ZONE_NAME} Air Node,                !- Zone Air Node Name
+    {ZONE_NAME} Return Node;             !- Zone Return Air Node or NodeList Name
 
   ZoneHVAC:EquipmentList,
-    {ZONE_NAME} PSZ Equipment,  !- Name
-    SequentialLoad,          !- Load Distribution Scheme
-    ZoneHVAC:AirDistributionUnit,  !- Zone Equipment 1 Object Type
-    {ZONE_NAME} PSZ ADU,     !- Zone Equipment 1 Name
-    1,                       !- Zone Equipment 1 Cooling Sequence
-    1,                       !- Zone Equipment 1 Heating or No-Load Sequence
-    ,                        !- Zone Equipment 1 Sequential Cooling Fraction Schedule Name
-    ;                        !- Zone Equipment 1 Sequential Heating Fraction Schedule Name
+    {ZONE_NAME} PSZ Equipment,           !- Name
+    SequentialLoad,                       !- Load Distribution Scheme
+    ZoneHVAC:AirDistributionUnit,        !- Zone Equipment 1 Object Type
+    {ZONE_NAME} PSZ ADU,                 !- Zone Equipment 1 Name
+    1,                                    !- Zone Equipment 1 Cooling Sequence
+    1,                                    !- Zone Equipment 1 Heating or No-Load Sequence
+    ,                                     !- Zone Equipment 1 Sequential Cooling Fraction Schedule Name
+    ;                                     !- Zone Equipment 1 Sequential Heating Fraction Schedule Name
 
   ZoneHVAC:AirDistributionUnit,
-    {ZONE_NAME} PSZ ADU,     !- Name
+    {ZONE_NAME} PSZ ADU,                 !- Name
+    {ZONE_NAME} PSZ Supply Inlet,        !- Air Distribution Unit Outlet Node Name
     AirTerminal:SingleDuct:ConstantVolume:NoReheat,  !- Air Terminal Object Type
-    {ZONE_NAME} PSZ Direct Air,  !- Air Terminal Name
-    ,                        !- Nominal Upstream Leakage Fraction
-    ,                        !- Constant Downstream Leakage Fraction
-    ;                        !- Design Specification Air Terminal Sizing Object Name
+    {ZONE_NAME} PSZ Direct Air,          !- Air Terminal Name
+    ,                                     !- Nominal Upstream Leakage Fraction
+    ,                                     !- Constant Downstream Leakage Fraction
+    ;                                     !- Design Specification Air Terminal Sizing Object Name
 
   AirTerminal:SingleDuct:ConstantVolume:NoReheat,
-    {ZONE_NAME} PSZ Direct Air,  !- Name
-    PSZ Avail Schedule,      !- Availability Schedule Name
-    {ZONE_NAME} PSZ Zone Inlet,  !- Air Inlet Node Name
-    {ZONE_NAME} PSZ Supply Inlet,  !- Air Outlet Node Name
-    autosize;                !- Maximum Air Flow Rate {m3/s}
+    {ZONE_NAME} PSZ Direct Air,          !- Name
+    {ZONE_NAME} PSZ Avail Schedule,      !- Availability Schedule Name
+    {ZONE_NAME} PSZ Zone Inlet,          !- Air Inlet Node Name
+    {ZONE_NAME} PSZ Supply Inlet,        !- Air Outlet Node Name
+    autosize;                             !- Maximum Air Flow Rate {m3/s}
 
-! --- Schedules ---
+! --- Availability Schedule ---
 
   Schedule:Compact,
-    PSZ Avail Schedule,      !- Name
-    Any Number,              !- Schedule Type Limits Name
-    Through: 12/31,          !- Field 1
-    For: AllDays,            !- Field 2
-    Until: 24:00,1.0;        !- Field 3
+    {ZONE_NAME} PSZ Avail Schedule,      !- Name
+    Any Number,                           !- Schedule Type Limits Name
+    Through: 12/31,                       !- Field 1
+    For: AllDays,                         !- Field 2
+    Until: 24:00,1.0;                     !- Field 3
 
-! --- AirLoopHVAC ---
+! --- Central Air Loop ---
 
   AirLoopHVAC,
-    PSZ Air Loop,            !- Name
-    ,                        !- Controller List Name
-    PSZ Avail Manager List,  !- Availability Manager List Name
-    autosize,                !- Design Supply Air Flow Rate {m3/s}
-    PSZ Air Loop Branches,   !- Branch List Name
-    ,                        !- Connector List Name
-    PSZ Air Loop Supply Inlet,  !- Supply Side Inlet Node Name
-    PSZ Air Loop Return Node,  !- Demand Side Outlet Node Name
-    PSZ Air Loop Zone Inlet, !- Demand Side Inlet Node Names
-    PSZ Air Loop Supply Outlet;  !- Supply Side Outlet Node Names
+    {ZONE_NAME} PSZ Air Loop,            !- Name
+    ,                                     !- Controller List Name
+    {ZONE_NAME} PSZ Avail Manager List,  !- Availability Manager List Name
+    autosize,                             !- Design Supply Air Flow Rate {m3/s}
+    {ZONE_NAME} PSZ Air Loop Branches,   !- Branch List Name
+    ,                                     !- Connector List Name
+    {ZONE_NAME} PSZ Air Loop Supply Inlet,   !- Supply Side Inlet Node Name
+    {ZONE_NAME} PSZ Air Loop Return Node,    !- Demand Side Outlet Node Name
+    {ZONE_NAME} PSZ Air Loop Zone Inlet,     !- Demand Side Inlet Node Names
+    {ZONE_NAME} PSZ Air Loop Supply Outlet;  !- Supply Side Outlet Node Names
 
   AvailabilityManager:Scheduled,
-    PSZ Avail Manager,       !- Name
-    PSZ Avail Schedule;      !- Schedule Name
+    {ZONE_NAME} PSZ Avail Manager,       !- Name
+    {ZONE_NAME} PSZ Avail Schedule;      !- Schedule Name
 
   AvailabilityManagerAssignmentList,
-    PSZ Avail Manager List,  !- Name
-    AvailabilityManager:Scheduled,  !- Availability Manager 1 Object Type
-    PSZ Avail Manager;       !- Availability Manager 1 Name
+    {ZONE_NAME} PSZ Avail Manager List,  !- Name
+    AvailabilityManager:Scheduled,        !- Availability Manager 1 Object Type
+    {ZONE_NAME} PSZ Avail Manager;       !- Availability Manager 1 Name
 
 ! --- Branches ---
 
   BranchList,
-    PSZ Air Loop Branches,   !- Name
-    PSZ Main Branch;         !- Branch 1 Name
+    {ZONE_NAME} PSZ Air Loop Branches,   !- Name
+    {ZONE_NAME} PSZ Main Branch;         !- Branch 1 Name
 
   Branch,
-    PSZ Main Branch,         !- Name
-    ,                        !- Pressure Drop Curve Name
-    AirLoopHVAC:OutdoorAirSystem,  !- Component 1 Object Type
-    PSZ OA System,           !- Component 1 Name
-    PSZ Air Loop Supply Inlet,  !- Component 1 Inlet Node Name
-    PSZ OA Mixed Air Outlet, !- Component 1 Outlet Node Name
-    Coil:Heating:Fuel,       !- Component 2 Object Type
-    PSZ Gas Heater,          !- Component 2 Name
-    PSZ OA Mixed Air Outlet, !- Component 2 Inlet Node Name
-    PSZ Heating Coil Outlet, !- Component 2 Outlet Node Name
-    Coil:Cooling:DX:SingleSpeed,  !- Component 3 Object Type
-    PSZ DX Cool Coil,        !- Component 3 Name
-    PSZ Heating Coil Outlet, !- Component 3 Inlet Node Name
-    PSZ Cooling Coil Outlet, !- Component 3 Outlet Node Name
-    Fan:ConstantVolume,      !- Component 4 Object Type
-    PSZ Supply Fan,          !- Component 4 Name
-    PSZ Cooling Coil Outlet, !- Component 4 Inlet Node Name
-    PSZ Air Loop Supply Outlet;  !- Component 4 Outlet Node Name
+    {ZONE_NAME} PSZ Main Branch,         !- Name
+    ,                                     !- Pressure Drop Curve Name
+    AirLoopHVAC:OutdoorAirSystem,        !- Component 1 Object Type
+    {ZONE_NAME} PSZ OA System,           !- Component 1 Name
+    {ZONE_NAME} PSZ Air Loop Supply Inlet,  !- Component 1 Inlet Node Name
+    {ZONE_NAME} PSZ OA Mixed Air Outlet, !- Component 1 Outlet Node Name
+    Coil:Heating:Fuel,                   !- Component 2 Object Type
+    {ZONE_NAME} PSZ Gas Heater,          !- Component 2 Name
+    {ZONE_NAME} PSZ OA Mixed Air Outlet, !- Component 2 Inlet Node Name
+    {ZONE_NAME} PSZ Heating Coil Outlet, !- Component 2 Outlet Node Name
+    Coil:Cooling:DX:SingleSpeed,         !- Component 3 Object Type
+    {ZONE_NAME} PSZ DX Cool Coil,        !- Component 3 Name
+    {ZONE_NAME} PSZ Heating Coil Outlet, !- Component 3 Inlet Node Name
+    {ZONE_NAME} PSZ Cooling Coil Outlet, !- Component 3 Outlet Node Name
+    Fan:ConstantVolume,                  !- Component 4 Object Type
+    {ZONE_NAME} PSZ Supply Fan,          !- Component 4 Name
+    {ZONE_NAME} PSZ Cooling Coil Outlet, !- Component 4 Inlet Node Name
+    {ZONE_NAME} PSZ Air Loop Supply Outlet;  !- Component 4 Outlet Node Name
 
 ! --- Outdoor Air System ---
 
   AirLoopHVAC:OutdoorAirSystem,
-    PSZ OA System,           !- Name
-    PSZ OA Controller List,  !- Controller List Name
-    PSZ OA Equipment List;   !- Outdoor Air Equipment List Name
+    {ZONE_NAME} PSZ OA System,           !- Name
+    {ZONE_NAME} PSZ OA Controller List,  !- Controller List Name
+    {ZONE_NAME} PSZ OA Equipment List;   !- Outdoor Air Equipment List Name
 
   AirLoopHVAC:ControllerList,
-    PSZ OA Controller List,  !- Name
-    Controller:OutdoorAir,   !- Controller 1 Object Type
-    PSZ OA Controller;       !- Controller 1 Name
+    {ZONE_NAME} PSZ OA Controller List,  !- Name
+    Controller:OutdoorAir,               !- Controller 1 Object Type
+    {ZONE_NAME} PSZ OA Controller;       !- Controller 1 Name
 
   Controller:OutdoorAir,
-    PSZ OA Controller,       !- Name
-    PSZ Relief Air Node,     !- Relief Air Outlet Node Name
-    PSZ Air Loop Supply Inlet,  !- Return Air Node Name
-    PSZ OA Mixed Air Outlet, !- Mixed Air Node Name
-    PSZ OA In Node,          !- Actuator Node Name
-    autosize,                !- Minimum Outdoor Air Flow Rate {m3/s}
-    autosize,                !- Maximum Outdoor Air Flow Rate {m3/s}
-    NoEconomizer,            !- Economizer Control Type
-    ModulateFlow,            !- Economizer Control Action Type
-    ,                        !- Economizer Maximum Limit Dry-Bulb Temperature {C}
-    ,                        !- Economizer Maximum Limit Enthalpy {J/kg}
-    ,                        !- Economizer Maximum Limit Dewpoint Temperature {C}
-    ,                        !- Electronic Enthalpy Limit Curve Name
-    ,                        !- Economizer Minimum Limit Dry-Bulb Temperature {C}
-    NoLockout,               !- Lockout Type
-    FixedMinimum;            !- Minimum Limit Type
+    {ZONE_NAME} PSZ OA Controller,       !- Name
+    {ZONE_NAME} PSZ Relief Air Node,     !- Relief Air Outlet Node Name
+    {ZONE_NAME} PSZ Air Loop Supply Inlet,  !- Return Air Node Name
+    {ZONE_NAME} PSZ OA Mixed Air Outlet, !- Mixed Air Node Name
+    {ZONE_NAME} PSZ OA In Node,          !- Actuator Node Name
+    autosize,                             !- Minimum Outdoor Air Flow Rate {m3/s}
+    autosize,                             !- Maximum Outdoor Air Flow Rate {m3/s}
+    NoEconomizer,                         !- Economizer Control Type
+    ModulateFlow,                         !- Economizer Control Action Type
+    ,                                     !- Economizer Maximum Limit Dry-Bulb Temperature {C}
+    ,                                     !- Economizer Maximum Limit Enthalpy {J/kg}
+    ,                                     !- Economizer Maximum Limit Dewpoint Temperature {C}
+    ,                                     !- Electronic Enthalpy Limit Curve Name
+    ,                                     !- Economizer Minimum Limit Dry-Bulb Temperature {C}
+    NoLockout,                            !- Lockout Type
+    FixedMinimum;                         !- Minimum Limit Type
 
   AirLoopHVAC:OutdoorAirSystem:EquipmentList,
-    PSZ OA Equipment List,   !- Name
-    OutdoorAir:Mixer,        !- Component 1 Object Type
-    PSZ OA Mixer;            !- Component 1 Name
+    {ZONE_NAME} PSZ OA Equipment List,   !- Name
+    OutdoorAir:Mixer,                    !- Component 1 Object Type
+    {ZONE_NAME} PSZ OA Mixer;           !- Component 1 Name
 
   OutdoorAir:Mixer,
-    PSZ OA Mixer,            !- Name
-    PSZ OA Mixed Air Outlet, !- Mixed Air Node Name
-    PSZ OA In Node,          !- Outdoor Air Stream Node Name
-    PSZ Relief Air Node,     !- Relief Air Stream Node Name
-    PSZ Air Loop Supply Inlet;  !- Return Air Stream Node Name
+    {ZONE_NAME} PSZ OA Mixer,           !- Name
+    {ZONE_NAME} PSZ OA Mixed Air Outlet, !- Mixed Air Node Name
+    {ZONE_NAME} PSZ OA In Node,          !- Outdoor Air Stream Node Name
+    {ZONE_NAME} PSZ Relief Air Node,     !- Relief Air Stream Node Name
+    {ZONE_NAME} PSZ Air Loop Supply Inlet;  !- Return Air Stream Node Name
 
   OutdoorAir:NodeList,
-    PSZ OA In Node;          !- Node or NodeList Name 1
+    {ZONE_NAME} PSZ OA In Node;          !- Node or NodeList Name 1
 
 ! --- Supply/Return Paths ---
 
   AirLoopHVAC:SupplyPath,
-    PSZ Supply Path,         !- Name
-    PSZ Air Loop Zone Inlet, !- Supply Air Path Inlet Node Name
-    AirLoopHVAC:ZoneSplitter,  !- Component 1 Object Type
-    PSZ Zone Splitter;       !- Component 1 Name
+    {ZONE_NAME} PSZ Supply Path,         !- Name
+    {ZONE_NAME} PSZ Air Loop Zone Inlet, !- Supply Air Path Inlet Node Name
+    AirLoopHVAC:ZoneSplitter,           !- Component 1 Object Type
+    {ZONE_NAME} PSZ Zone Splitter;       !- Component 1 Name
 
   AirLoopHVAC:ZoneSplitter,
-    PSZ Zone Splitter,       !- Name
-    PSZ Air Loop Zone Inlet, !- Inlet Node Name
-    {ZONE_NAME} PSZ Zone Inlet;  !- Outlet 1 Node Name
+    {ZONE_NAME} PSZ Zone Splitter,       !- Name
+    {ZONE_NAME} PSZ Air Loop Zone Inlet, !- Inlet Node Name
+    {ZONE_NAME} PSZ Zone Inlet;          !- Outlet 1 Node Name
 
   AirLoopHVAC:ReturnPath,
-    PSZ Return Path,         !- Name
-    PSZ Air Loop Return Node,  !- Return Air Path Outlet Node Name
-    AirLoopHVAC:ZoneMixer,   !- Component 1 Object Type
-    PSZ Zone Mixer;          !- Component 1 Name
+    {ZONE_NAME} PSZ Return Path,         !- Name
+    {ZONE_NAME} PSZ Air Loop Return Node,  !- Return Air Path Outlet Node Name
+    AirLoopHVAC:ZoneMixer,              !- Component 1 Object Type
+    {ZONE_NAME} PSZ Zone Mixer;          !- Component 1 Name
 
   AirLoopHVAC:ZoneMixer,
-    PSZ Zone Mixer,          !- Name
-    PSZ Air Loop Return Node,  !- Outlet Node Name
-    {ZONE_NAME} Return Node; !- Inlet 1 Node Name
+    {ZONE_NAME} PSZ Zone Mixer,          !- Name
+    {ZONE_NAME} PSZ Air Loop Return Node, !- Outlet Node Name
+    {ZONE_NAME} Return Node;             !- Inlet 1 Node Name
 
 ! --- Setpoint Managers ---
 
   SetpointManager:SingleZone:Reheat,
-    PSZ Supply Air Temp Manager,  !- Name
-    Temperature,             !- Control Variable
-    13.0,                    !- Minimum Supply Air Temperature {C}
-    40.0,                    !- Maximum Supply Air Temperature {C}
-    {ZONE_NAME},             !- Control Zone Name
-    {ZONE_NAME} Air Node,    !- Zone Node Name
-    {ZONE_NAME} PSZ Supply Inlet,  !- Zone Inlet Node Name
-    PSZ Air Loop Supply Outlet;  !- Setpoint Node or NodeList Name
+    {ZONE_NAME} PSZ Supply Air Temp Manager,  !- Name
+    Temperature,                          !- Control Variable
+    13.0,                                 !- Minimum Supply Air Temperature {C}
+    40.0,                                 !- Maximum Supply Air Temperature {C}
+    {ZONE_NAME},                          !- Control Zone Name
+    {ZONE_NAME} Air Node,                !- Zone Node Name
+    {ZONE_NAME} PSZ Supply Inlet,        !- Zone Inlet Node Name
+    {ZONE_NAME} PSZ Air Loop Supply Outlet;  !- Setpoint Node or NodeList Name
 
   SetpointManager:MixedAir,
-    PSZ Cooling Coil Air Temp Manager,  !- Name
-    Temperature,             !- Control Variable
-    PSZ Air Loop Supply Outlet,  !- Reference Setpoint Node Name
-    PSZ Cooling Coil Outlet, !- Fan Inlet Node Name
-    PSZ Air Loop Supply Outlet,  !- Fan Outlet Node Name
-    PSZ Cooling Coil Outlet; !- Setpoint Node or NodeList Name
+    {ZONE_NAME} PSZ Cooling Coil Air Temp Manager,  !- Name
+    Temperature,                          !- Control Variable
+    {ZONE_NAME} PSZ Air Loop Supply Outlet,  !- Reference Setpoint Node Name
+    {ZONE_NAME} PSZ Cooling Coil Outlet, !- Fan Inlet Node Name
+    {ZONE_NAME} PSZ Air Loop Supply Outlet,  !- Fan Outlet Node Name
+    {ZONE_NAME} PSZ Cooling Coil Outlet; !- Setpoint Node or NodeList Name
 
   SetpointManager:MixedAir,
-    PSZ Heating Coil Air Temp Manager,  !- Name
-    Temperature,             !- Control Variable
-    PSZ Air Loop Supply Outlet,  !- Reference Setpoint Node Name
-    PSZ Cooling Coil Outlet, !- Fan Inlet Node Name
-    PSZ Air Loop Supply Outlet,  !- Fan Outlet Node Name
-    PSZ Heating Coil Outlet; !- Setpoint Node or NodeList Name
+    {ZONE_NAME} PSZ Heating Coil Air Temp Manager,  !- Name
+    Temperature,                          !- Control Variable
+    {ZONE_NAME} PSZ Air Loop Supply Outlet,  !- Reference Setpoint Node Name
+    {ZONE_NAME} PSZ Cooling Coil Outlet, !- Fan Inlet Node Name
+    {ZONE_NAME} PSZ Air Loop Supply Outlet,  !- Fan Outlet Node Name
+    {ZONE_NAME} PSZ Heating Coil Outlet; !- Setpoint Node or NodeList Name
 
 ! --- Fan ---
 
   Fan:ConstantVolume,
-    PSZ Supply Fan,          !- Name
-    PSZ Avail Schedule,      !- Availability Schedule Name
-    0.7,                     !- Fan Total Efficiency
-    250.0,                   !- Pressure Rise {Pa}
-    autosize,                !- Maximum Flow Rate {m3/s}
-    0.9,                     !- Motor Efficiency
-    1.0,                     !- Motor In Airstream Fraction
-    PSZ Cooling Coil Outlet, !- Air Inlet Node Name
-    PSZ Air Loop Supply Outlet;  !- Air Outlet Node Name
+    {ZONE_NAME} PSZ Supply Fan,          !- Name
+    {ZONE_NAME} PSZ Avail Schedule,      !- Availability Schedule Name
+    0.7,                                  !- Fan Total Efficiency
+    250.0,                                !- Pressure Rise {Pa}
+    autosize,                             !- Maximum Flow Rate {m3/s}
+    0.9,                                  !- Motor Efficiency
+    1.0,                                  !- Motor In Airstream Fraction
+    {ZONE_NAME} PSZ Cooling Coil Outlet, !- Air Inlet Node Name
+    {ZONE_NAME} PSZ Air Loop Supply Outlet;  !- Air Outlet Node Name
 
 ! --- Gas Heating Coil ---
 
   Coil:Heating:Fuel,
-    PSZ Gas Heater,          !- Name
-    PSZ Avail Schedule,      !- Availability Schedule Name
-    NaturalGas,              !- Fuel Type
-    0.8,                     !- Burner Efficiency
-    autosize,                !- Nominal Capacity {W}
-    PSZ OA Mixed Air Outlet, !- Air Inlet Node Name
-    PSZ Heating Coil Outlet; !- Air Outlet Node Name
+    {ZONE_NAME} PSZ Gas Heater,          !- Name
+    {ZONE_NAME} PSZ Avail Schedule,      !- Availability Schedule Name
+    NaturalGas,                           !- Fuel Type
+    0.8,                                  !- Burner Efficiency
+    autosize,                             !- Nominal Capacity {W}
+    {ZONE_NAME} PSZ OA Mixed Air Outlet, !- Air Inlet Node Name
+    {ZONE_NAME} PSZ Heating Coil Outlet; !- Air Outlet Node Name
 
 ! --- DX Cooling Coil ---
 
   Coil:Cooling:DX:SingleSpeed,
-    PSZ DX Cool Coil,        !- Name
-    PSZ Avail Schedule,      !- Availability Schedule Name
-    autosize,                !- Gross Rated Total Cooling Capacity {W}
-    autosize,                !- Gross Rated Sensible Heat Ratio
-    3.0,                     !- Gross Rated Cooling COP {W/W}
-    autosize,                !- Rated Air Flow Rate {m3/s}
-    ,                        !- 2017 Rated Evaporator Fan Power Per Volume Flow Rate {W/(m3/s)}
-    934.4,                   !- 2023 Rated Evaporator Fan Power Per Volume Flow Rate {W/(m3/s)}
-    PSZ Heating Coil Outlet, !- Air Inlet Node Name
-    PSZ Cooling Coil Outlet, !- Air Outlet Node Name
-    PSZ Cool Cap FT,         !- Total Cooling Capacity Function of Temperature Curve Name
-    PSZ Cool Cap FFF,        !- Total Cooling Capacity Function of Flow Fraction Curve Name
-    PSZ Cool EIR FT,         !- Energy Input Ratio Function of Temperature Curve Name
-    PSZ Cool EIR FFF,        !- Energy Input Ratio Function of Flow Fraction Curve Name
-    PSZ Cool PLF;            !- Part Load Fraction Correlation Curve Name
+    {ZONE_NAME} PSZ DX Cool Coil,        !- Name
+    {ZONE_NAME} PSZ Avail Schedule,      !- Availability Schedule Name
+    autosize,                             !- Gross Rated Total Cooling Capacity {W}
+    autosize,                             !- Gross Rated Sensible Heat Ratio
+    3.0,                                  !- Gross Rated Cooling COP {W/W}
+    autosize,                             !- Rated Air Flow Rate {m3/s}
+    ,                                     !- 2017 Rated Evaporator Fan Power Per Volume Flow Rate {W/(m3/s)}
+    934.4,                                !- 2023 Rated Evaporator Fan Power Per Volume Flow Rate {W/(m3/s)}
+    {ZONE_NAME} PSZ Heating Coil Outlet, !- Air Inlet Node Name
+    {ZONE_NAME} PSZ Cooling Coil Outlet, !- Air Outlet Node Name
+    {ZONE_NAME} PSZ Cool Cap FT,         !- Total Cooling Capacity Function of Temperature Curve Name
+    {ZONE_NAME} PSZ Cool Cap FFF,        !- Total Cooling Capacity Function of Flow Fraction Curve Name
+    {ZONE_NAME} PSZ Cool EIR FT,         !- Energy Input Ratio Function of Temperature Curve Name
+    {ZONE_NAME} PSZ Cool EIR FFF,        !- Energy Input Ratio Function of Flow Fraction Curve Name
+    {ZONE_NAME} PSZ Cool PLF;            !- Part Load Fraction Correlation Curve Name
 
 ! --- Performance Curves ---
 
   Curve:Biquadratic,
-    PSZ Cool Cap FT,         !- Name
-    0.942587793,             !- Coefficient1 Constant
-    0.009543347,             !- Coefficient2 x
-    0.000683770,             !- Coefficient3 x**2
-    -0.011042676,            !- Coefficient4 y
-    0.000005249,             !- Coefficient5 y**2
-    -0.000009720,            !- Coefficient6 x*y
-    12.77778,                !- Minimum Value of x
-    23.88889,                !- Maximum Value of x
-    18.0,                    !- Minimum Value of y
-    46.11111,                !- Maximum Value of y
-    ,                        !- Minimum Curve Output
-    ,                        !- Maximum Curve Output
-    Temperature,             !- Input Unit Type for X
-    Temperature,             !- Input Unit Type for Y
-    Dimensionless;           !- Output Unit Type
+    {ZONE_NAME} PSZ Cool Cap FT,         !- Name
+    0.942587793,                          !- Coefficient1 Constant
+    0.009543347,                          !- Coefficient2 x
+    0.000683770,                          !- Coefficient3 x**2
+    -0.011042676,                         !- Coefficient4 y
+    0.000005249,                          !- Coefficient5 y**2
+    -0.000009720,                         !- Coefficient6 x*y
+    12.77778,                             !- Minimum Value of x
+    23.88889,                             !- Maximum Value of x
+    18.0,                                 !- Minimum Value of y
+    46.11111,                             !- Maximum Value of y
+    ,                                     !- Minimum Curve Output
+    ,                                     !- Maximum Curve Output
+    Temperature,                          !- Input Unit Type for X
+    Temperature,                          !- Input Unit Type for Y
+    Dimensionless;                        !- Output Unit Type
 
   Curve:Biquadratic,
-    PSZ Cool EIR FT,         !- Name
-    0.342414409,             !- Coefficient1 Constant
-    0.034885008,             !- Coefficient2 x
-    -0.000623700,            !- Coefficient3 x**2
-    0.004977216,             !- Coefficient4 y
-    0.000437951,             !- Coefficient5 y**2
-    -0.000728028,            !- Coefficient6 x*y
-    12.77778,                !- Minimum Value of x
-    23.88889,                !- Maximum Value of x
-    18.0,                    !- Minimum Value of y
-    46.11111,                !- Maximum Value of y
-    ,                        !- Minimum Curve Output
-    ,                        !- Maximum Curve Output
-    Temperature,             !- Input Unit Type for X
-    Temperature,             !- Input Unit Type for Y
-    Dimensionless;           !- Output Unit Type
+    {ZONE_NAME} PSZ Cool EIR FT,         !- Name
+    0.342414409,                          !- Coefficient1 Constant
+    0.034885008,                          !- Coefficient2 x
+    -0.000623700,                         !- Coefficient3 x**2
+    0.004977216,                          !- Coefficient4 y
+    0.000437951,                          !- Coefficient5 y**2
+    -0.000728028,                         !- Coefficient6 x*y
+    12.77778,                             !- Minimum Value of x
+    23.88889,                             !- Maximum Value of x
+    18.0,                                 !- Minimum Value of y
+    46.11111,                             !- Maximum Value of y
+    ,                                     !- Minimum Curve Output
+    ,                                     !- Maximum Curve Output
+    Temperature,                          !- Input Unit Type for X
+    Temperature,                          !- Input Unit Type for Y
+    Dimensionless;                        !- Output Unit Type
 
   Curve:Quadratic,
-    PSZ Cool Cap FFF,        !- Name
-    0.8,                     !- Coefficient1 Constant
-    0.2,                     !- Coefficient2 x
-    0.0,                     !- Coefficient3 x**2
-    0.5,                     !- Minimum Value of x
-    1.5;                     !- Maximum Value of x
+    {ZONE_NAME} PSZ Cool Cap FFF,        !- Name
+    0.8,                                  !- Coefficient1 Constant
+    0.2,                                  !- Coefficient2 x
+    0.0,                                  !- Coefficient3 x**2
+    0.5,                                  !- Minimum Value of x
+    1.5;                                  !- Maximum Value of x
 
   Curve:Quadratic,
-    PSZ Cool EIR FFF,        !- Name
-    1.1552,                  !- Coefficient1 Constant
-    -0.1808,                 !- Coefficient2 x
-    0.0256,                  !- Coefficient3 x**2
-    0.5,                     !- Minimum Value of x
-    1.5;                     !- Maximum Value of x
+    {ZONE_NAME} PSZ Cool EIR FFF,        !- Name
+    1.1552,                               !- Coefficient1 Constant
+    -0.1808,                              !- Coefficient2 x
+    0.0256,                               !- Coefficient3 x**2
+    0.5,                                  !- Minimum Value of x
+    1.5;                                  !- Maximum Value of x
 
   Curve:Quadratic,
-    PSZ Cool PLF,            !- Name
-    0.85,                    !- Coefficient1 Constant
-    0.15,                    !- Coefficient2 x
-    0.0,                     !- Coefficient3 x**2
-    0.0,                     !- Minimum Value of x
-    1.0;                     !- Maximum Value of x
+    {ZONE_NAME} PSZ Cool PLF,            !- Name
+    0.85,                                 !- Coefficient1 Constant
+    0.15,                                 !- Coefficient2 x
+    0.0,                                  !- Coefficient3 x**2
+    0.0,                                  !- Minimum Value of x
+    1.0;                                  !- Maximum Value of x
