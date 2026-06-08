@@ -52,7 +52,7 @@ def generate_zone_geometry(
     {v4[0]:.2f}, {v4[1]:.2f}, {v4[2]:.2f};  !- X,Y,Z ==> Vertex 4
 """
 
-    def make_window(wall_name, v1, v4, wall_width, wall_height, wwr_val, window_data=None):
+    def make_window(wall_name, v1, v2, wall_width, wall_height, wwr_val, window_data=None):
         if window_data and isinstance(window_data, dict):
             # Custom Window Placement
             win_w = float(window_data.get("width") if window_data.get("width") is not None else 1.0)
@@ -62,12 +62,10 @@ def generate_zone_geometry(
             offset_z = float(window_data.get("offset_z") if window_data.get("offset_z") is not None else 0.0)
             ref_z = window_data.get("ref_z") or "center"
             
-            # v1 is Bottom-Right (from outside), v4 is Bottom-Left
-            # If ref_x is 'left', it is offset from v4. So distance from v1 (w_off) is wall_width - win_w - offset_x
             if ref_x == "left":
-                w_off = wall_width - win_w - offset_x
-            elif ref_x == "right":
                 w_off = offset_x
+            elif ref_x == "right":
+                w_off = wall_width - win_w - offset_x
             else:
                 w_off = (wall_width - win_w) / 2.0
                 
@@ -88,8 +86,8 @@ def generate_zone_geometry(
         def interpolate(pA, pB, frac):
             return (pA[0] + (pB[0]-pA[0])*frac, pA[1] + (pB[1]-pA[1])*frac, pA[2] + (pB[2]-pA[2])*frac)
             
-        win_br_x, win_br_y, win_br_z = interpolate(v1, v4, w_off / wall_width)
-        win_bl_x, win_bl_y, win_bl_z = interpolate(v1, v4, (w_off + win_w) / wall_width)
+        win_bl_x, win_bl_y, win_bl_z = interpolate(v1, v2, w_off / wall_width)
+        win_br_x, win_br_y, win_br_z = interpolate(v1, v2, (w_off + win_w) / wall_width)
         
         z_bottom = v1[2] + h_off
         z_top = z_bottom + win_h
@@ -105,13 +103,13 @@ def generate_zone_geometry(
     ,                        !- Frame and Divider Name
     1,                       !- Multiplier
     4,                       !- Number of Vertices
-    {win_br_x:.2f}, {win_br_y:.2f}, {z_bottom:.2f},  !- X,Y,Z ==> Vertex 1
-    {win_br_x:.2f}, {win_br_y:.2f}, {z_top:.2f},  !- X,Y,Z ==> Vertex 2
-    {win_bl_x:.2f}, {win_bl_y:.2f}, {z_top:.2f},  !- X,Y,Z ==> Vertex 3
-    {win_bl_x:.2f}, {win_bl_y:.2f}, {z_bottom:.2f};  !- X,Y,Z ==> Vertex 4
+    {win_bl_x:.2f}, {win_bl_y:.2f}, {z_bottom:.2f},  !- X,Y,Z ==> Vertex 1
+    {win_br_x:.2f}, {win_br_y:.2f}, {z_bottom:.2f},  !- X,Y,Z ==> Vertex 2
+    {win_br_x:.2f}, {win_br_y:.2f}, {z_top:.2f},  !- X,Y,Z ==> Vertex 3
+    {win_bl_x:.2f}, {win_bl_y:.2f}, {z_top:.2f};  !- X,Y,Z ==> Vertex 4
 """
 
-    def make_door(wall_name, v1, v4, wall_width, wall_height, door_data):
+    def make_door(wall_name, v1, v2, wall_width, wall_height, door_data):
         if not door_data: return ""
         
         if isinstance(door_data, dict):
@@ -119,13 +117,11 @@ def generate_zone_geometry(
             door_h = float(door_data.get("height") if door_data.get("height") is not None else 2.0)
             offset_x = float(door_data.get("offset_x") if door_data.get("offset_x") is not None else 0.0)
             ref_x = door_data.get("ref_x") or "center"
-            offset_z = float(door_data.get("offset_z") if door_data.get("offset_z") is not None else 0.0)
-            ref_z = door_data.get("ref_z") or "bottom"
             
             if ref_x == "left":
-                w_off = wall_width - door_w - offset_x
-            elif ref_x == "right":
                 w_off = offset_x
+            elif ref_x == "right":
+                w_off = wall_width - door_w - offset_x
             else:
                 w_off = (wall_width - door_w) / 2.0
                 
@@ -146,8 +142,8 @@ def generate_zone_geometry(
         def interpolate(pA, pB, frac):
             return (pA[0] + (pB[0]-pA[0])*frac, pA[1] + (pB[1]-pA[1])*frac, pA[2] + (pB[2]-pA[2])*frac)
             
-        win_br_x, win_br_y, win_br_z = interpolate(v1, v4, w_off / wall_width)
-        win_bl_x, win_bl_y, win_bl_z = interpolate(v1, v4, (w_off + door_w) / wall_width)
+        win_bl_x, win_bl_y, win_bl_z = interpolate(v1, v2, w_off / wall_width)
+        win_br_x, win_br_y, win_br_z = interpolate(v1, v2, (w_off + door_w) / wall_width)
         
         z_bottom = v1[2] + h_off
         z_top = z_bottom + door_h
@@ -163,10 +159,10 @@ def generate_zone_geometry(
     ,                        !- Frame and Divider Name
     1,                       !- Multiplier
     4,                       !- Number of Vertices
-    {win_br_x:.2f}, {win_br_y:.2f}, {z_bottom:.2f},  !- X,Y,Z ==> Vertex 1
-    {win_br_x:.2f}, {win_br_y:.2f}, {z_top:.2f},  !- X,Y,Z ==> Vertex 2
-    {win_bl_x:.2f}, {win_bl_y:.2f}, {z_top:.2f},  !- X,Y,Z ==> Vertex 3
-    {win_bl_x:.2f}, {win_bl_y:.2f}, {z_bottom:.2f};  !- X,Y,Z ==> Vertex 4
+    {win_bl_x:.2f}, {win_bl_y:.2f}, {z_bottom:.2f},  !- X,Y,Z ==> Vertex 1
+    {win_br_x:.2f}, {win_br_y:.2f}, {z_bottom:.2f},  !- X,Y,Z ==> Vertex 2
+    {win_br_x:.2f}, {win_br_y:.2f}, {z_top:.2f},  !- X,Y,Z ==> Vertex 3
+    {win_bl_x:.2f}, {win_bl_y:.2f}, {z_top:.2f};  !- X,Y,Z ==> Vertex 4
 """
 
     # Using placeholder text that our backend Assembler will string-replace later for roof and floor
@@ -175,28 +171,28 @@ def generate_zone_geometry(
     
     # CCW Vertices viewed from OUTSIDE
     # Wall South (Facing -Y)
-    v1, v2, v3, v4 = (L, 0, 0), (L, 0, H), (0, 0, H), (0, 0, 0)
+    v1, v2, v3, v4 = (0, 0, 0), (L, 0, 0), (L, 0, H), (0, 0, H)
     idf_str += make_surface("Wall_South", "Wall", wall_s, "Outdoors", "SunExposed", "WindExposed", v1, v2, v3, v4)
-    idf_str += make_window("Wall_South", v1, v4, L, H, wwr_s, window_s)
-    idf_str += make_door("Wall_South", v1, v4, L, H, door_s)
+    idf_str += make_window("Wall_South", v1, v2, L, H, wwr_s, window_s)
+    idf_str += make_door("Wall_South", v1, v2, L, H, door_s)
     
     # Wall East (Facing +X)
-    v1, v2, v3, v4 = (L, W, 0), (L, W, H), (L, 0, H), (L, 0, 0)
+    v1, v2, v3, v4 = (L, 0, 0), (L, W, 0), (L, W, H), (L, 0, H)
     idf_str += make_surface("Wall_East", "Wall", wall_e, "Outdoors", "SunExposed", "WindExposed", v1, v2, v3, v4)
-    idf_str += make_window("Wall_East", v1, v4, W, H, wwr_e, window_e)
-    idf_str += make_door("Wall_East", v1, v4, W, H, door_e)
+    idf_str += make_window("Wall_East", v1, v2, W, H, wwr_e, window_e)
+    idf_str += make_door("Wall_East", v1, v2, W, H, door_e)
     
     # Wall North (Facing +Y)
-    v1, v2, v3, v4 = (0, W, 0), (0, W, H), (L, W, H), (L, W, 0)
+    v1, v2, v3, v4 = (L, W, 0), (0, W, 0), (0, W, H), (L, W, H)
     idf_str += make_surface("Wall_North", "Wall", wall_n, "Outdoors", "SunExposed", "WindExposed", v1, v2, v3, v4)
-    idf_str += make_window("Wall_North", v1, v4, L, H, wwr_n, window_n)
-    idf_str += make_door("Wall_North", v1, v4, L, H, door_n)
+    idf_str += make_window("Wall_North", v1, v2, L, H, wwr_n, window_n)
+    idf_str += make_door("Wall_North", v1, v2, L, H, door_n)
     
     # Wall West (Facing -X)
-    v1, v2, v3, v4 = (0, 0, 0), (0, 0, H), (0, W, H), (0, W, 0)
+    v1, v2, v3, v4 = (0, W, 0), (0, 0, 0), (0, 0, H), (0, W, H)
     idf_str += make_surface("Wall_West", "Wall", wall_w, "Outdoors", "SunExposed", "WindExposed", v1, v2, v3, v4)
-    idf_str += make_window("Wall_West", v1, v4, W, H, wwr_w, window_w)
-    idf_str += make_door("Wall_West", v1, v4, W, H, door_w)
+    idf_str += make_window("Wall_West", v1, v2, W, H, wwr_w, window_w)
+    idf_str += make_door("Wall_West", v1, v2, W, H, door_w)
     
     # Roof (Facing +Z)
     idf_str += make_surface("Roof", "Roof", roof_constr, "Outdoors", "SunExposed", "WindExposed", 
@@ -204,7 +200,7 @@ def generate_zone_geometry(
                        
     # Floor (Facing -Z)
     idf_str += make_surface("Floor", "Floor", floor_constr, "Ground", "NoSun", "NoWind", 
-                       (0, 0, 0), (L, 0, 0), (L, W, 0), (0, W, 0))
+                       (0, W, 0), (L, W, 0), (L, 0, 0), (0, 0, 0))
                        
     return idf_str
 
@@ -395,7 +391,7 @@ def generate_multizone_geometry(zones, zone_origins):
     {v4[0]:.2f}, {v4[1]:.2f}, {v4[2]:.2f};  !- X,Y,Z ==> Vertex 4
 """
 
-    def make_window_mz(wall_name, v1, v4, wall_width, wall_height, wwr_val, window_data=None):
+    def make_window_mz(wall_name, v1, v2, wall_width, wall_height, wwr_val, window_data=None):
         """Generate window for multi-zone (same logic as single-zone make_window)."""
         if window_data and isinstance(window_data, dict):
             win_w = float(window_data.get("width") if window_data.get("width") is not None else 1.0)
@@ -406,9 +402,9 @@ def generate_multizone_geometry(zones, zone_origins):
             ref_z = window_data.get("ref_z") or "center"
             
             if ref_x == "left":
-                w_off = wall_width - win_w - offset_x
-            elif ref_x == "right":
                 w_off = offset_x
+            elif ref_x == "right":
+                w_off = wall_width - win_w - offset_x
             else:
                 w_off = (wall_width - win_w) / 2.0
                 
@@ -429,8 +425,8 @@ def generate_multizone_geometry(zones, zone_origins):
         def interpolate(pA, pB, frac):
             return (pA[0] + (pB[0]-pA[0])*frac, pA[1] + (pB[1]-pA[1])*frac, pA[2] + (pB[2]-pA[2])*frac)
             
-        win_br_x, win_br_y, win_br_z = interpolate(v1, v4, w_off / wall_width)
-        win_bl_x, win_bl_y, win_bl_z = interpolate(v1, v4, (w_off + win_w) / wall_width)
+        win_bl_x, win_bl_y, win_bl_z = interpolate(v1, v2, w_off / wall_width)
+        win_br_x, win_br_y, win_br_z = interpolate(v1, v2, (w_off + win_w) / wall_width)
         
         z_bottom = v1[2] + h_off
         z_top = z_bottom + win_h
@@ -446,13 +442,13 @@ def generate_multizone_geometry(zones, zone_origins):
     ,                        !- Frame and Divider Name
     1,                       !- Multiplier
     4,                       !- Number of Vertices
-    {win_br_x:.2f}, {win_br_y:.2f}, {z_bottom:.2f},  !- X,Y,Z ==> Vertex 1
-    {win_br_x:.2f}, {win_br_y:.2f}, {z_top:.2f},  !- X,Y,Z ==> Vertex 2
-    {win_bl_x:.2f}, {win_bl_y:.2f}, {z_top:.2f},  !- X,Y,Z ==> Vertex 3
-    {win_bl_x:.2f}, {win_bl_y:.2f}, {z_bottom:.2f};  !- X,Y,Z ==> Vertex 4
+    {win_bl_x:.2f}, {win_bl_y:.2f}, {z_bottom:.2f},  !- X,Y,Z ==> Vertex 1
+    {win_br_x:.2f}, {win_br_y:.2f}, {z_bottom:.2f},  !- X,Y,Z ==> Vertex 2
+    {win_br_x:.2f}, {win_br_y:.2f}, {z_top:.2f},  !- X,Y,Z ==> Vertex 3
+    {win_bl_x:.2f}, {win_bl_y:.2f}, {z_top:.2f};  !- X,Y,Z ==> Vertex 4
 """
 
-    def make_door_mz(wall_name, v1, v4, wall_width, wall_height, door_data):
+    def make_door_mz(wall_name, v1, v2, wall_width, wall_height, door_data):
         """Generate door for multi-zone (same logic as single-zone make_door)."""
         if not door_data:
             return ""
@@ -462,13 +458,11 @@ def generate_multizone_geometry(zones, zone_origins):
             door_h = float(door_data.get("height") if door_data.get("height") is not None else 2.0)
             offset_x = float(door_data.get("offset_x") if door_data.get("offset_x") is not None else 0.0)
             ref_x = door_data.get("ref_x") or "center"
-            offset_z = float(door_data.get("offset_z") if door_data.get("offset_z") is not None else 0.0)
-            ref_z = door_data.get("ref_z") or "bottom"
             
             if ref_x == "left":
-                w_off = wall_width - door_w - offset_x
-            elif ref_x == "right":
                 w_off = offset_x
+            elif ref_x == "right":
+                w_off = wall_width - door_w - offset_x
             else:
                 w_off = (wall_width - door_w) / 2.0
                 
@@ -489,8 +483,8 @@ def generate_multizone_geometry(zones, zone_origins):
         def interpolate(pA, pB, frac):
             return (pA[0] + (pB[0]-pA[0])*frac, pA[1] + (pB[1]-pA[1])*frac, pA[2] + (pB[2]-pA[2])*frac)
             
-        win_br_x, win_br_y, win_br_z = interpolate(v1, v4, w_off / wall_width)
-        win_bl_x, win_bl_y, win_bl_z = interpolate(v1, v4, (w_off + door_w) / wall_width)
+        win_bl_x, win_bl_y, win_bl_z = interpolate(v1, v2, w_off / wall_width)
+        win_br_x, win_br_y, win_br_z = interpolate(v1, v2, (w_off + door_w) / wall_width)
         
         z_bottom = v1[2] + h_off
         z_top = z_bottom + door_h
@@ -506,10 +500,10 @@ def generate_multizone_geometry(zones, zone_origins):
     ,                        !- Frame and Divider Name
     1,                       !- Multiplier
     4,                       !- Number of Vertices
-    {win_br_x:.2f}, {win_br_y:.2f}, {z_bottom:.2f},  !- X,Y,Z ==> Vertex 1
-    {win_br_x:.2f}, {win_br_y:.2f}, {z_top:.2f},  !- X,Y,Z ==> Vertex 2
-    {win_bl_x:.2f}, {win_bl_y:.2f}, {z_top:.2f},  !- X,Y,Z ==> Vertex 3
-    {win_bl_x:.2f}, {win_bl_y:.2f}, {z_bottom:.2f};  !- X,Y,Z ==> Vertex 4
+    {win_bl_x:.2f}, {win_bl_y:.2f}, {z_bottom:.2f},  !- X,Y,Z ==> Vertex 1
+    {win_br_x:.2f}, {win_br_y:.2f}, {z_bottom:.2f},  !- X,Y,Z ==> Vertex 2
+    {win_br_x:.2f}, {win_br_y:.2f}, {z_top:.2f},  !- X,Y,Z ==> Vertex 3
+    {win_bl_x:.2f}, {win_bl_y:.2f}, {z_top:.2f};  !- X,Y,Z ==> Vertex 4
 """
 
     # Generate geometry for each zone
@@ -556,19 +550,19 @@ def generate_multizone_geometry(zones, zone_origins):
         # --- Generate 4 walls ---
         # Use LOCAL coordinates (relative to zone origin) since we set Zone X/Y/Z Origin
         
-        # Wall definitions: (wall_dir, surf_name, vertices, wall_dim_for_windows, wwr, window_data, door_data)
+        # Wall definitions: (wall_dir, surf_name, v1, v2, v3, v4, wall_dim_for_windows, wall_h_dim, wwr, window_data, door_data)
         walls = [
             ("South", f"{name}_Wall_South",
-             (L, 0, 0), (L, 0, H), (0, 0, H), (0, 0, 0),
+             (0, 0, 0), (L, 0, 0), (L, 0, H), (0, 0, H),
              L, H, wwr_s, window_s, door_s),
             ("East", f"{name}_Wall_East",
-             (L, W, 0), (L, W, H), (L, 0, H), (L, 0, 0),
+             (L, 0, 0), (L, W, 0), (L, W, H), (L, 0, H),
              W, H, wwr_e, window_e, door_e),
             ("North", f"{name}_Wall_North",
-             (0, W, 0), (0, W, H), (L, W, H), (L, W, 0),
+             (L, W, 0), (0, W, 0), (0, W, H), (L, W, H),
              L, H, wwr_n, window_n, door_n),
             ("West", f"{name}_Wall_West",
-             (0, 0, 0), (0, 0, H), (0, W, H), (0, W, 0),
+             (0, W, 0), (0, 0, 0), (0, 0, H), (0, W, H),
              W, H, wwr_w, window_w, door_w),
         ]
         
@@ -596,8 +590,8 @@ def generate_multizone_geometry(zones, zone_origins):
                     v1, v2, v3, v4
                 )
                 # Add windows and doors only on exterior walls
-                idf_str += make_window_mz(surf_name, v1, v4, wall_w_dim, wall_h_dim, wwr, win_data)
-                idf_str += make_door_mz(surf_name, v1, v4, wall_w_dim, wall_h_dim, dr_data)
+                idf_str += make_window_mz(surf_name, v1, v2, wall_w_dim, wall_h_dim, wwr, win_data)
+                idf_str += make_door_mz(surf_name, v1, v2, wall_w_dim, wall_h_dim, dr_data)
         
         # Roof
         idf_str += make_surface(
@@ -610,7 +604,7 @@ def generate_multizone_geometry(zones, zone_origins):
         idf_str += make_surface(
             f"{name}_Floor", "Floor", floor_constr, name,
             "Ground", None, "NoSun", "NoWind",
-            (0, 0, 0), (L, 0, 0), (L, W, 0), (0, W, 0)
+            (0, W, 0), (L, W, 0), (L, 0, 0), (0, 0, 0)
         )
     
     # Add interior partition construction material

@@ -152,8 +152,8 @@
     {ZONE_NAME} PSZ Gas Heater,          !- Component 2 Name
     {ZONE_NAME} PSZ OA Mixed Air Outlet, !- Component 2 Inlet Node Name
     {ZONE_NAME} PSZ Heating Coil Outlet, !- Component 2 Outlet Node Name
-    Coil:Cooling:DX:SingleSpeed,         !- Component 3 Object Type
-    {ZONE_NAME} PSZ DX Cool Coil,        !- Component 3 Name
+    CoilSystem:Cooling:DX,               !- Component 3 Object Type
+    {ZONE_NAME} PSZ DX Cool Coil System, !- Component 3 Name
     {ZONE_NAME} PSZ Heating Coil Outlet, !- Component 3 Inlet Node Name
     {ZONE_NAME} PSZ Cooling Coil Outlet, !- Component 3 Outlet Node Name
     Fan:ConstantVolume,                  !- Component 4 Object Type
@@ -280,7 +280,19 @@
     0.8,                                  !- Burner Efficiency
     autosize,                             !- Nominal Capacity {W}
     {ZONE_NAME} PSZ OA Mixed Air Outlet, !- Air Inlet Node Name
-    {ZONE_NAME} PSZ Heating Coil Outlet; !- Air Outlet Node Name
+    {ZONE_NAME} PSZ Heating Coil Outlet, !- Air Outlet Node Name
+    {ZONE_NAME} PSZ Heating Coil Outlet; !- Temperature Setpoint Node Name
+
+! --- DX Cooling Coil System Wrapper ---
+
+  CoilSystem:Cooling:DX,
+    {ZONE_NAME} PSZ DX Cool Coil System, !- Name
+    {ZONE_NAME} PSZ Avail Schedule,      !- Availability Schedule Name
+    {ZONE_NAME} PSZ Heating Coil Outlet, !- DX Cooling Coil System Inlet Node Name
+    {ZONE_NAME} PSZ Cooling Coil Outlet, !- DX Cooling Coil System Outlet Node Name
+    {ZONE_NAME} PSZ Cooling Coil Outlet, !- DX Cooling Coil System Sensor Node Name
+    Coil:Cooling:DX:SingleSpeed,         !- Cooling Coil Object Type
+    {ZONE_NAME} PSZ DX Cool Coil;        !- Cooling Coil Name
 
 ! --- DX Cooling Coil ---
 

@@ -324,7 +324,47 @@ class AIPipelines:
 
             print(f"[AI Assembler] AI Selected -> L:{L}, W:{W}, Wall_S:{wall_s}, WWR_S:{wwr_s}, Door_S:{door_s}, HVAC:{hvac_type}")
 
-            # 5. Build Geometry (Now passing directional WWRs, Materials, and custom Windows/Doors)
+            # 5. Extract and Validate Dependencies
+            extracted_blocks = {}
+            default_constr = "Composite 2x4 Wood Stud R11"
+
+            # Validate walls
+            idf_extractor.resolve_dependencies("Construction", wall_s, extracted_blocks)
+            if f"Construction::{wall_s}" not in extracted_blocks and wall_s != default_constr:
+                print(f"[AI Assembler] Fallback: Wall South '{wall_s}' not found, using default.")
+                wall_s = default_constr
+                idf_extractor.resolve_dependencies("Construction", default_constr, extracted_blocks)
+                
+            idf_extractor.resolve_dependencies("Construction", wall_n, extracted_blocks)
+            if f"Construction::{wall_n}" not in extracted_blocks and wall_n != default_constr:
+                print(f"[AI Assembler] Fallback: Wall North '{wall_n}' not found, using default.")
+                wall_n = default_constr
+                idf_extractor.resolve_dependencies("Construction", default_constr, extracted_blocks)
+                
+            idf_extractor.resolve_dependencies("Construction", wall_e, extracted_blocks)
+            if f"Construction::{wall_e}" not in extracted_blocks and wall_e != default_constr:
+                print(f"[AI Assembler] Fallback: Wall East '{wall_e}' not found, using default.")
+                wall_e = default_constr
+                idf_extractor.resolve_dependencies("Construction", default_constr, extracted_blocks)
+                
+            idf_extractor.resolve_dependencies("Construction", wall_w, extracted_blocks)
+            if f"Construction::{wall_w}" not in extracted_blocks and wall_w != default_constr:
+                print(f"[AI Assembler] Fallback: Wall West '{wall_w}' not found, using default.")
+                wall_w = default_constr
+                idf_extractor.resolve_dependencies("Construction", default_constr, extracted_blocks)
+
+            idf_extractor.resolve_dependencies("Construction", roof_name, extracted_blocks)
+            if f"Construction::{roof_name}" not in extracted_blocks and roof_name != default_constr:
+                print(f"[AI Assembler] Fallback: Roof '{roof_name}' not found, using default.")
+                roof_name = default_constr
+                idf_extractor.resolve_dependencies("Construction", default_constr, extracted_blocks)
+
+            idf_extractor.resolve_dependencies("Construction", global_wall, extracted_blocks)
+            if f"Construction::{global_wall}" not in extracted_blocks and global_wall != default_constr:
+                global_wall = default_constr
+                idf_extractor.resolve_dependencies("Construction", default_constr, extracted_blocks)
+
+            # 6. Build Geometry (Now passing directional WWRs, Materials, and custom Windows/Doors)
             geometry_idf = geometry_util.generate_zone_geometry(
                 L, W, H, 
                 wwr_s, wwr_n, wwr_e, wwr_w,
@@ -332,12 +372,6 @@ class AIPipelines:
                 door_s, door_n, door_e, door_w,
                 window_s, window_n, window_e, window_w
             )
-            
-            # 6. Extract Dependencies
-            extracted_blocks = {}
-            for w_name in set([wall_s, wall_n, wall_e, wall_w]):
-                idf_extractor.resolve_dependencies("Construction", w_name, extracted_blocks)
-            idf_extractor.resolve_dependencies("Construction", roof_name, extracted_blocks)
 
             # 6.5 Load HVAC Template
             hvac_idf_block = ""
@@ -686,17 +720,26 @@ class AIPipelines:
         zone_origins = geometry_util.resolve_zone_origins(zones)
         print(f"[AI Assembler MZ] Zone origins: {zone_origins}")
 
-        # --- Step 3: Generate multi-zone geometry with adjacencies ---
-        geometry_idf, adjacency_info = geometry_util.generate_multizone_geometry(zones, zone_origins)
-
-        # --- Step 4: Extract material dependencies ---
+        # --- Step 3: Extract and validate material dependencies ---
         extracted_blocks = {}
-        all_wall_names = set()
+        default_constr = "Composite 2x4 Wood Stud R11"
         for z in zones:
-            all_wall_names.add(z.get("wall_construction") or "Composite 2x4 Wood Stud R11")
-            all_wall_names.add(z.get("roof_construction") or "Composite 2x4 Wood Stud R11")
-        for w_name in all_wall_names:
+            w_name = z.get("wall_construction") or default_constr
             idf_extractor.resolve_dependencies("Construction", w_name, extracted_blocks)
+            if f"Construction::{w_name}" not in extracted_blocks and w_name != default_constr:
+                print(f"[AI Assembler MZ] Fallback: Wall '{w_name}' not found, using default.")
+                z["wall_construction"] = default_constr
+                idf_extractor.resolve_dependencies("Construction", default_constr, extracted_blocks)
+
+            r_name = z.get("roof_construction") or default_constr
+            idf_extractor.resolve_dependencies("Construction", r_name, extracted_blocks)
+            if f"Construction::{r_name}" not in extracted_blocks and r_name != default_constr:
+                print(f"[AI Assembler MZ] Fallback: Roof '{r_name}' not found, using default.")
+                z["roof_construction"] = default_constr
+                idf_extractor.resolve_dependencies("Construction", default_constr, extracted_blocks)
+
+        # --- Step 4: Generate multi-zone geometry with adjacencies ---
+        geometry_idf, adjacency_info = geometry_util.generate_multizone_geometry(zones, zone_origins)
 
         # --- Step 5: Load HVAC templates for each zone ---
         hvac_idf_block = ""

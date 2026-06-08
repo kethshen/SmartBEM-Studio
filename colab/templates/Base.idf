@@ -107,9 +107,9 @@
     GenericMaterial;         !- Outside Layer
 
   GlobalGeometryRules,
-    UpperLeftCorner,         !- Starting Vertex Position
+    LowerLeftCorner,         !- Starting Vertex Position
     Counterclockwise,        !- Vertex Entry Direction
-    World;                   !- Coordinate System
+    Relative;                !- Coordinate System
 
 ! ==========================================================================
 ! GEOMETRY IS NOT INCLUDED IN THIS TEMPLATE.
