@@ -244,16 +244,31 @@ def resolve_zone_origins(zones):
         ref = z.get("relative_to", None)
         direction = z.get("direction", None)
         
+        if ref in [None, "null", "Null", "NULL", "none", "None", ""]:
+            ref = None
+        if direction in [None, "null", "Null", "NULL", "none", "None", ""]:
+            direction = None
+            
+        print(f"[AI Assembler MZ] Resolving origin for '{name}'. ref='{ref}', direction='{direction}'")
+        
         if ref is None or direction is None:
             # Anchor zone
+            print(f"[AI Assembler MZ] -> '{name}' is treated as an ANCHOR zone at (0,0,0)")
             origins[name] = (0.0, 0.0, 0.0)
         else:
-            if ref not in origins:
-                raise ValueError(f"Zone '{name}' references '{ref}' which has not been defined yet. "
-                                 f"Ensure zones are ordered so that referenced zones come first.")
-            
-            ref_origin = origins[ref]
-            ref_L, ref_W, ref_H = zone_dims[ref]
+            actual_ref = None
+            for o_name in origins:
+                if o_name.lower() == ref.lower():
+                    actual_ref = o_name
+                    break
+                    
+            if actual_ref is None:
+                print(f"[WARNING] Zone '{name}' references '{ref}' which has not been defined yet! Falling back to Anchor (0,0,0)")
+                origins[name] = (0.0, 0.0, 0.0)
+                continue
+                
+            ref_origin = origins[actual_ref]
+            ref_L, ref_W, ref_H = zone_dims[actual_ref]
             
             direction_upper = direction.strip().capitalize()
             
