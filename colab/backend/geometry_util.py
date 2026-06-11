@@ -463,8 +463,8 @@ def generate_multizone_geometry(zones, zone_origins):
     {win_bl_x:.2f}, {win_bl_y:.2f}, {z_top:.2f};  !- X,Y,Z ==> Vertex 4
 """
 
-    def make_door_mz(wall_name, v1, v2, wall_width, wall_height, door_data):
-        """Generate door for multi-zone (same logic as single-zone make_door)."""
+    def make_door_mz(wall_name, v1, v2, wall_width, wall_height, door_data, constr="{EXTERIOR_DOOR_CONSTR}"):
+        """Generate door for multi-zone. constr allows specifying interior vs exterior door construction."""
         if not door_data:
             return ""
         
@@ -508,7 +508,7 @@ def generate_multizone_geometry(zones, zone_origins):
   FenestrationSurface:Detailed,
     {wall_name}_Door,      !- Name
     Door,                  !- Surface Type
-    {{EXTERIOR_DOOR_CONSTR}},  !- Construction Name
+    {constr},  !- Construction Name
     {wall_name},             !- Building Surface Name
     ,                        !- Outside Boundary Condition Object
     0.5,                     !- View Factor to Ground
@@ -596,7 +596,11 @@ def generate_multizone_geometry(zones, zone_origins):
                     "Surface", adj_wall_name, "NoSun", "NoWind",
                     v1, v2, v3, v4
                 )
-                # No windows or doors on interior partition walls
+                # Allow doors on interior partition walls (between zones), but not windows.
+                # Interior doors use a special opaque construction.
+                if dr_data:
+                    idf_str += make_door_mz(surf_name, v1, v2, wall_w_dim, wall_h_dim, dr_data,
+                                            constr="Interior_Door_Constr")
             else:
                 # Exterior wall
                 idf_str += make_surface(
@@ -638,6 +642,21 @@ def generate_multizone_geometry(zones, zone_origins):
   Construction,
     Interior_Partition,      !- Name
     Interior_Partition_Material; !- Outside Layer
+
+  Material,
+    Interior_Door_Material,  !- Name
+    MediumSmooth,            !- Roughness
+    0.045,                   !- Thickness {m}
+    0.15,                    !- Conductivity {W/m-K}
+    600.0,                   !- Density {kg/m3}
+    1000.0,                  !- Specific Heat {J/kg-K}
+    0.9,                     !- Thermal Absorptance
+    0.6,                     !- Solar Absorptance
+    0.6;                     !- Visible Absorptance
+
+  Construction,
+    Interior_Door_Constr,    !- Name
+    Interior_Door_Material;  !- Outside Layer
 """
     
     # Replace the placeholder

@@ -60,9 +60,9 @@ def generate_3d_html(idf_path, output_path):
             if len(fields) >= 2:
                 zname = fields[1]
                 zone_order.append(zname)
-                ox = float(fields[4]) if len(fields) > 4 and fields[4] else 0.0
-                oy = float(fields[5]) if len(fields) > 5 and fields[5] else 0.0
-                oz = float(fields[6]) if len(fields) > 6 and fields[6] else 0.0
+                ox = float(fields[3]) if len(fields) > 3 and fields[3].strip() else 0.0
+                oy = float(fields[4]) if len(fields) > 4 and fields[4].strip() else 0.0
+                oz = float(fields[5]) if len(fields) > 5 and fields[5].strip() else 0.0
                 zone_origins[zname] = (ox, oy, oz)
 
     # Map zone name -> palette index
@@ -72,6 +72,17 @@ def generate_3d_html(idf_path, output_path):
     # 3. Parse surfaces                                                   #
     # ------------------------------------------------------------------ #
     surfaces = []
+
+    # Build a quick wall-name -> zone-name map so windows/doors can look up their zone
+    wall_to_zone = {}
+    for obj in objects:
+        fields = [f.strip() for f in obj.split(',')]
+        if not fields:
+            continue
+        if fields[0] == "BuildingSurface:Detailed" and len(fields) >= 5:
+            wall_name = fields[1]
+            zone_name = fields[4]
+            wall_to_zone[wall_name] = zone_name
 
     for obj in objects:
         fields = [f.strip() for f in obj.split(',')]
@@ -86,7 +97,12 @@ def generate_3d_html(idf_path, output_path):
 
         name      = fields[1]
         surf_type = fields[2]   # Wall / Roof / Floor / Window / Door
-        zone_name = fields[4] if obj_type == "BuildingSurface:Detailed" else fields[5]
+        if obj_type == "BuildingSurface:Detailed":
+            zone_name = fields[4]
+        else:
+            # FenestrationSurface: no direct zone field; look up from parent wall
+            parent_wall = fields[4]
+            zone_name = wall_to_zone.get(parent_wall, "")
 
         # Detect interior partitions (Outside Boundary Condition == Surface)
         is_partition = False
@@ -99,10 +115,13 @@ def generate_3d_html(idf_path, output_path):
         try:
             num_verts = int(fields[num_vert_idx])
             verts = []
+            # Vertices in IDF are LOCAL to zone origin (Coordinate System = Relative).
+            # We must add the zone origin offset to get absolute world coordinates for plotting.
+            zox, zoy, zoz = zone_origins.get(zone_name, (0.0, 0.0, 0.0))
             for vi in range(num_verts):
-                x = float(fields[num_vert_idx + 1 + vi*3])
-                y = float(fields[num_vert_idx + 2 + vi*3])
-                z = float(fields[num_vert_idx + 3 + vi*3])
+                x = float(fields[num_vert_idx + 1 + vi*3]) + zox
+                y = float(fields[num_vert_idx + 2 + vi*3]) + zoy
+                z = float(fields[num_vert_idx + 3 + vi*3]) + zoz
                 verts.append((x, y, z))
 
             surfaces.append({
