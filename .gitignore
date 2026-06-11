@@ -6,6 +6,9 @@ serviceAccountKey.json
 *.png
 *.csv
 
+desktop.ini
+
+
 # Python cache
 __pycache__/
 
