@@ -226,6 +226,36 @@
                 </section>
             </div>
 
+            <!-- Row 3: Material Dictionary & Placeholder -->
+            <div class="grid-2" style="margin-top: 1.5rem;">
+                <!-- Left Column: Material Dictionary -->
+                <section class="card">
+                    <div class="card-header" style="display: flex; flex-direction: column; align-items: flex-start; gap: 1rem;">
+                        <h2 class="card-title">5. Material Dictionary</h2>
+                        <div style="display: flex; flex-direction: column; gap: 0.75rem; width: 100%;">
+                            <input type="text" id="dictSearch" placeholder="Search materials (e.g. glass, wood)..." 
+                                style="width: 100%; padding: 0.8rem; border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); background: var(--bg-app); color: var(--text-primary); font-size: 1rem;">
+                            <label style="font-size: 1rem; color: var(--text-secondary); display: flex; align-items: center; gap: 0.5rem; cursor: pointer; padding-left: 0.2rem;">
+                                <input type="checkbox" id="dictAdvancedSearch" style="width: 1.2rem; height: 1.2rem; cursor: pointer;">
+                                Include advanced categories in search
+                            </label>
+                        </div>
+                    </div>
+                    <div id="dictContainer" style="margin-top: 1.5rem; max-height: 800px; overflow-y: auto; border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 1rem; background: var(--bg-app);">
+                        <div style="text-align: center; color: var(--text-muted);">Loading dictionary...</div>
+                    </div>
+                </section>
+
+                <!-- Right Column: Placeholder -->
+                <section class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">6. Placeholder</h2>
+                    </div>
+                    <div style="color: var(--text-muted); text-align: center; margin-top: 2rem;">
+                        Content coming soon...
+                    </div>
+                </section>
+            </div>
 
         </main>
     </div>
@@ -370,6 +400,184 @@
                 observer.observe(resDiv, { childList: true, subtree: true });
             }
         }
+
+        // Material Dictionary Logic
+        document.addEventListener('DOMContentLoaded', () => {
+            const container = document.getElementById('dictContainer');
+            const searchInput = document.getElementById('dictSearch');
+            const advancedSearchCheckbox = document.getElementById('dictAdvancedSearch');
+            let dictionaryData = {};
+
+            const keepCategories = [
+                "Construction",
+                "Material",
+                "Material:AirGap",
+                "Material:NoMass",
+                "WindowMaterial:Glazing",
+                "WindowMaterial:Gas",
+                "WindowMaterial:Blind",
+                "WindowMaterial:Shade",
+                "WindowMaterial:Screen"
+            ];
+
+            // Fetch the JSON data
+            fetch('../assets/data/index.json')
+                .then(response => {
+                    if (!response.ok) throw new Error("Could not load index.json");
+                    return response.json();
+                })
+                .then(data => {
+                    dictionaryData = data;
+                    renderDictionary(data);
+                })
+                .catch(err => {
+                    console.error("Dictionary Load Error:", err);
+                    container.innerHTML = `<div style="color: var(--error);">Error loading dictionary. Check console.</div>`;
+                });
+
+            function renderDictionary(data, filterText = '') {
+                container.innerHTML = '';
+                const lowerFilter = filterText.toLowerCase();
+                const isAdvancedSearch = advancedSearchCheckbox.checked;
+                let hasMatches = false;
+
+                const basicContainer = document.createElement('div');
+                const advancedContainer = document.createElement('div');
+                
+                // Set up Advanced wrapper
+                const advancedDetails = document.createElement('details');
+                advancedDetails.style.marginTop = '1.5rem';
+                advancedDetails.style.border = '1px solid var(--border-subtle)';
+                advancedDetails.style.borderRadius = 'var(--radius-sm)';
+                advancedDetails.style.padding = '0.5rem';
+                advancedDetails.style.background = 'var(--bg-subtle)';
+                advancedDetails.style.color = 'var(--text-muted)';
+                
+                const advancedSummary = document.createElement('summary');
+                advancedSummary.style.fontWeight = 'bold';
+                advancedSummary.style.cursor = 'pointer';
+                advancedSummary.textContent = "Advanced Categories (Engine Data & Curves)";
+                advancedDetails.appendChild(advancedSummary);
+                advancedDetails.appendChild(advancedContainer);
+
+                let advancedHasMatches = false;
+
+                // Loop through each category in index.json
+                for (const [category, itemsObj] of Object.entries(data)) {
+                    const isKeep = keepCategories.includes(category);
+                    
+                    // If not an advanced search, and this is an advanced category, skip filtering completely if there's a search term
+                    if (!isKeep && lowerFilter && !isAdvancedSearch) {
+                        continue;
+                    }
+
+                    // Extract object names
+                    const itemNames = Object.keys(itemsObj);
+                    
+                    // Filter item names and category name
+                    const isCategoryMatch = category.toLowerCase().includes(lowerFilter);
+                    const matchedItems = itemNames.filter(name => name.toLowerCase().includes(lowerFilter));
+                    
+                    // If no filter, show category. If filter, only show if match.
+                    if (!lowerFilter || isCategoryMatch || matchedItems.length > 0) {
+                        if (isKeep) hasMatches = true;
+                        if (!isKeep) advancedHasMatches = true;
+                        
+                        // Create <details> element
+                        const details = document.createElement('details');
+                        // Expand if there's a search filter and it matches this category or its items
+                        if (lowerFilter && (isCategoryMatch || matchedItems.length > 0)) {
+                            details.open = true;
+                            if (!isKeep) advancedDetails.open = true;
+                        }
+                        details.style.marginBottom = '0.5rem';
+                        details.style.border = '1px solid var(--border-subtle)';
+                        details.style.borderRadius = 'var(--radius-sm)';
+                        details.style.padding = '0.5rem';
+                        details.style.background = 'var(--bg-app)';
+                        details.style.color = 'var(--text-primary)';
+                        
+                        // Create <summary>
+                        const summary = document.createElement('summary');
+                        summary.style.fontWeight = 'bold';
+                        summary.style.cursor = 'pointer';
+                        summary.style.color = isKeep ? 'var(--primary)' : 'var(--text-secondary)';
+                        summary.textContent = `${category} (${itemNames.length} items)`;
+                        details.appendChild(summary);
+                        
+                        // Create list of items
+                        const ul = document.createElement('ul');
+                        ul.style.listStyleType = 'none';
+                        ul.style.paddingLeft = '1.5rem';
+                        ul.style.marginTop = '0.5rem';
+                        
+                        // Display either all items (if no filter or category matched) or just matched items
+                        const itemsToDisplay = (lowerFilter && !isCategoryMatch) ? matchedItems : itemNames;
+                        
+                        itemsToDisplay.forEach(item => {
+                            const li = document.createElement('li');
+                            li.style.marginBottom = '0.25rem';
+                            li.style.padding = '0.25rem';
+                            li.style.background = 'var(--bg-subtle)';
+                            li.style.borderRadius = '4px';
+                            li.style.fontFamily = 'monospace';
+                            li.style.fontSize = '0.9rem';
+                            li.style.display = 'flex';
+                            li.style.justifyContent = 'space-between';
+                            
+                            const textSpan = document.createElement('span');
+                            textSpan.textContent = item;
+                            
+                            const copyBtn = document.createElement('button');
+                            copyBtn.textContent = 'Copy';
+                            copyBtn.style.fontSize = '0.7rem';
+                            copyBtn.style.padding = '2px 6px';
+                            copyBtn.style.border = 'none';
+                            copyBtn.style.background = 'var(--primary)';
+                            copyBtn.style.color = 'white';
+                            copyBtn.style.borderRadius = '3px';
+                            copyBtn.style.cursor = 'pointer';
+                            copyBtn.onclick = () => {
+                                navigator.clipboard.writeText(item);
+                                copyBtn.textContent = 'Copied!';
+                                setTimeout(() => copyBtn.textContent = 'Copy', 1500);
+                            };
+                            
+                            li.appendChild(textSpan);
+                            li.appendChild(copyBtn);
+                            ul.appendChild(li);
+                        });
+                        
+                        details.appendChild(ul);
+                        if (isKeep) {
+                            basicContainer.appendChild(details);
+                        } else {
+                            advancedContainer.appendChild(details);
+                        }
+                    }
+                }
+                
+                container.appendChild(basicContainer);
+                
+                if (advancedHasMatches || (!lowerFilter)) {
+                    container.appendChild(advancedDetails);
+                }
+
+                if (!hasMatches && !advancedHasMatches && lowerFilter) {
+                    container.innerHTML = '<div style="color: var(--text-muted); text-align: center;">No matches found.</div>';
+                }
+            }
+
+            // Listen for search input
+            searchInput.addEventListener('input', (e) => {
+                renderDictionary(dictionaryData, e.target.value);
+            });
+
+            // Listen for advanced search checkbox toggle
+            advancedSearchCheckbox.addEventListener('change', () => {
+                renderDictionary(dictionaryData, searchInput.value);
+            });
+        });
     </script>
 </body>
 

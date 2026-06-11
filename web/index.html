@@ -34,20 +34,29 @@
     <main class="main-content">
       <header class="page-header">
         <h1 class="page-title">Welcome to SmartHVAC Studio</h1>
-        <p class="page-subtitle">An academic platform for AI-assisted HVAC modeling, EnergyPlus simulation, and
-          EKF-based estimation.</p>
       </header>
 
       <div class="grid-2" style="display: grid; grid-template-columns: 3fr 2fr; gap: 2rem; align-items: start;">
         <!-- Left Column: Cards -->
         <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+          <!-- Intro Card -->
+          <section class="card" style="margin: 0; background-color: var(--bg-subtle);">
+            <p style="color: var(--text-primary); margin-bottom: 0; line-height: 1.6; font-size: 1.05rem;">
+              Ever wanted to simulate a building's energy use without learning complicated software? SmartHVAC Studio
+              makes it easy!
+              Just type out what your building looks like in plain English, and our AI will automatically build the 3D
+              model and run the energy simulation for you.
+            </p>
+          </section>
+
           <!-- Card 1: AI Modeling -->
           <section class="card" style="margin: 0;">
             <div class="card-header">
-              <h2 class="card-title">✨ Agentic AI Modeling</h2>
+              <h2 class="card-title">✨ AI Building Simulator</h2>
             </div>
             <p style="color: var(--text-secondary); margin-bottom: 1.5rem; line-height: 1.6;">
-              Transform natural language descriptions into functional EnergyPlus building models. Our two-pass RAG pipeline autonomously handles complex geometries, material selections, and HVAC configurations.
+              Tell our AI about your building - like how big it is, where the windows are, and what it's made of.
+              The AI will instantly draw a 3D model and calculate its energy use for you! No coding required.
             </p>
             <a href="pages/nlp.html" class="btn btn-primary">
               Launch AI Simulator &rarr;
@@ -57,13 +66,15 @@
           <!-- Card 2: EKF Estimation -->
           <section class="card" style="margin: 0;">
             <div class="card-header">
-              <h2 class="card-title">📈 EKF Parameter Estimation</h2>
+              <h2 class="card-title">📈 Real-World Sensor Analytics</h2>
             </div>
             <p style="color: var(--text-secondary); margin-bottom: 1.5rem; line-height: 1.6;">
-              Bridge the gap between theoretical models and real-world behavior. Utilizing an 8-state Extended Kalman Filter, we estimate unknown thermal parameters and recover live occupancy from sensor data.
+              Look at real-world data to see how buildings actually behave. We use smart algorithms
+              to figure out hidden details, like guessing how many people are inside a room just by looking at the
+              temperature!
             </p>
             <a href="pages/ekf.html" class="btn btn-primary" style="background-color: #0d904f;">
-              Explore EKF Analytics &rarr;
+              Explore Real-World Data &rarr;
             </a>
           </section>
         </div>

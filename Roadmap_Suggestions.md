@@ -40,3 +40,9 @@ EnergyPlus can do more than just calculate Watts and Joules; it can calculate mo
 > - If you want a more accurate physical model, we should tackle **#1 (HVAC) or #2 (Schedules)**. 
 > - If you want a more impressive visual output, **#3 (Multi-Story)** or **#5 (UI Enhancements)** would be best. 
 > - If you want to pitch this as a green-tech tool, **#4 (Carbon)** is the way to go!
+
+## 6. Dynamic Custom Constructions (Advanced Materials)
+Currently, the app relies on pre-built `Construction` assemblies (like `Composite Brick Foam 2x4 Steel Stud R11`). 
+
+*   **Dynamic `Construction` Generation from Raw Materials:** Upgrade the NLP pipeline to accept individual raw `Material` types from the user (e.g., *"Make the wall out of 100mm brick"*). The backend can dynamically write a new `Construction` block into the IDF containing exactly those user-specified raw material layers, giving users total granular control over the building envelope.
+*   **Custom Window Constructions:** Currently, all windows are hardcoded to "Theoretical Glass [167]". Update the NLP pipeline to extract user-specified window configurations (using pre-built `Construction` objects, or dynamically generating them from `WindowMaterial:Glazing`, `WindowMaterial:Gas`, etc.).
