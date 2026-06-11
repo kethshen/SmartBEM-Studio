@@ -1,22 +1,27 @@
-// SmartHVAC Studio — Commercial-Grade Client
-// Follows 5-Layer Architecture -> Layer 1 (Frontend) & Layer 2 (Firebase Coordination)
+// SmartHVAC Studio — Direct Tunnel Architecture
+// Connects directly to Google Colab via Ngrok/FastAPI
 
-import { firebaseConfig } from "./firebaseConfig.js";
+// ----------------------------
+// Backend URL Management
+// ----------------------------
+function getBackendUrl() {
+  let url = localStorage.getItem("smarthvac_backend_url");
+  if (!url) {
+    url = "http://127.0.0.1:8000"; // Default fallback
+  }
+  // ensure no trailing slash
+  return url.replace(/\/$/, "");
+}
 
-// Firebase SDKs are loaded via CDN in HTML
-firebase.initializeApp(firebaseConfig);
-
-// Firestore & Storage
-const db = firebase.firestore();
-const storage = firebase.storage();
-
-console.log("Firebase initialized (5-Layer Architecture Mode)");
-document.body.classList.add('js-loaded'); // Mark for CSS if needed
+function setBackendUrl(url) {
+  localStorage.setItem("smarthvac_backend_url", url);
+  console.log("[Backend] URL updated to:", url);
+}
 
 // ----------------------------
 // Weather Index (Global)
 // ----------------------------
-let weatherIndex = []; // Populated on page load from weather_index.json
+let weatherIndex = []; 
 
 function loadWeatherIndex() {
   fetch('../data/weather_index.json')
@@ -39,7 +44,6 @@ function populateWeatherDatalist() {
     datalist.appendChild(opt);
   });
 
-  // When user selects a value, resolve it to the epw_url
   const searchInput = document.getElementById('weatherSearch');
   if (searchInput) {
     searchInput.addEventListener('change', () => {
@@ -47,77 +51,55 @@ function populateWeatherDatalist() {
       const hiddenUrl = document.getElementById('weatherEpwUrl');
       if (selected && hiddenUrl) {
         hiddenUrl.value = selected.epw_url;
-        console.log('[Weather] Selected:', selected.title, selected.epw_url);
       } else if (hiddenUrl) {
-        hiddenUrl.value = ''; // Clear if no match
+        hiddenUrl.value = ''; 
       }
     });
   }
 }
 
 // ----------------------------
-// Custom EPW Upload to Firebase Storage
+// Connection Testing
 // ----------------------------
-function handleEpwUpload(inputEl) {
-  const file = inputEl.files[0];
-  if (!file) return;
+function testBackendConnection(silent = false) {
+  const url = getBackendUrl();
+  const statusMsg = document.getElementById("statusMsg");
+  
+  if (!silent && statusMsg) {
+    statusMsg.innerText = "Checking connection...";
+    statusMsg.style.color = "blue";
+  }
 
-  const statusEl = document.getElementById('epwUploadStatus');
-  if (statusEl) statusEl.textContent = 'Uploading...';
-
-  const timestamp = Date.now();
-  const storagePath = `weather_uploads/${timestamp}_${file.name}`;
-  const storageRef = storage.ref(storagePath);
-
-  storageRef.put(file).then(snapshot => {
-    console.log('[Weather] Uploaded custom EPW to:', storagePath);
-    // Store the Firebase Storage path as the epw_url
-    const hiddenUrl = document.getElementById('weatherEpwUrl');
-    if (hiddenUrl) hiddenUrl.value = `firebase_storage:${storagePath}`;
-    // Clear the search box and show the uploaded filename
-    const searchInput = document.getElementById('weatherSearch');
-    if (searchInput) searchInput.value = `Custom: ${file.name}`;
-    if (statusEl) statusEl.textContent = `Uploaded: ${file.name}`;
-    statusEl.style.color = 'var(--success, green)';
-  }).catch(err => {
-    console.error('[Weather] Upload failed:', err);
-    if (statusEl) statusEl.textContent = 'Upload failed!';
-    statusEl.style.color = 'var(--error, red)';
-  });
-}
-
-// ----------------------------
-// TEST: Firestore write
-// ----------------------------
-// Added 'silent' parameter to suppress alerts for background checks
-function testFirestoreWrite(silent = false) {
-  const now = new Date();
-  const timestampId = now.getFullYear() +
-    String(now.getMonth() + 1).padStart(2, '0') +
-    String(now.getDate()).padStart(2, '0') + "_" +
-    String(now.getHours()).padStart(2, '0') +
-    String(now.getMinutes()).padStart(2, '0') +
-    String(now.getSeconds()).padStart(2, '0');
-
-  const customId = `client_check_${timestampId}`;
-
-  return db.collection("test_connectivity").doc(customId).set({
-    message: "SmartHVAC Studio connected",
-    source: "frontend_client",
-    timestamp: now
+  fetch(`${url}/api/ping`, {
+    headers: { 'ngrok-skip-browser-warning': 'true' }
   })
-    .then(() => {
-      if (!silent) alert("Firestore connection successful!");
-      return true;
+    .then(res => {
+      if(!res.ok) throw new Error("Network response was not ok");
+      return res.json();
     })
-    .catch((error) => {
-      console.error("Firestore error:", error);
-      if (!silent) alert("Firestore error: " + error.message);
-      throw error;
+    .then(data => {
+      if (!silent) {
+        if(statusMsg) {
+          statusMsg.innerText = "Connection successful! " + data.message;
+          statusMsg.style.color = "green";
+        } else {
+          alert("Connection successful! " + data.message);
+        }
+      }
+    })
+    .catch(err => {
+      console.error("Backend connection error:", err);
+      if (!silent) {
+        if(statusMsg) {
+          statusMsg.innerText = "Connection failed. Please check your Backend URL.";
+          statusMsg.style.color = "red";
+        } else {
+          alert("Connection failed. Please check your Backend URL.");
+        }
+      }
     });
 }
 
-// Sidebar Toggle Logic
 function toggleSidebar() {
   const container = document.querySelector('.dashboard-container');
   const sidebar = document.querySelector('.sidebar');
@@ -128,282 +110,229 @@ function toggleSidebar() {
 }
 
 // ----------------------------
-// Create a new Job (Layer 1 -> Layer 2)
+// Local Job Management
+// ----------------------------
+function getLocalJobs() {
+  const jobs = localStorage.getItem("smarthvac_jobs");
+  return jobs ? JSON.parse(jobs) : [];
+}
+
+function saveLocalJob(jobData) {
+  let jobs = getLocalJobs();
+  // Update if exists, else prepend
+  const idx = jobs.findIndex(j => j.id === jobData.id);
+  if (idx >= 0) {
+    jobs[idx] = jobData;
+  } else {
+    jobs.unshift(jobData); // newest first
+  }
+  localStorage.setItem("smarthvac_jobs", JSON.stringify(jobs));
+}
+
+// ----------------------------
+// Create a new Job (POST)
 // ----------------------------
 function submitDescription() {
-
   const input = document.getElementById("description");
   if (!input || input.value.trim() === "") {
     alert("Please enter a description.");
     return;
   }
 
-  // Exact Data Model from Architecture PDF
-  const jobData = {
-    status: "queued",
-    nlpInputText: input.value,
-    selectedModel: document.getElementById("aiModel") ? document.getElementById("aiModel").value : "openai",
-    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-    updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-
-    // Placeholders for Layer 3 (Colab) to fill
-    idfFilePath: null,
-    weatherFilePath: null,
-    simulationConfig: {
-      ...JSON.parse(localStorage.getItem("smartHVAC_config") || "{}"),
-      run_type: document.getElementById("simType") ? document.getElementById("simType").value : "design_day",
-      weather_file: "USA_IL_Chicago-OHare.Intl.AP.725300_TMY3.epw", // Default fallback
-      epw_url: document.getElementById("weatherEpwUrl") ? document.getElementById("weatherEpwUrl").value : ""
-    },
-    resultPath: null,
-    errorMessage: null
-  };
-
-  // Generate Custom ID: "job_YYYYMMDD_HHMMSS"
-  const now = new Date();
-  const timestampId = now.getFullYear() +
-    String(now.getMonth() + 1).padStart(2, '0') +
-    String(now.getDate()).padStart(2, '0') + "_" +
-    String(now.getHours()).padStart(2, '0') +
-    String(now.getMinutes()).padStart(2, '0') +
-    String(now.getSeconds()).padStart(2, '0');
-
-  const customJobId = `job_${timestampId}`;
-
-  // Use set() with custom ID instead of add()
-  db.collection("jobs").doc(customJobId).set(jobData)
-    .then(() => {
-      const statusMsg = document.getElementById("statusMsg");
-      if (statusMsg) {
-        statusMsg.innerText = `Job submitted! ID: ${customJobId} (Waiting for Colab)`;
-        statusMsg.style.color = "green";
-      }
-      input.value = ""; // Clear input
-      // If we are on the results page or dashboard, refresh list
-      if (typeof loadJobs === "function") {
-        loadJobs();
-      }
-    })
-    .catch((error) => {
-      if (statusMsg) {
-        statusMsg.innerText = "Error submitting job: " + error.message;
-        statusMsg.style.color = "red";
-      }
-    });
-}
-
-// ----------------------------
-// Run Minimal IDF (Safe Test)
-// ----------------------------
-function runMinimalIdf() {
-  const jobData = {
-    status: "queued",
-    runMode: "minimal",
-    nlpInputText: "Minimal.idf Safe Test Bypass",
-    selectedModel: "none",
-    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-    updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-    idfFilePath: null,
-    weatherFilePath: null,
-    simulationConfig: {
-      ...JSON.parse(localStorage.getItem("smartHVAC_config") || "{}"),
-      run_type: "design_day",
-      weather_file: "USA_IL_Chicago-OHare.Intl.AP.725300_TMY3.epw"
-    },
-    resultPath: null,
-    errorMessage: null
-  };
-
-  const now = new Date();
-  const timestampId = now.getFullYear() +
-    String(now.getMonth() + 1).padStart(2, '0') +
-    String(now.getDate()).padStart(2, '0') + "_" +
-    String(now.getHours()).padStart(2, '0') +
-    String(now.getMinutes()).padStart(2, '0') +
-    String(now.getSeconds()).padStart(2, '0');
-
-  const customJobId = `job_minimal_${timestampId}`;
-
-  db.collection("jobs").doc(customJobId).set(jobData)
-    .then(() => {
-      const statusMsg = document.getElementById("statusMsg");
-      if (statusMsg) {
-        statusMsg.innerText = `Safe Test submitted! ID: ${customJobId} (Waiting for Colab)`;
-        statusMsg.style.color = "blue";
-        statusMsg.style.display = "block";
-      }
-      if (typeof loadJobs === "function") {
-        loadJobs();
-      }
-    })
-    .catch((error) => {
-      alert("Error submitting safe test: " + error.message);
-    });
-}
-window.runMinimalIdf = runMinimalIdf;
-
-// ----------------------------
-// Test AI Connectivity (Layer 4 Check)
-// ----------------------------
-// ----------------------------
-// Test AI Connectivity (Layer 4 Check)
-// ----------------------------
-function testAIConnection(checkGemini = true, checkOpenAI = true, checkHF = true) {
+  const backendUrl = getBackendUrl();
   const statusMsg = document.getElementById("statusMsg");
 
-  // Create a special "test_connection" job
-  const jobData = {
-    status: "test_connection",
-    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-    nlpInputText: "Connectivity Check",
-    checkGemini: checkGemini,
-    checkOpenAI: checkOpenAI,
-    checkHF: checkHF
+  if(statusMsg) {
+    statusMsg.innerText = "Submitting job...";
+    statusMsg.style.color = "blue";
+  }
+
+  const payload = {
+    prompt: input.value,
+    settings: {
+      ...JSON.parse(localStorage.getItem("smartHVAC_config") || "{}"),
+      run_type: document.getElementById("simType") ? document.getElementById("simType").value : "design_day",
+      weather_file: "USA_IL_Chicago-OHare.Intl.AP.725300_TMY3.epw", 
+      epw_url: document.getElementById("weatherEpwUrl") ? document.getElementById("weatherEpwUrl").value : "",
+      model_type: document.getElementById("aiModel") ? document.getElementById("aiModel").value : "ollama"
+    }
   };
 
-  const now = new Date();
-  const timestampId = now.getFullYear() +
-    String(now.getMonth() + 1).padStart(2, '0') +
-    String(now.getDate()).padStart(2, '0') + "_" +
-    String(now.getHours()).padStart(2, '0') +
-    String(now.getMinutes()).padStart(2, '0') +
-    String(now.getSeconds()).padStart(2, '0');
+  fetch(`${backendUrl}/api/simulate`, {
+    method: 'POST',
+    headers: { 
+      'Content-Type': 'application/json',
+      'ngrok-skip-browser-warning': 'true'
+    },
+    body: JSON.stringify(payload)
+  })
+  .then(res => {
+    if(!res.ok) throw new Error("Failed to submit job.");
+    return res.json();
+  })
+  .then(data => {
+    const jobId = data.job_id;
+    if(statusMsg) {
+      statusMsg.innerText = `Job submitted! ID: ${jobId}. Simulation running...`;
+      statusMsg.style.color = "orange";
+    }
+    
+    input.value = "";
+    
+    // Save to local list
+    const jobData = {
+      id: jobId,
+      status: "running",
+      prompt: payload.prompt,
+      createdAt: new Date().getTime()
+    };
+    saveLocalJob(jobData);
+    if (typeof loadJobs === "function") loadJobs();
 
-  const customJobId = `test_ai_${timestampId}`;
-
-  db.collection("test_connectivity").doc(customJobId).set(jobData)
-    .then(() => {
-      // SILENCED: Do not show "Waiting for Colab"
-      // if (statusMsg) {
-      //   statusMsg.innerText = "Test requested. Waiting for Colab...";
-      //   statusMsg.style.color = "blue";
-      // }
-
-      // Listen for the result of THIS specific test job
-      const unsubscribe = db.collection("test_connectivity").doc(customJobId)
-        .onSnapshot((doc) => {
-          const data = doc.data();
-          if (data && data.status === "tested" && data.testResults) {
-            // Display Detailed Results
-            const results = data.testResults;
-            const resDiv = document.getElementById("connectionResults");
-
-            let html = "";
-            html += `OpenAI: <span style="color:${results.openai ? 'green' : 'red'}">${results.openai ? 'Supported' : 'Failed'}</span> &nbsp;|&nbsp; `;
-            html += `Gemini: <span style="color:${results.gemini ? 'green' : 'red'}">${results.gemini ? 'Supported' : 'Failed'}</span> &nbsp;|&nbsp; `;
-            html += `HF: <span style="color:${results.hf ? 'green' : 'red'}">${results.hf ? 'Supported' : 'Failed'}</span>`;
-
-            if (results.details) {
-              html += `<br><small style="color:gray; font-weight:normal;">${results.details}</small>`;
-            }
-
-            if (resDiv) {
-              resDiv.innerHTML = html;
-              // resDiv.style.display = 'block'; // Or keep hidden if only parsing text
-            }
-
-            // SILENCED: Do not show "Check Complete"
-            // if (statusMsg) statusMsg.innerText = "Connection Check Complete.";
-
-            unsubscribe(); // Stop listening
-          }
-        });
-    })
-    .catch((e) => alert("Failed: " + e.message));
+    // Start polling for this job
+    startPolling(jobId);
+  })
+  .catch(err => {
+    if(statusMsg) {
+      statusMsg.innerText = "Error: " + err.message;
+      statusMsg.style.color = "red";
+    }
+  });
 }
 
 // ----------------------------
-// Load all Jobs (Status Polling)
+// Status Polling
+// ----------------------------
+const activePolls = {};
+
+function startPolling(jobId) {
+  if (activePolls[jobId]) return;
+
+  const backendUrl = getBackendUrl();
+  
+  activePolls[jobId] = setInterval(() => {
+    fetch(`${backendUrl}/api/status/${jobId}`, {
+      headers: { 'ngrok-skip-browser-warning': 'true' }
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (data.status === "done" || data.status === "error") {
+          clearInterval(activePolls[jobId]);
+          delete activePolls[jobId];
+          
+          // Update local storage
+          const jobData = {
+            id: jobId,
+            status: data.status,
+            prompt: data.prompt,
+            createdAt: data.created_at * 1000,
+            result: data.result,
+            error_message: data.error_message
+          };
+          saveLocalJob(jobData);
+          if (typeof loadJobs === "function") loadJobs();
+          
+          const statusMsg = document.getElementById("statusMsg");
+          if(statusMsg) {
+            statusMsg.innerText = data.status === "done" ? "Simulation Complete!" : "Simulation Failed.";
+            statusMsg.style.color = data.status === "done" ? "green" : "red";
+          }
+        }
+      })
+      .catch(err => console.error(`[Polling] Error for ${jobId}:`, err));
+  }, 3000); // Poll every 3 seconds
+}
+
+// ----------------------------
+// Load all Jobs (UI)
 // ----------------------------
 function loadJobs() {
-
   const tableBody = document.getElementById("runsTable");
   if (!tableBody) return;
 
-  // Clear current list
   tableBody.innerHTML = "";
+  const jobs = getLocalJobs().slice(0, 5); // Show last 5
 
-  db.collection("jobs")
-    .orderBy("createdAt", "desc")
-    .limit(4) // Keep UI clean - Last 4 only per user request
-    .onSnapshot((snapshot) => {
-      // Real-time listener (better than manual polling)
-      tableBody.innerHTML = ""; // Clear again for update
+  jobs.forEach(data => {
+    const row = document.createElement("tr");
 
-      snapshot.forEach((doc) => {
-        const data = doc.data();
-        const row = document.createElement("tr");
+    let statusColor = "black";
+    if (data.status === "running") statusColor = "orange";
+    if (data.status === "done") statusColor = "green";
+    if (data.status === "error") statusColor = "red";
 
-        // Row styling based on status
-        let statusColor = "black";
-        if (data.status === "running") statusColor = "orange";
-        if (data.status === "done") statusColor = "green";
-        if (data.status === "error") statusColor = "red";
+    const dateStr = new Date(data.createdAt).toLocaleString();
 
-        // Simple date formatting
-        const dateStr = data.createdAt ? data.createdAt.toDate().toLocaleString() : "Just now";
+    row.innerHTML = `
+      <td style="padding: 0.75rem; border-bottom: 1px solid var(--border-subtle);">${data.prompt ? data.prompt.substring(0, 40) + "..." : "No description"}</td>
+      <td style="padding: 0.75rem; border-bottom: 1px solid var(--border-subtle); color: ${statusColor}; font-weight: bold;">${data.status}</td>
+      <td style="padding: 0.75rem; border-bottom: 1px solid var(--border-subtle); color: var(--text-secondary); font-size: 0.85rem;">${dateStr}</td>
+    `;
 
-        row.innerHTML = `
-              <td style="padding: 0.75rem; border-bottom: 1px solid var(--border-subtle);">${data.nlpInputText ? data.nlpInputText.substring(0, 40) + "..." : "No description"}</td>
-              <td style="padding: 0.75rem; border-bottom: 1px solid var(--border-subtle); color: ${statusColor}; font-weight: bold;">${data.status}</td>
-              <td style="padding: 0.75rem; border-bottom: 1px solid var(--border-subtle); color: var(--text-secondary); font-size: 0.85rem;">${dateStr}</td>
-            `;
+    row.onclick = () => showJobDetails(data.id, data);
+    row.style.cursor = "pointer";
+    row.onmouseover = () => row.style.backgroundColor = "var(--bg-app)";
+    row.onmouseout = () => row.style.backgroundColor = "transparent";
 
-        // Click to show details
-        row.onclick = () => showJobDetails(doc.id, data);
-        row.style.cursor = "pointer";
-        row.onmouseover = () => row.style.backgroundColor = "var(--bg-app)";
-        row.onmouseout = () => row.style.backgroundColor = "transparent";
+    tableBody.appendChild(row);
 
-        tableBody.appendChild(row);
-      });
-    }, (error) => {
-      console.error("Error loading jobs:", error);
-      const autoMsg = document.getElementById("autoMsg");
-      if (autoMsg) autoMsg.innerText = "Error syncing jobs.";
-    });
+    // If job is still running, make sure we are polling it
+    if (data.status === "running") {
+      startPolling(data.id);
+    }
+  });
 }
 
 // ----------------------------
 // Show Job Details & Results
 // ----------------------------
 function showJobDetails(jobId, data) {
-  // Hide placeholder, show content
   const placeholder = document.getElementById("detailPlaceholder");
   const content = document.getElementById("detailContent");
   if (placeholder) placeholder.style.display = 'none';
   if (content) content.style.display = 'grid';
 
-  // Fill text details
   const elDesc = document.getElementById("detailDescription");
   const elStatus = document.getElementById("detailStatus");
   const elTime = document.getElementById("detailTime");
-  const elPath = document.getElementById("detailPath"); // Re-purposed for ID/Path
 
-  if (elDesc) elDesc.innerText = data.nlpInputText;
+  if (elDesc) elDesc.innerText = data.prompt;
   if (elStatus) {
     elStatus.innerText = data.status;
-    // Coloring
     if (data.status === "running") elStatus.style.color = "var(--warning)";
     else if (data.status === "done") elStatus.style.color = "var(--success)";
     else if (data.status === "error") elStatus.style.color = "var(--error)";
-    else elStatus.style.color = "var(--text-primary)";
   }
-  if (elTime) elTime.innerText = data.createdAt ? data.createdAt.toDate().toLocaleString() : "-";
-  if (elPath) elPath.innerText = data.resultPath || "Waiting...";
+  if (elTime) elTime.innerText = new Date(data.createdAt).toLocaleString();
 
-  // Handle "View IDF" Button Visibility
+  // Handle Buttons
   const actionContainer = document.getElementById("actionButtonsContainer");
   const btnView = document.getElementById("btnViewIDF");
   const btnSummary = document.getElementById("btnViewIDFSummary");
   const btn3D = document.getElementById("btnView3D");
+  
   if (actionContainer && btnView && btnSummary) {
-    if (data.status === "done") {
+    if (data.status === "done" && data.result) {
       actionContainer.style.display = "flex";
-      btnView.onclick = () => viewIDF(jobId);
-      btnSummary.onclick = () => viewIDFSummary(jobId);
+      btnView.onclick = () => {
+         const w = window.open();
+         w.document.write(`<pre>${data.result.idf.replace(/</g, "&lt;")}</pre>`);
+      };
+      btnSummary.onclick = () => {
+         if (data.result.files && data.result.files.summary) {
+             window.open(getBackendUrl() + data.result.files.summary, "_blank");
+         } else {
+             alert("Summary not available.");
+         }
+      };
       if (btn3D) {
-        btn3D.onclick = () => view3DGeometry(jobId);
+        btn3D.onclick = () => {
+           if (data.result.files && data.result.files.geometry) {
+               window.open(getBackendUrl() + data.result.files.geometry, "_blank");
+           } else {
+               alert("3D Geometry not available.");
+           }
+        };
       }
     } else {
       actionContainer.style.display = "none";
@@ -421,27 +350,21 @@ function showJobDetails(jobId, data) {
   plots.forEach(plotDef => {
     const imgInfo = document.getElementById(plotDef.imgId);
     const msgInfo = document.getElementById(plotDef.msgId);
-
     if (!imgInfo || !msgInfo) return;
 
-    if (data.status === "done") {
-      const plotPath = `jobs/${jobId}/${plotDef.key}.png`;
-      msgInfo.innerText = "Loading...";
-
-      storage.ref(plotPath).getDownloadURL()
-        .then((url) => {
-          imgInfo.src = url;
-          msgInfo.innerText = "";
-          imgInfo.style.display = "block";
-        })
-        .catch((e) => {
-          console.log(`No ${plotDef.key} found yet:`, e);
-          imgInfo.style.display = "none";
-          msgInfo.innerText = `${plotDef.fallbackText} not available.`;
-        });
+    if (data.status === "done" && data.result && data.result.files) {
+      const plotPath = data.result.files[plotDef.key];
+      if (plotPath) {
+        imgInfo.src = getBackendUrl() + plotPath;
+        msgInfo.innerText = "";
+        imgInfo.style.display = "block";
+      } else {
+        imgInfo.style.display = "none";
+        msgInfo.innerText = `${plotDef.fallbackText} not available.`;
+      }
     } else if (data.status === "error") {
       imgInfo.style.display = "none";
-      msgInfo.innerText = "Job failed.";
+      msgInfo.innerText = data.error_message || "Job failed.";
       msgInfo.style.color = "var(--error)";
     } else {
       imgInfo.style.display = "none";
@@ -450,228 +373,130 @@ function showJobDetails(jobId, data) {
     }
   });
 
-  // Multi-zone inline temperature chart
-  if (data.status === "done") {
-    loadAndPlotZoneTemperatures(jobId);
+  // Multi-zone chart
+  if (data.status === "done" && data.result && data.result.csv_data) {
+    loadAndPlotZoneTemperatures(data.result.csv_data);
   }
 }
-
 
 // ----------------------------
 // Multi-Zone Temperature Chart
 // ----------------------------
 const ZONE_CHART_COLORS = [
-  'rgba(54,  162, 235, 1)',   // Blue
-  'rgba(255, 159,  64, 1)',   // Orange
-  'rgba( 75, 192, 100, 1)',   // Green
-  'rgba(255,  99, 132, 1)',   // Pink
-  'rgba(153, 102, 255, 1)',   // Purple
-  'rgba(255, 205,  86, 1)',   // Yellow
-  'rgba( 23, 190, 207, 1)',   // Teal
-  'rgba(188, 143,  52, 1)',   // Brown
+  'rgba(54,  162, 235, 1)', 'rgba(255, 159,  64, 1)', 'rgba( 75, 192, 100, 1)',
+  'rgba(255,  99, 132, 1)', 'rgba(153, 102, 255, 1)', 'rgba(255, 205,  86, 1)'
 ];
 
-let _multiZoneChart = null; // holds Chart.js instance so we can destroy on re-render
+let _multiZoneChart = null;
 
-function loadAndPlotZoneTemperatures(jobId) {
-  const csvPath = `jobs/${jobId}/results.csv`;
+function loadAndPlotZoneTemperatures(csvText) {
   const container = document.getElementById('multiZoneChartContainer');
+  if (!csvText) return;
 
-  storage.ref(csvPath).getDownloadURL()
-    .then(url => fetch(url))
-    .then(res => res.text())
-    .then(csvText => {
-      // Parse CSV
-      const rows = csvText.trim().split('\n').map(r => r.split(','));
-      if (rows.length < 2) return;
+  const rows = csvText.trim().split('\n').map(r => r.split(','));
+  if (rows.length < 2) return;
 
-      const headers = rows[0].map(h => h.trim().replace(/"/g, ''));
+  const headers = rows[0].map(h => h.trim().replace(/"/g, ''));
+  const timeCol = 0;
+  
+  const tempCols = [];
+  headers.forEach((h, idx) => {
+    if (h.toLowerCase().includes('zone air temperature')) {
+      tempCols.push({ idx, label: h });
+    }
+  });
 
-      // Find the time column (first column)
-      const timeCol = 0;
+  if (tempCols.length === 0) {
+    if (container) container.style.display = 'none';
+    return;
+  }
 
-      // Find ALL zone temperature columns — keys containing "Zone Air Temperature"
-      const tempCols = [];
-      headers.forEach((h, idx) => {
-        if (h.toLowerCase().includes('zone air temperature')) {
-          tempCols.push({ idx, label: h });
+  const timeLabels = rows.slice(1).map(r => r[timeCol] ? r[timeCol].trim() : '');
+  const datasets = tempCols.map((col, ci) => ({
+    label: col.label,
+    data: rows.slice(1).map(r => parseFloat(r[col.idx]) || null),
+    borderColor: ZONE_CHART_COLORS[ci % ZONE_CHART_COLORS.length],
+    backgroundColor: ZONE_CHART_COLORS[ci % ZONE_CHART_COLORS.length].replace(', 1)', ', 0.08)'),
+    borderWidth: 2,
+    pointRadius: 0,
+    tension: 0.3,
+    fill: false,
+  }));
+
+  if (!container) return;
+  container.style.display = 'block';
+  container.innerHTML = `
+    <div style="padding: 0.75rem 0 0.5rem;">
+      <h4 style="margin:0 0 0.5rem; color:var(--text-primary); font-size:0.95rem;">
+        🌡️ Zone Air Temperature Comparison
+      </h4>
+      <canvas id="multiZoneCanvas" style="max-height:320px;"></canvas>
+    </div>`;
+
+  const ctx = document.getElementById('multiZoneCanvas').getContext('2d');
+  if (_multiZoneChart) {
+    _multiZoneChart.destroy();
+    _multiZoneChart = null;
+  }
+
+  const renderChart = () => {
+    _multiZoneChart = new Chart(ctx, {
+      type: 'line',
+      data: { labels: timeLabels, datasets },
+      options: {
+        responsive: true,
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: { position: 'top', labels: { boxWidth: 12, font: { size: 11 } } }
+        },
+        scales: {
+          x: { ticks: { maxRotation: 45, maxTicksLimit: 12 }, title: { display: true, text: 'Time' } },
+          y: { title: { display: true, text: 'Temperature (°C)' } }
         }
-      });
-
-      if (tempCols.length === 0) {
-        console.log('[MultiZone Chart] No zone temperature columns found in CSV.');
-        if (container) container.style.display = 'none';
-        return;
       }
-
-      const timeLabels = rows.slice(1).map(r => r[timeCol] ? r[timeCol].trim() : '');
-
-      const datasets = tempCols.map((col, ci) => ({
-        label: col.label,
-        data: rows.slice(1).map(r => parseFloat(r[col.idx]) || null),
-        borderColor: ZONE_CHART_COLORS[ci % ZONE_CHART_COLORS.length],
-        backgroundColor: ZONE_CHART_COLORS[ci % ZONE_CHART_COLORS.length].replace(', 1)', ', 0.08)'),
-        borderWidth: 2,
-        pointRadius: 0,
-        tension: 0.3,
-        fill: false,
-      }));
-
-      // Show the container and set it up
-      if (!container) return;
-      container.style.display = 'block';
-      container.innerHTML = `
-        <div style="padding: 0.75rem 0 0.5rem;">
-          <h4 style="margin:0 0 0.5rem; color:var(--text-primary); font-size:0.95rem;">
-            🌡️ Zone Air Temperature Comparison
-          </h4>
-          <canvas id="multiZoneCanvas" style="max-height:320px;"></canvas>
-        </div>`;
-
-      const ctx = document.getElementById('multiZoneCanvas').getContext('2d');
-
-      // Destroy previous chart instance if it exists
-      if (_multiZoneChart) {
-        _multiZoneChart.destroy();
-        _multiZoneChart = null;
-      }
-
-      // Check if Chart.js is available; load it on-demand if not
-      const renderChart = () => {
-        _multiZoneChart = new Chart(ctx, {
-          type: 'line',
-          data: { labels: timeLabels, datasets },
-          options: {
-            responsive: true,
-            interaction: { mode: 'index', intersect: false },
-            plugins: {
-              legend: { position: 'top', labels: { boxWidth: 12, font: { size: 11 } } },
-              tooltip: { callbacks: {
-                label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y?.toFixed(2) ?? '-'} °C`
-              }}
-            },
-            scales: {
-              x: {
-                ticks: { maxRotation: 45, font: { size: 10 }, maxTicksLimit: 12 },
-                title: { display: true, text: 'Time', font: { size: 11 } }
-              },
-              y: {
-                title: { display: true, text: 'Temperature (°C)', font: { size: 11 } }
-              }
-            }
-          }
-        });
-      };
-
-      if (typeof Chart !== 'undefined') {
-        renderChart();
-      } else {
-        // Lazy-load Chart.js from CDN
-        const script = document.createElement('script');
-        script.src = 'https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js';
-        script.onload = renderChart;
-        document.head.appendChild(script);
-      }
-    })
-    .catch(err => {
-      console.log('[MultiZone Chart] Could not load results CSV:', err);
-      if (container) container.style.display = 'none';
     });
-}
-window.loadAndPlotZoneTemperatures = loadAndPlotZoneTemperatures;
+  };
 
-// ----------------------------
-// IDF Viewer Logic (Server-Side Diff)
-// ----------------------------
-function viewIDF(jobId) {
-  // Construct path: jobs/{jobId}/diff.html
-  // The Backend now generates a "diff.html" file which we can view directly.
-  // This bypasses CORS because we don't fetch it, we just open it.
-
-  const diffPath = `jobs/${jobId}/diff.html`;
-  const btn = document.getElementById("btnViewIDF");
-  if (btn) btn.innerText = "Opening...";
-
-  storage.ref(diffPath).getDownloadURL()
-    .then((url) => {
-      window.open(url, "_blank");
-      if (btn) btn.innerText = "📄 View Generated IDF";
-    })
-    .catch((error) => {
-      console.error("Error fetching Diff URL:", error);
-      // Fallback: If diff.html doesn't exist, try opening the raw generated IDF directly
-      const idfPath = `jobs/${jobId}/${jobId}_in.idf`;
-      storage.ref(idfPath).getDownloadURL().then(u => window.open(u, "_blank")).catch(e => {
-        alert("IDF file not found on server.");
-      });
-
-      if (btn) btn.innerText = "📄 View Generated IDF";
-    });
-}
-
-// ----------------------------
-// View IDF Summary (Backend Generated)
-// ----------------------------
-function viewIDFSummary(jobId) {
-  const summaryPath = `jobs/${jobId}/summary.html`;
-  const btn = document.getElementById("btnViewIDFSummary");
-  if (btn) btn.innerText = "Opening...";
-
-  storage.ref(summaryPath).getDownloadURL()
-    .then((url) => {
-      window.open(url, "_blank");
-      if (btn) btn.innerText = "📋 View Object Summary";
-    })
-    .catch((error) => {
-      console.error("Error fetching Summary URL:", error);
-      alert("Summary not available. This is likely an older job generated before the summary feature was added. Please run a new job!");
-      if (btn) btn.innerText = "📋 View Object Summary";
-    });
-}
-
-// ----------------------------
-// View 3D Geometry (Backend Generated)
-// ----------------------------
-function view3DGeometry(jobId) {
-  const geometryPath = `jobs/${jobId}/geometry.html`;
-  const btn = document.getElementById("btnView3D");
-  if (btn) btn.innerText = "Opening...";
-
-  storage.ref(geometryPath).getDownloadURL()
-    .then((url) => {
-      window.open(url, "_blank");
-      if (btn) btn.innerText = "🧊 View 3D Model";
-    })
-    .catch((error) => {
-      console.error("Error fetching 3D Geometry URL:", error);
-      alert("3D Geometry not available for this job.");
-      if (btn) btn.innerText = "🧊 View 3D Model";
-    });
+  if (typeof Chart !== 'undefined') {
+    renderChart();
+  } else {
+    const script = document.createElement('script');
+    script.src = 'https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js';
+    script.onload = renderChart;
+    document.head.appendChild(script);
+  }
 }
 
 // ----------------------------
 // Auto-Init on Page Load
 // ----------------------------
 window.addEventListener("load", () => {
-  // If we are on the results page, load jobs immediately
   if (document.getElementById("runsTable")) {
     loadJobs();
   }
-  // If we are on the NLP page, load the weather index
   if (document.getElementById("weatherSearch")) {
     loadWeatherIndex();
   }
+  
+  // Inject backend URL input into the header if it doesn't exist
+  if (!document.getElementById("backendUrlInput")) {
+      const header = document.querySelector(".page-header");
+      if (header) {
+          const div = document.createElement("div");
+          div.style = "margin-top: 10px; display: flex; gap: 10px; align-items: center;";
+          div.innerHTML = `
+            <label style="font-weight: bold; color: var(--text-secondary);">Backend URL:</label>
+            <input type="text" id="backendUrlInput" value="${getBackendUrl()}" style="padding: 5px; border-radius: 4px; border: 1px solid #ccc; width: 300px;" placeholder="https://xyz.ngrok-free.app">
+            <button onclick="setBackendUrl(document.getElementById('backendUrlInput').value); testBackendConnection()" style="padding: 5px 10px; border-radius: 4px; cursor:pointer; background: var(--primary); color: white; border: none;">Connect</button>
+            <span id="statusMsg" style="font-size: 0.9em; font-weight: bold; margin-left: 10px;"></span>
+          `;
+          header.appendChild(div);
+      }
+  }
 });
 
-// Expose functions to global scope for HTML onclick
-window.testFirestoreWrite = testFirestoreWrite;
 window.submitDescription = submitDescription;
-window.testAIConnection = testAIConnection;
-window.loadRuns = loadJobs; // Alias for backward compatibility if HTML buttons haven't changed yet
-window.testAIConnection = testAIConnection;
-window.loadRuns = loadJobs; // Alias for backward compatibility
+window.loadRuns = loadJobs;
 window.toggleSidebar = toggleSidebar;
-window.viewIDF = viewIDF;
-window.viewIDFSummary = viewIDFSummary;
-window.view3DGeometry = view3DGeometry;
-window.handleEpwUpload = handleEpwUpload;
+window.testBackendConnection = testBackendConnection;
+window.setBackendUrl = setBackendUrl;
