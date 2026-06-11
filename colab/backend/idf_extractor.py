@@ -44,12 +44,9 @@ def resolve_dependencies(obj_type, obj_name, extracted_blocks=None):
     if extracted_blocks is None:
         extracted_blocks = {}
         
-    key = f"{obj_type}::{obj_name}"
-    if key in extracted_blocks:
-        return extracted_blocks
-        
-    # Search index
+    # Search index FIRST to determine true type
     filepath = None
+    true_type = obj_type
     if obj_type in INDEX and obj_name in INDEX[obj_type]:
         filepath = INDEX[obj_type][obj_name]
     else:
@@ -57,9 +54,13 @@ def resolve_dependencies(obj_type, obj_name, extracted_blocks=None):
         for t_key in INDEX:
             if obj_name in INDEX[t_key]:
                 filepath = INDEX[t_key][obj_name]
-                obj_type = t_key
+                true_type = t_key
                 break
                 
+    key = f"{true_type}::{obj_name}"
+    if key in extracted_blocks:
+        return extracted_blocks
+        
     if not filepath:
         print(f"Warning: {obj_name} not found in Datasets.")
         return extracted_blocks
@@ -67,7 +68,7 @@ def resolve_dependencies(obj_type, obj_name, extracted_blocks=None):
     with open(os.path.join(DATASET_ROOT, filepath), 'r', encoding='utf-8') as f:
         content = f.read()
         
-    raw_block = extract_raw_block(content, obj_type, obj_name)
+    raw_block = extract_raw_block(content, true_type, obj_name)
     
     if raw_block:
         extracted_blocks[key] = raw_block
@@ -89,6 +90,29 @@ def resolve_dependencies(obj_type, obj_name, extracted_blocks=None):
                     resolve_dependencies("Material", layer_name, extracted_blocks)
                     
     return extracted_blocks
+
+def get_construction_layers(obj_name):
+    """Returns a list of material names for a given construction, or None if it's not a construction."""
+    filepath = None
+    for t_key in INDEX:
+        if "construction" in t_key.lower() and obj_name in INDEX[t_key]:
+            filepath = INDEX[t_key][obj_name]
+            break
+    if not filepath: return None
+    
+    with open(os.path.join(DATASET_ROOT, filepath), 'r', encoding='utf-8') as f:
+        content = f.read()
+    raw_block = extract_raw_block(content, "Construction", obj_name)
+    if not raw_block: return None
+    
+    clean_str = ""
+    for line in raw_block.split('\n'):
+        if '!' in line: line = line.split('!')[0]
+        clean_str += line.strip()
+    parts = [p.strip() for p in clean_str.split(';')[0].split(',')]
+    if len(parts) > 2:
+        return parts[2:]
+    return None
 
 if __name__ == "__main__":
     # TEST RUN

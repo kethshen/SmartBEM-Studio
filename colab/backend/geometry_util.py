@@ -329,8 +329,13 @@ def resolve_zone_origins(zones):
         
         if ref in [None, "null", "Null", "NULL", "none", "None", ""]:
             ref = None
+        else:
+            ref = str(ref).strip()
+            
         if direction in [None, "null", "Null", "NULL", "none", "None", ""]:
             direction = None
+        else:
+            direction = str(direction).strip()
             
         print(f"[AI Assembler MZ] Resolving origin for '{name}'. ref='{ref}', direction='{direction}'")
         
@@ -340,8 +345,11 @@ def resolve_zone_origins(zones):
             origins[name] = (0.0, 0.0, 0.0)
         else:
             actual_ref = None
+            # Aggressive matching: strip, lower, and check substrings just in case AI adds prefixes like 'The '
             for o_name in origins:
-                if o_name.lower() == ref.lower():
+                norm_o = o_name.strip().lower()
+                norm_r = ref.strip().lower()
+                if norm_o == norm_r or norm_o in norm_r or norm_r in norm_o:
                     actual_ref = o_name
                     break
                     
@@ -460,8 +468,40 @@ def generate_multizone_geometry(zones, zone_origins):
                 adjacency_map[(name_a, "West")] = name_b
                 adjacency_map[(name_b, "East")] = name_a
                 adjacency_info.append(f"{name_a}_West <-> {name_b}_East")
-    
     print(f"[Geometry MZ] Detected {len(adjacency_info)} adjacencies: {adjacency_info}")
+    
+    # Sync subsurfaces (doors/windows) across adjacent walls
+    for z in zones:
+        name_a = z["name"]
+        for wdir, opp_dir in [("North", "South"), ("South", "North"), ("East", "West"), ("West", "East")]:
+            adj_key = (name_a, wdir)
+            if adj_key in adjacency_map:
+                name_b = adjacency_map[adj_key]
+                zone_b = next((x for x in zones if x["name"] == name_b), None)
+                if not zone_b: continue
+                
+                door_key_a = f"door_{wdir.lower()}"
+                door_key_b = f"door_{opp_dir.lower()}"
+                if z.get(door_key_a) and not zone_b.get(door_key_b):
+                    d_data = z[door_key_a].copy()
+                    rx = d_data.get("ref_x", "center")
+                    if rx == "left": d_data["ref_x"] = "right"
+                    elif rx == "right": d_data["ref_x"] = "left"
+                    zone_b[door_key_b] = d_data
+                    
+                win_key_a = f"window_{wdir.lower()}"
+                win_key_b = f"window_{opp_dir.lower()}"
+                if z.get(win_key_a) and not zone_b.get(win_key_b):
+                    w_data = z[win_key_a].copy()
+                    rx = w_data.get("ref_x", "center")
+                    if rx == "left": w_data["ref_x"] = "right"
+                    elif rx == "right": w_data["ref_x"] = "left"
+                    zone_b[win_key_b] = w_data
+                    
+                wwr_key_a = f"wwr_{wdir.lower()}"
+                wwr_key_b = f"wwr_{opp_dir.lower()}"
+                if z.get(wwr_key_a, 0) > 0 and zone_b.get(wwr_key_b, 0) == 0:
+                    zone_b[wwr_key_b] = z[wwr_key_a]
     
     # Interior partition construction placeholder
     partition_constr = "{INTERIOR_PARTITION_CONSTR}"

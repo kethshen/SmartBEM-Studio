@@ -569,12 +569,22 @@ class AIPipelines:
         if isinstance(layers, list) and len(layers) > 0:
             if len(layers) == 1:
                 return layers[0]
+                
+            # Flatten any Constructions into their Materials to avoid EnergyPlus nested construction errors
+            flat_layers = []
+            for layer in layers:
+                c_layers = idf_extractor.get_construction_layers(layer)
+                if c_layers:
+                    flat_layers.extend(c_layers)
+                else:
+                    flat_layers.append(layer)
+                    
             # Build custom construction
             name = f"Custom_{prefix}_{len(custom_constructions_list) + 1}"
             block = f"Construction,\n  {name},"
-            for i, layer in enumerate(layers):
+            for i, layer in enumerate(flat_layers):
                 idf_extractor.resolve_dependencies("Material", layer, extracted_blocks)
-                if i == len(layers) - 1:
+                if i == len(flat_layers) - 1:
                     block += f"\n  {layer};"
                 else:
                     block += f"\n  {layer},"
