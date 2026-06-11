@@ -106,6 +106,9 @@ class AIPipelines:
             "   - 'length' (float), 'width' (float), 'height' (float)\n"
             "   - 'wall_construction' (string, default global wall). 'wall_constr_south', 'wall_constr_north', 'wall_constr_east', 'wall_constr_west' (strings, specific wall constructions. Pick EXACTLY from menu. If not specified, leave empty or same as global)\n"
             "   - 'roof_construction' (string)\n"
+            "   - 'roof_type' (string, 'flat' or 'pitched'. Default 'flat')\n"
+            "   - 'roof_pitch_height' (float, height of pitched roof apex above wall. Default 2.0)\n"
+            "   - 'skylight' (object for custom skylight on roof. Schema: {\"width\": float, \"length\": float} or null. Default null)\n"
             "   - 'wwr_south', 'wwr_north', 'wwr_east', 'wwr_west' (floats between 0 and 1, Window-to-Wall Ratios for each face. Default 0.0. If user gives a single global WWR, set all 4 to that value. If they specify certain walls, apply only to those and set others to 0.0.)\n"
             "   - 'window_south', 'window_north', 'window_east', 'window_west' (objects for custom windows overriding WWR. Schema: {\"width\": float, \"height\": float, \"offset_x\": float, \"ref_x\": \"left\"|\"right\"|\"center\", \"offset_z\": float, \"ref_z\": \"bottom\"|\"top\"|\"center\"} or null. Default null)\n"
             "   - 'door_south', 'door_north', 'door_east', 'door_west' (objects for custom doors. Schema: {\"width\": float, \"height\": float, \"offset_x\": float, \"ref_x\": \"left\"|\"right\"|\"center\", \"offset_z\": float, \"ref_z\": \"bottom\"|\"top\"|\"center\"} or null. Default null)\n"
@@ -137,6 +140,9 @@ class AIPipelines:
             "     - 'direction' (string or null): CRITICAL! Which wall of 'relative_to' this zone attaches to. Pick from: 'North', 'South', 'East', 'West'. ONLY null for the first zone.\n"
             "     - 'wall_construction' (string, from menu)\n"
             "     - 'roof_construction' (string, from menu)\n"
+            "     - 'roof_type' (string, 'flat' or 'pitched'. Default 'flat')\n"
+            "     - 'roof_pitch_height' (float, height of pitched roof apex above wall. Default 2.0)\n"
+            "     - 'skylight' (object for custom skylight. Schema: {\"width\": float, \"length\": float} or null. Default null)\n"
             "     - 'wwr_south', 'wwr_north', 'wwr_east', 'wwr_west' (floats 0-1. Default 0.0)\n"
             "     - 'window_south', 'window_north', 'window_east', 'window_west' (custom window objects or null)\n"
             "     - 'door_south', 'door_north', 'door_east', 'door_west' (custom door objects or null)\n"
@@ -365,12 +371,22 @@ class AIPipelines:
                 idf_extractor.resolve_dependencies("Construction", default_constr, extracted_blocks)
 
             # 6. Build Geometry (Now passing directional WWRs, Materials, and custom Windows/Doors)
+            # Roof properties
+            roof_type = params.get("roof_type", "flat")
+            roof_pitch_height = params.get("roof_pitch_height", 2.0)
+            skylight_data = params.get("skylight", None)
+            
+            # 5. Generate Geometry
             geometry_idf = geometry_util.generate_zone_geometry(
-                L, W, H, 
+                L, W, H,
                 wwr_s, wwr_n, wwr_e, wwr_w,
                 wall_s, wall_n, wall_e, wall_w,
                 door_s, door_n, door_e, door_w,
-                window_s, window_n, window_e, window_w
+                window_s, window_n, window_e, window_w,
+                zone_name="ZONE ONE",
+                roof_type=roof_type,
+                roof_pitch_height=roof_pitch_height,
+                skylight_data=skylight_data
             )
 
             # 6.5 Load HVAC Template

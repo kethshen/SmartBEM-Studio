@@ -153,7 +153,45 @@
     Any Number,              !- Schedule Type Limits Name
     Through: 12/31,          !- Field 1
     For: AllDays,            !- Field 2
-    Until: 24:00,120;        !- Field 3            !- Activity Level Schedule Name                       !- Fraction Replaceable                 !- End-Use Subcategory
+    Until: 24:00,120;        !- Field 3
+
+  People,
+    OFFICE_PEOPLE,           !- Name
+    ZONE ONE,                !- Zone or ZoneList Name
+    OCCUPANCY_SCH,         !- Number of People Schedule Name
+    Area/Person,             !- Number of People Calculation Method
+    ,                        !- Number of People
+    ,                        !- People per Zone Floor Area {person/m2}
+    30.0,        !- Zone Floor Area per Person {m2/person}
+    0.3,                     !- Fraction Radiant
+    ,                        !- Sensible Heat Fraction
+    ACTIVITY_SCH;            !- Activity Level Schedule Name
+
+  Lights,
+    OFFICE_LIGHTS,           !- Name
+    ZONE ONE,                !- Zone or ZoneList Name
+    LIGHTING_SCH,          !- Schedule Name
+    Watts/Area,              !- Design Level Calculation Method
+    ,                        !- Lighting Level {W}
+    6.0,         !- Watts per Zone Floor Area {W/m2}
+    ,                        !- Watts per Person {W/person}
+    0,                       !- Return Air Fraction
+    0.42,                    !- Fraction Radiant
+    0.18,                    !- Fraction Visible
+    1;                       !- Fraction Replaceable
+
+  ElectricEquipment,
+    OFFICE_EQUIP,            !- Name
+    ZONE ONE,                !- Zone or ZoneList Name
+    EQUIPMENT_SCH,         !- Schedule Name
+    Watts/Area,              !- Design Level Calculation Method
+    ,                        !- Design Level {W}
+    45.8,         !- Watts per Zone Floor Area {W/m2}
+    ,                        !- Watts per Person {W/person}
+    0,                       !- Fraction Latent
+    0.3,                     !- Fraction Radiant
+    0,                       !- Fraction Lost
+    General;                 !- End-Use Subcategory
 
 ! ==========================================================================
 ! HVAC SYSTEM IS NOT INCLUDED IN THIS TEMPLATE.
@@ -161,226 +199,394 @@
 ! and injects it here during IDF assembly.
 ! ==========================================================================
 ! ============================================================================
-! HVAC Template: Ideal Loads Air System
-! Description: A simplified, perfect heating/cooling system. No real equipment
-!              is modelled. EnergyPlus calculates the exact energy needed to
-!              maintain setpoints. Best for envelope-focused studies.
-! Complexity: Very Low (always simulates successfully)
+! HVAC Template: Packaged Single Zone AC (PSZ-AC)
+! Description: A dedicated central air handling unit with gas furnace heating,
+!              DX cooling, outdoor air economizer, and constant volume fan.
+!              One INSTANCE of this template is included PER ZONE.
+!              ALL object names are prefixed with ZONE ONE so that the
+!              template can be duplicated N times without any name collisions.
+! Compatible: EnergyPlus 25.1+
 ! ============================================================================
+
+! NOTE: Sizing:Parameters is intentionally EXCLUDED here.
+!       It is a global object and must appear exactly once in Base.idf.
+
+! --- Zone Sizing ---
+
+  Sizing:Zone,
+    ZONE ONE,                          !- Zone or ZoneList Name
+    SupplyAirTemperature,                 !- Zone Cooling Design Supply Air Temperature Input Method
+    12.8,                                 !- Zone Cooling Design Supply Air Temperature {C}
+    ,                                     !- Zone Cooling Design Supply Air Temperature Difference {deltaC}
+    SupplyAirTemperature,                 !- Zone Heating Design Supply Air Temperature Input Method
+    40.0,                                 !- Zone Heating Design Supply Air Temperature {C}
+    ,                                     !- Zone Heating Design Supply Air Temperature Difference {deltaC}
+    0.008,                                !- Zone Cooling Design Supply Air Humidity Ratio {kgWater/kgDryAir}
+    0.008,                                !- Zone Heating Design Supply Air Humidity Ratio {kgWater/kgDryAir}
+    ZONE ONE PSZ OA Spec,             !- Design Specification Outdoor Air Object Name
+    0.0,                                  !- Zone Heating Sizing Factor
+    0.0;                                  !- Zone Cooling Sizing Factor
+
+! --- Outdoor Air Specification ---
+
+  DesignSpecification:OutdoorAir,
+    ZONE ONE PSZ OA Spec,             !- Name
+    flow/person,                          !- Outdoor Air Method
+    0.00944,                              !- Outdoor Air Flow per Person {m3/s-person}
+    0.0,                                  !- Outdoor Air Flow per Zone Floor Area {m3/s-m2}
+    0.0;                                  !- Outdoor Air Flow per Zone {m3/s}
+
+! --- System Sizing ---
+
+  Sizing:System,
+    ZONE ONE PSZ Air Loop,            !- AirLoop Name
+    Sensible,                             !- Type of Load to Size On
+    autosize,                             !- Design Outdoor Air Flow Rate {m3/s}
+    0.3,                                  !- Central Heating Maximum System Air Flow Ratio
+    7.0,                                  !- Preheat Design Temperature {C}
+    0.008,                                !- Preheat Design Humidity Ratio {kgWater/kgDryAir}
+    11.0,                                 !- Precool Design Temperature {C}
+    0.008,                                !- Precool Design Humidity Ratio {kgWater/kgDryAir}
+    12.8,                                 !- Central Cooling Design Supply Air Temperature {C}
+    40.0,                                 !- Central Heating Design Supply Air Temperature {C}
+    NonCoincident,                        !- Type of Zone Sum to Use
+    No,                                   !- 100% Outdoor Air in Cooling
+    No,                                   !- 100% Outdoor Air in Heating
+    0.008,                                !- Central Cooling Design Supply Air Humidity Ratio {kgWater/kgDryAir}
+    0.008,                                !- Central Heating Design Supply Air Humidity Ratio {kgWater/kgDryAir}
+    DesignDay,                            !- Cooling Supply Air Flow Rate Method
+    0,                                    !- Cooling Supply Air Flow Rate {m3/s}
+    ,                                     !- Cooling Supply Air Flow Rate Per Floor Area {m3/s-m2}
+    ,                                     !- Cooling Fraction of Autosized Cooling Supply Air Flow Rate
+    ,                                     !- Cooling Supply Air Flow Rate Per Unit Cooling Capacity {m3/s-W}
+    DesignDay,                            !- Heating Supply Air Flow Rate Method
+    0,                                    !- Heating Supply Air Flow Rate {m3/s}
+    ,                                     !- Heating Supply Air Flow Rate Per Floor Area {m3/s-m2}
+    ,                                     !- Heating Fraction of Autosized Heating Supply Air Flow Rate
+    ,                                     !- Heating Fraction of Autosized Cooling Supply Air Flow Rate
+    ,                                     !- Heating Supply Air Flow Rate Per Unit Heating Capacity {m3/s-W}
+    ;                                     !- System Outdoor Air Method
+
+! --- Zone Equipment Connections ---
 
   ZoneHVAC:EquipmentConnections,
-    Office,                !- Zone Name
-    Office Equipment,      !- Zone Conditioning Equipment List Name
-    Office Supply Inlet,   !- Zone Air Inlet Node or NodeList Name
-    ,                        !- Zone Air Exhaust Node or NodeList Name
-    Office Zone Air Node,  !- Zone Air Node Name
-    Office Return Outlet;  !- Zone Return Air Node or NodeList Name
+    ZONE ONE,                          !- Zone Name
+    ZONE ONE PSZ Equipment,           !- Zone Conditioning Equipment List Name
+    ZONE ONE PSZ Supply Inlet,        !- Zone Air Inlet Node or NodeList Name
+    ,                                     !- Zone Air Exhaust Node or NodeList Name
+    ZONE ONE Air Node,                !- Zone Air Node Name
+    ZONE ONE Return Node;             !- Zone Return Air Node or NodeList Name
 
   ZoneHVAC:EquipmentList,
-    Office Equipment,      !- Name
-    SequentialLoad,          !- Load Distribution Scheme
-    ZoneHVAC:IdealLoadsAirSystem,  !- Zone Equipment 1 Object Type
-    Office Purchased Air,  !- Zone Equipment 1 Name
-    1,                       !- Zone Equipment 1 Cooling Sequence
-    1,                       !- Zone Equipment 1 Heating or No-Load Sequence
-    ,                        !- Zone Equipment 1 Sequential Cooling Fraction Schedule Name
-    ;                        !- Zone Equipment 1 Sequential Heating Fraction Schedule Name
+    ZONE ONE PSZ Equipment,           !- Name
+    SequentialLoad,                       !- Load Distribution Scheme
+    ZoneHVAC:AirDistributionUnit,        !- Zone Equipment 1 Object Type
+    ZONE ONE PSZ ADU,                 !- Zone Equipment 1 Name
+    1,                                    !- Zone Equipment 1 Cooling Sequence
+    1,                                    !- Zone Equipment 1 Heating or No-Load Sequence
+    ,                                     !- Zone Equipment 1 Sequential Cooling Fraction Schedule Name
+    ;                                     !- Zone Equipment 1 Sequential Heating Fraction Schedule Name
 
-  ZoneHVAC:IdealLoadsAirSystem,
-    Office Purchased Air,  !- Name
-    ,                        !- Availability Schedule Name
-    Office Supply Inlet,   !- Zone Supply Air Node Name
-    ,                        !- Zone Exhaust Air Node Name
-    ,                        !- System Inlet Air Node Name
-    50,                      !- Maximum Heating Supply Air Temperature {C}
-    13,                      !- Minimum Cooling Supply Air Temperature {C}
-    0.015,                   !- Maximum Heating Supply Air Humidity Ratio {kgWater/kgDryAir}
-    0.01,                    !- Minimum Cooling Supply Air Humidity Ratio {kgWater/kgDryAir}
-    NoLimit,                 !- Heating Limit
-    ,                        !- Maximum Heating Air Flow Rate {m3/s}
-    ,                        !- Maximum Sensible Heating Capacity {W}
-    NoLimit,                 !- Cooling Limit
-    ,                        !- Maximum Cooling Air Flow Rate {m3/s}
-    ,                        !- Maximum Total Cooling Capacity {W}
-    ,                        !- Heating Availability Schedule Name
-    ,                        !- Cooling Availability Schedule Name
-    ConstantSupplyHumidityRatio,  !- Dehumidification Control Type
-    ,                        !- Cooling Sensible Heat Ratio {dimensionless}
-    ConstantSupplyHumidityRatio,  !- Humidification Control Type
-    ,                        !- Design Specification Outdoor Air Object Name
-    ,                        !- Outdoor Air Inlet Node Name
-    ,                        !- Demand Controlled Ventilation Type
-    ,                        !- Outdoor Air Economizer Type
-    ,                        !- Heat Recovery Type
-    ,                        !- Sensible Heat Recovery Effectiveness {dimensionless}
-    ;                        !- Latent Heat Recovery Effectiveness {dimensionless}
+  ZoneHVAC:AirDistributionUnit,
+    ZONE ONE PSZ ADU,                 !- Name
+    ZONE ONE PSZ Supply Inlet,        !- Air Distribution Unit Outlet Node Name
+    AirTerminal:SingleDuct:ConstantVolume:NoReheat,  !- Air Terminal Object Type
+    ZONE ONE PSZ Direct Air,          !- Air Terminal Name
+    ,                                     !- Nominal Upstream Leakage Fraction
+    ,                                     !- Constant Downstream Leakage Fraction
+    ;                                     !- Design Specification Air Terminal Sizing Object Name
 
-! ============================================================================
-! HVAC Template: Ideal Loads Air System
-! Description: A simplified, perfect heating/cooling system. No real equipment
-!              is modelled. EnergyPlus calculates the exact energy needed to
-!              maintain setpoints. Best for envelope-focused studies.
-! Complexity: Very Low (always simulates successfully)
-! ============================================================================
+  AirTerminal:SingleDuct:ConstantVolume:NoReheat,
+    ZONE ONE PSZ Direct Air,          !- Name
+    ZONE ONE PSZ Avail Schedule,      !- Availability Schedule Name
+    ZONE ONE PSZ Zone Inlet,          !- Air Inlet Node Name
+    ZONE ONE PSZ Supply Inlet,        !- Air Outlet Node Name
+    autosize;                             !- Maximum Air Flow Rate {m3/s}
 
-  ZoneHVAC:EquipmentConnections,
-    Meeting Room,                !- Zone Name
-    Meeting Room Equipment,      !- Zone Conditioning Equipment List Name
-    Meeting Room Supply Inlet,   !- Zone Air Inlet Node or NodeList Name
-    ,                        !- Zone Air Exhaust Node or NodeList Name
-    Meeting Room Zone Air Node,  !- Zone Air Node Name
-    Meeting Room Return Outlet;  !- Zone Return Air Node or NodeList Name
+! --- Availability Schedule ---
 
-  ZoneHVAC:EquipmentList,
-    Meeting Room Equipment,      !- Name
-    SequentialLoad,          !- Load Distribution Scheme
-    ZoneHVAC:IdealLoadsAirSystem,  !- Zone Equipment 1 Object Type
-    Meeting Room Purchased Air,  !- Zone Equipment 1 Name
-    1,                       !- Zone Equipment 1 Cooling Sequence
-    1,                       !- Zone Equipment 1 Heating or No-Load Sequence
-    ,                        !- Zone Equipment 1 Sequential Cooling Fraction Schedule Name
-    ;                        !- Zone Equipment 1 Sequential Heating Fraction Schedule Name
+  Schedule:Compact,
+    ZONE ONE PSZ Avail Schedule,      !- Name
+    Any Number,                           !- Schedule Type Limits Name
+    Through: 12/31,                       !- Field 1
+    For: AllDays,                         !- Field 2
+    Until: 24:00,1.0;                     !- Field 3
 
-  ZoneHVAC:IdealLoadsAirSystem,
-    Meeting Room Purchased Air,  !- Name
-    ,                        !- Availability Schedule Name
-    Meeting Room Supply Inlet,   !- Zone Supply Air Node Name
-    ,                        !- Zone Exhaust Air Node Name
-    ,                        !- System Inlet Air Node Name
-    50,                      !- Maximum Heating Supply Air Temperature {C}
-    13,                      !- Minimum Cooling Supply Air Temperature {C}
-    0.015,                   !- Maximum Heating Supply Air Humidity Ratio {kgWater/kgDryAir}
-    0.01,                    !- Minimum Cooling Supply Air Humidity Ratio {kgWater/kgDryAir}
-    NoLimit,                 !- Heating Limit
-    ,                        !- Maximum Heating Air Flow Rate {m3/s}
-    ,                        !- Maximum Sensible Heating Capacity {W}
-    NoLimit,                 !- Cooling Limit
-    ,                        !- Maximum Cooling Air Flow Rate {m3/s}
-    ,                        !- Maximum Total Cooling Capacity {W}
-    ,                        !- Heating Availability Schedule Name
-    ,                        !- Cooling Availability Schedule Name
-    ConstantSupplyHumidityRatio,  !- Dehumidification Control Type
-    ,                        !- Cooling Sensible Heat Ratio {dimensionless}
-    ConstantSupplyHumidityRatio,  !- Humidification Control Type
-    ,                        !- Design Specification Outdoor Air Object Name
-    ,                        !- Outdoor Air Inlet Node Name
-    ,                        !- Demand Controlled Ventilation Type
-    ,                        !- Outdoor Air Economizer Type
-    ,                        !- Heat Recovery Type
-    ,                        !- Sensible Heat Recovery Effectiveness {dimensionless}
-    ;                        !- Latent Heat Recovery Effectiveness {dimensionless}
+! --- Central Air Loop ---
 
-! ============================================================================
-! HVAC Template: Ideal Loads Air System
-! Description: A simplified, perfect heating/cooling system. No real equipment
-!              is modelled. EnergyPlus calculates the exact energy needed to
-!              maintain setpoints. Best for envelope-focused studies.
-! Complexity: Very Low (always simulates successfully)
-! ============================================================================
+  AirLoopHVAC,
+    ZONE ONE PSZ Air Loop,            !- Name
+    ,                                     !- Controller List Name
+    ZONE ONE PSZ Avail Manager List,  !- Availability Manager List Name
+    autosize,                             !- Design Supply Air Flow Rate {m3/s}
+    ZONE ONE PSZ Air Loop Branches,   !- Branch List Name
+    ,                                     !- Connector List Name
+    ZONE ONE PSZ Air Loop Supply Inlet,   !- Supply Side Inlet Node Name
+    ZONE ONE PSZ Air Loop Return Node,    !- Demand Side Outlet Node Name
+    ZONE ONE PSZ Air Loop Zone Inlet,     !- Demand Side Inlet Node Names
+    ZONE ONE PSZ Air Loop Supply Outlet;  !- Supply Side Outlet Node Names
 
-  ZoneHVAC:EquipmentConnections,
-    Lobby,                !- Zone Name
-    Lobby Equipment,      !- Zone Conditioning Equipment List Name
-    Lobby Supply Inlet,   !- Zone Air Inlet Node or NodeList Name
-    ,                        !- Zone Air Exhaust Node or NodeList Name
-    Lobby Zone Air Node,  !- Zone Air Node Name
-    Lobby Return Outlet;  !- Zone Return Air Node or NodeList Name
+  AvailabilityManager:Scheduled,
+    ZONE ONE PSZ Avail Manager,       !- Name
+    ZONE ONE PSZ Avail Schedule;      !- Schedule Name
 
-  ZoneHVAC:EquipmentList,
-    Lobby Equipment,      !- Name
-    SequentialLoad,          !- Load Distribution Scheme
-    ZoneHVAC:IdealLoadsAirSystem,  !- Zone Equipment 1 Object Type
-    Lobby Purchased Air,  !- Zone Equipment 1 Name
-    1,                       !- Zone Equipment 1 Cooling Sequence
-    1,                       !- Zone Equipment 1 Heating or No-Load Sequence
-    ,                        !- Zone Equipment 1 Sequential Cooling Fraction Schedule Name
-    ;                        !- Zone Equipment 1 Sequential Heating Fraction Schedule Name
+  AvailabilityManagerAssignmentList,
+    ZONE ONE PSZ Avail Manager List,  !- Name
+    AvailabilityManager:Scheduled,        !- Availability Manager 1 Object Type
+    ZONE ONE PSZ Avail Manager;       !- Availability Manager 1 Name
 
-  ZoneHVAC:IdealLoadsAirSystem,
-    Lobby Purchased Air,  !- Name
-    ,                        !- Availability Schedule Name
-    Lobby Supply Inlet,   !- Zone Supply Air Node Name
-    ,                        !- Zone Exhaust Air Node Name
-    ,                        !- System Inlet Air Node Name
-    50,                      !- Maximum Heating Supply Air Temperature {C}
-    13,                      !- Minimum Cooling Supply Air Temperature {C}
-    0.015,                   !- Maximum Heating Supply Air Humidity Ratio {kgWater/kgDryAir}
-    0.01,                    !- Minimum Cooling Supply Air Humidity Ratio {kgWater/kgDryAir}
-    NoLimit,                 !- Heating Limit
-    ,                        !- Maximum Heating Air Flow Rate {m3/s}
-    ,                        !- Maximum Sensible Heating Capacity {W}
-    NoLimit,                 !- Cooling Limit
-    ,                        !- Maximum Cooling Air Flow Rate {m3/s}
-    ,                        !- Maximum Total Cooling Capacity {W}
-    ,                        !- Heating Availability Schedule Name
-    ,                        !- Cooling Availability Schedule Name
-    ConstantSupplyHumidityRatio,  !- Dehumidification Control Type
-    ,                        !- Cooling Sensible Heat Ratio {dimensionless}
-    ConstantSupplyHumidityRatio,  !- Humidification Control Type
-    ,                        !- Design Specification Outdoor Air Object Name
-    ,                        !- Outdoor Air Inlet Node Name
-    ,                        !- Demand Controlled Ventilation Type
-    ,                        !- Outdoor Air Economizer Type
-    ,                        !- Heat Recovery Type
-    ,                        !- Sensible Heat Recovery Effectiveness {dimensionless}
-    ;                        !- Latent Heat Recovery Effectiveness {dimensionless}
+! --- Branches ---
 
-! ============================================================================
-! HVAC Template: Ideal Loads Air System
-! Description: A simplified, perfect heating/cooling system. No real equipment
-!              is modelled. EnergyPlus calculates the exact energy needed to
-!              maintain setpoints. Best for envelope-focused studies.
-! Complexity: Very Low (always simulates successfully)
-! ============================================================================
+  BranchList,
+    ZONE ONE PSZ Air Loop Branches,   !- Name
+    ZONE ONE PSZ Main Branch;         !- Branch 1 Name
 
-  ZoneHVAC:EquipmentConnections,
-    Rest Room,                !- Zone Name
-    Rest Room Equipment,      !- Zone Conditioning Equipment List Name
-    Rest Room Supply Inlet,   !- Zone Air Inlet Node or NodeList Name
-    ,                        !- Zone Air Exhaust Node or NodeList Name
-    Rest Room Zone Air Node,  !- Zone Air Node Name
-    Rest Room Return Outlet;  !- Zone Return Air Node or NodeList Name
+  Branch,
+    ZONE ONE PSZ Main Branch,         !- Name
+    ,                                     !- Pressure Drop Curve Name
+    AirLoopHVAC:OutdoorAirSystem,        !- Component 1 Object Type
+    ZONE ONE PSZ OA System,           !- Component 1 Name
+    ZONE ONE PSZ Air Loop Supply Inlet,  !- Component 1 Inlet Node Name
+    ZONE ONE PSZ OA Mixed Air Outlet, !- Component 1 Outlet Node Name
+    Coil:Heating:Fuel,                   !- Component 2 Object Type
+    ZONE ONE PSZ Gas Heater,          !- Component 2 Name
+    ZONE ONE PSZ OA Mixed Air Outlet, !- Component 2 Inlet Node Name
+    ZONE ONE PSZ Heating Coil Outlet, !- Component 2 Outlet Node Name
+    CoilSystem:Cooling:DX,               !- Component 3 Object Type
+    ZONE ONE PSZ DX Cool Coil System, !- Component 3 Name
+    ZONE ONE PSZ Heating Coil Outlet, !- Component 3 Inlet Node Name
+    ZONE ONE PSZ Cooling Coil Outlet, !- Component 3 Outlet Node Name
+    Fan:ConstantVolume,                  !- Component 4 Object Type
+    ZONE ONE PSZ Supply Fan,          !- Component 4 Name
+    ZONE ONE PSZ Cooling Coil Outlet, !- Component 4 Inlet Node Name
+    ZONE ONE PSZ Air Loop Supply Outlet;  !- Component 4 Outlet Node Name
 
-  ZoneHVAC:EquipmentList,
-    Rest Room Equipment,      !- Name
-    SequentialLoad,          !- Load Distribution Scheme
-    ZoneHVAC:IdealLoadsAirSystem,  !- Zone Equipment 1 Object Type
-    Rest Room Purchased Air,  !- Zone Equipment 1 Name
-    1,                       !- Zone Equipment 1 Cooling Sequence
-    1,                       !- Zone Equipment 1 Heating or No-Load Sequence
-    ,                        !- Zone Equipment 1 Sequential Cooling Fraction Schedule Name
-    ;                        !- Zone Equipment 1 Sequential Heating Fraction Schedule Name
+! --- Outdoor Air System ---
 
-  ZoneHVAC:IdealLoadsAirSystem,
-    Rest Room Purchased Air,  !- Name
-    ,                        !- Availability Schedule Name
-    Rest Room Supply Inlet,   !- Zone Supply Air Node Name
-    ,                        !- Zone Exhaust Air Node Name
-    ,                        !- System Inlet Air Node Name
-    50,                      !- Maximum Heating Supply Air Temperature {C}
-    13,                      !- Minimum Cooling Supply Air Temperature {C}
-    0.015,                   !- Maximum Heating Supply Air Humidity Ratio {kgWater/kgDryAir}
-    0.01,                    !- Minimum Cooling Supply Air Humidity Ratio {kgWater/kgDryAir}
-    NoLimit,                 !- Heating Limit
-    ,                        !- Maximum Heating Air Flow Rate {m3/s}
-    ,                        !- Maximum Sensible Heating Capacity {W}
-    NoLimit,                 !- Cooling Limit
-    ,                        !- Maximum Cooling Air Flow Rate {m3/s}
-    ,                        !- Maximum Total Cooling Capacity {W}
-    ,                        !- Heating Availability Schedule Name
-    ,                        !- Cooling Availability Schedule Name
-    ConstantSupplyHumidityRatio,  !- Dehumidification Control Type
-    ,                        !- Cooling Sensible Heat Ratio {dimensionless}
-    ConstantSupplyHumidityRatio,  !- Humidification Control Type
-    ,                        !- Design Specification Outdoor Air Object Name
-    ,                        !- Outdoor Air Inlet Node Name
-    ,                        !- Demand Controlled Ventilation Type
-    ,                        !- Outdoor Air Economizer Type
-    ,                        !- Heat Recovery Type
-    ,                        !- Sensible Heat Recovery Effectiveness {dimensionless}
-    ;                        !- Latent Heat Recovery Effectiveness {dimensionless}
+  AirLoopHVAC:OutdoorAirSystem,
+    ZONE ONE PSZ OA System,           !- Name
+    ZONE ONE PSZ OA Controller List,  !- Controller List Name
+    ZONE ONE PSZ OA Equipment List;   !- Outdoor Air Equipment List Name
 
-  !- Control 1 Name    !- Cooling Setpoint Temperature Schedule Name
+  AirLoopHVAC:ControllerList,
+    ZONE ONE PSZ OA Controller List,  !- Name
+    Controller:OutdoorAir,               !- Controller 1 Object Type
+    ZONE ONE PSZ OA Controller;       !- Controller 1 Name
+
+  Controller:OutdoorAir,
+    ZONE ONE PSZ OA Controller,       !- Name
+    ZONE ONE PSZ Relief Air Node,     !- Relief Air Outlet Node Name
+    ZONE ONE PSZ Air Loop Supply Inlet,  !- Return Air Node Name
+    ZONE ONE PSZ OA Mixed Air Outlet, !- Mixed Air Node Name
+    ZONE ONE PSZ OA In Node,          !- Actuator Node Name
+    autosize,                             !- Minimum Outdoor Air Flow Rate {m3/s}
+    autosize,                             !- Maximum Outdoor Air Flow Rate {m3/s}
+    NoEconomizer,                         !- Economizer Control Type
+    ModulateFlow,                         !- Economizer Control Action Type
+    ,                                     !- Economizer Maximum Limit Dry-Bulb Temperature {C}
+    ,                                     !- Economizer Maximum Limit Enthalpy {J/kg}
+    ,                                     !- Economizer Maximum Limit Dewpoint Temperature {C}
+    ,                                     !- Electronic Enthalpy Limit Curve Name
+    ,                                     !- Economizer Minimum Limit Dry-Bulb Temperature {C}
+    NoLockout,                            !- Lockout Type
+    FixedMinimum;                         !- Minimum Limit Type
+
+  AirLoopHVAC:OutdoorAirSystem:EquipmentList,
+    ZONE ONE PSZ OA Equipment List,   !- Name
+    OutdoorAir:Mixer,                    !- Component 1 Object Type
+    ZONE ONE PSZ OA Mixer;           !- Component 1 Name
+
+  OutdoorAir:Mixer,
+    ZONE ONE PSZ OA Mixer,           !- Name
+    ZONE ONE PSZ OA Mixed Air Outlet, !- Mixed Air Node Name
+    ZONE ONE PSZ OA In Node,          !- Outdoor Air Stream Node Name
+    ZONE ONE PSZ Relief Air Node,     !- Relief Air Stream Node Name
+    ZONE ONE PSZ Air Loop Supply Inlet;  !- Return Air Stream Node Name
+
+  OutdoorAir:NodeList,
+    ZONE ONE PSZ OA In Node;          !- Node or NodeList Name 1
+
+! --- Supply/Return Paths ---
+
+  AirLoopHVAC:SupplyPath,
+    ZONE ONE PSZ Supply Path,         !- Name
+    ZONE ONE PSZ Air Loop Zone Inlet, !- Supply Air Path Inlet Node Name
+    AirLoopHVAC:ZoneSplitter,           !- Component 1 Object Type
+    ZONE ONE PSZ Zone Splitter;       !- Component 1 Name
+
+  AirLoopHVAC:ZoneSplitter,
+    ZONE ONE PSZ Zone Splitter,       !- Name
+    ZONE ONE PSZ Air Loop Zone Inlet, !- Inlet Node Name
+    ZONE ONE PSZ Zone Inlet;          !- Outlet 1 Node Name
+
+  AirLoopHVAC:ReturnPath,
+    ZONE ONE PSZ Return Path,         !- Name
+    ZONE ONE PSZ Air Loop Return Node,  !- Return Air Path Outlet Node Name
+    AirLoopHVAC:ZoneMixer,              !- Component 1 Object Type
+    ZONE ONE PSZ Zone Mixer;          !- Component 1 Name
+
+  AirLoopHVAC:ZoneMixer,
+    ZONE ONE PSZ Zone Mixer,          !- Name
+    ZONE ONE PSZ Air Loop Return Node, !- Outlet Node Name
+    ZONE ONE Return Node;             !- Inlet 1 Node Name
+
+! --- Setpoint Managers ---
+
+  SetpointManager:SingleZone:Reheat,
+    ZONE ONE PSZ Supply Air Temp Manager,  !- Name
+    Temperature,                          !- Control Variable
+    13.0,                                 !- Minimum Supply Air Temperature {C}
+    40.0,                                 !- Maximum Supply Air Temperature {C}
+    ZONE ONE,                          !- Control Zone Name
+    ZONE ONE Air Node,                !- Zone Node Name
+    ZONE ONE PSZ Supply Inlet,        !- Zone Inlet Node Name
+    ZONE ONE PSZ Air Loop Supply Outlet;  !- Setpoint Node or NodeList Name
+
+  SetpointManager:MixedAir,
+    ZONE ONE PSZ Cooling Coil Air Temp Manager,  !- Name
+    Temperature,                          !- Control Variable
+    ZONE ONE PSZ Air Loop Supply Outlet,  !- Reference Setpoint Node Name
+    ZONE ONE PSZ Cooling Coil Outlet, !- Fan Inlet Node Name
+    ZONE ONE PSZ Air Loop Supply Outlet,  !- Fan Outlet Node Name
+    ZONE ONE PSZ Cooling Coil Outlet; !- Setpoint Node or NodeList Name
+
+  SetpointManager:MixedAir,
+    ZONE ONE PSZ Heating Coil Air Temp Manager,  !- Name
+    Temperature,                          !- Control Variable
+    ZONE ONE PSZ Air Loop Supply Outlet,  !- Reference Setpoint Node Name
+    ZONE ONE PSZ Cooling Coil Outlet, !- Fan Inlet Node Name
+    ZONE ONE PSZ Air Loop Supply Outlet,  !- Fan Outlet Node Name
+    ZONE ONE PSZ Heating Coil Outlet; !- Setpoint Node or NodeList Name
+
+! --- Fan ---
+
+  Fan:ConstantVolume,
+    ZONE ONE PSZ Supply Fan,          !- Name
+    ZONE ONE PSZ Avail Schedule,      !- Availability Schedule Name
+    0.7,                                  !- Fan Total Efficiency
+    250.0,                                !- Pressure Rise {Pa}
+    autosize,                             !- Maximum Flow Rate {m3/s}
+    0.9,                                  !- Motor Efficiency
+    1.0,                                  !- Motor In Airstream Fraction
+    ZONE ONE PSZ Cooling Coil Outlet, !- Air Inlet Node Name
+    ZONE ONE PSZ Air Loop Supply Outlet;  !- Air Outlet Node Name
+
+! --- Gas Heating Coil ---
+
+  Coil:Heating:Fuel,
+    ZONE ONE PSZ Gas Heater,          !- Name
+    ZONE ONE PSZ Avail Schedule,      !- Availability Schedule Name
+    NaturalGas,                           !- Fuel Type
+    0.8,                                  !- Burner Efficiency
+    autosize,                             !- Nominal Capacity {W}
+    ZONE ONE PSZ OA Mixed Air Outlet, !- Air Inlet Node Name
+    ZONE ONE PSZ Heating Coil Outlet, !- Air Outlet Node Name
+    ZONE ONE PSZ Heating Coil Outlet; !- Temperature Setpoint Node Name
+
+! --- DX Cooling Coil System Wrapper ---
+
+  CoilSystem:Cooling:DX,
+    ZONE ONE PSZ DX Cool Coil System, !- Name
+    ZONE ONE PSZ Avail Schedule,      !- Availability Schedule Name
+    ZONE ONE PSZ Heating Coil Outlet, !- DX Cooling Coil System Inlet Node Name
+    ZONE ONE PSZ Cooling Coil Outlet, !- DX Cooling Coil System Outlet Node Name
+    ZONE ONE PSZ Cooling Coil Outlet, !- DX Cooling Coil System Sensor Node Name
+    Coil:Cooling:DX:SingleSpeed,         !- Cooling Coil Object Type
+    ZONE ONE PSZ DX Cool Coil;        !- Cooling Coil Name
+
+! --- DX Cooling Coil ---
+
+  Coil:Cooling:DX:SingleSpeed,
+    ZONE ONE PSZ DX Cool Coil,        !- Name
+    ZONE ONE PSZ Avail Schedule,      !- Availability Schedule Name
+    autosize,                             !- Gross Rated Total Cooling Capacity {W}
+    autosize,                             !- Gross Rated Sensible Heat Ratio
+    3.0,                                  !- Gross Rated Cooling COP {W/W}
+    autosize,                             !- Rated Air Flow Rate {m3/s}
+    ,                                     !- 2017 Rated Evaporator Fan Power Per Volume Flow Rate {W/(m3/s)}
+    934.4,                                !- 2023 Rated Evaporator Fan Power Per Volume Flow Rate {W/(m3/s)}
+    ZONE ONE PSZ Heating Coil Outlet, !- Air Inlet Node Name
+    ZONE ONE PSZ Cooling Coil Outlet, !- Air Outlet Node Name
+    ZONE ONE PSZ Cool Cap FT,         !- Total Cooling Capacity Function of Temperature Curve Name
+    ZONE ONE PSZ Cool Cap FFF,        !- Total Cooling Capacity Function of Flow Fraction Curve Name
+    ZONE ONE PSZ Cool EIR FT,         !- Energy Input Ratio Function of Temperature Curve Name
+    ZONE ONE PSZ Cool EIR FFF,        !- Energy Input Ratio Function of Flow Fraction Curve Name
+    ZONE ONE PSZ Cool PLF;            !- Part Load Fraction Correlation Curve Name
+
+! --- Performance Curves ---
+
+  Curve:Biquadratic,
+    ZONE ONE PSZ Cool Cap FT,         !- Name
+    0.942587793,                          !- Coefficient1 Constant
+    0.009543347,                          !- Coefficient2 x
+    0.000683770,                          !- Coefficient3 x**2
+    -0.011042676,                         !- Coefficient4 y
+    0.000005249,                          !- Coefficient5 y**2
+    -0.000009720,                         !- Coefficient6 x*y
+    12.77778,                             !- Minimum Value of x
+    23.88889,                             !- Maximum Value of x
+    18.0,                                 !- Minimum Value of y
+    46.11111,                             !- Maximum Value of y
+    ,                                     !- Minimum Curve Output
+    ,                                     !- Maximum Curve Output
+    Temperature,                          !- Input Unit Type for X
+    Temperature,                          !- Input Unit Type for Y
+    Dimensionless;                        !- Output Unit Type
+
+  Curve:Biquadratic,
+    ZONE ONE PSZ Cool EIR FT,         !- Name
+    0.342414409,                          !- Coefficient1 Constant
+    0.034885008,                          !- Coefficient2 x
+    -0.000623700,                         !- Coefficient3 x**2
+    0.004977216,                          !- Coefficient4 y
+    0.000437951,                          !- Coefficient5 y**2
+    -0.000728028,                         !- Coefficient6 x*y
+    12.77778,                             !- Minimum Value of x
+    23.88889,                             !- Maximum Value of x
+    18.0,                                 !- Minimum Value of y
+    46.11111,                             !- Maximum Value of y
+    ,                                     !- Minimum Curve Output
+    ,                                     !- Maximum Curve Output
+    Temperature,                          !- Input Unit Type for X
+    Temperature,                          !- Input Unit Type for Y
+    Dimensionless;                        !- Output Unit Type
+
+  Curve:Quadratic,
+    ZONE ONE PSZ Cool Cap FFF,        !- Name
+    0.8,                                  !- Coefficient1 Constant
+    0.2,                                  !- Coefficient2 x
+    0.0,                                  !- Coefficient3 x**2
+    0.5,                                  !- Minimum Value of x
+    1.5;                                  !- Maximum Value of x
+
+  Curve:Quadratic,
+    ZONE ONE PSZ Cool EIR FFF,        !- Name
+    1.1552,                               !- Coefficient1 Constant
+    -0.1808,                              !- Coefficient2 x
+    0.0256,                               !- Coefficient3 x**2
+    0.5,                                  !- Minimum Value of x
+    1.5;                                  !- Maximum Value of x
+
+  Curve:Quadratic,
+    ZONE ONE PSZ Cool PLF,            !- Name
+    0.85,                                 !- Coefficient1 Constant
+    0.15,                                 !- Coefficient2 x
+    0.0,                                  !- Coefficient3 x**2
+    0.0,                                  !- Minimum Value of x
+    1.0;                                  !- Maximum Value of x
+
+
+  ZoneControl:Thermostat,
+    ZONE ONE Thermostat,     !- Name
+    ZONE ONE,                !- Zone or ZoneList Name
+    ALWAYS 4,                !- Control Type Schedule Name
+    ThermostatSetpoint:DualSetpoint,  !- Control 1 Object Type
+    Office Thermostat Dual SP Control;  !- Control 1 Name
+
+  ThermostatSetpoint:DualSetpoint,
+    Office Thermostat Dual SP Control,  !- Name
+    HEATING_SETPOINT_SCH,    !- Heating Setpoint Temperature Schedule Name
+    COOLING_SETPOINT_SCH;    !- Cooling Setpoint Temperature Schedule Name
 
 
   Schedule:Compact,
@@ -392,9 +598,7 @@
     Until: 17:00, 1,
     Until: 24:00, 0,
     For: Weekends Holidays AllOtherDays,
-    Until: 09:00, 0,
-    Until: 17:00, 1,
-    Until: 24:00, 0;
+    Until: 24:00, 1;
 
 
   Schedule:Compact,
@@ -406,9 +610,7 @@
     Until: 18:00, 1,
     Until: 24:00, 0,
     For: Weekends Holidays AllOtherDays,
-    Until: 08:00, 0,
-    Until: 18:00, 1,
-    Until: 24:00, 0;
+    Until: 24:00, 1;
 
 
   Schedule:Compact,
@@ -448,7 +650,25 @@
     Until: 18:00, 24.0,
     Until: 24:00, 28.0;
 
-      !- Air Changes per Hour {1/hr}       !- Outdoor Air Flow Air Changes per Hour {1/hr}
+
+
+  ZoneInfiltration:DesignFlowRate,
+    ZONE ONE Infiltration,   !- Name
+    ZONE ONE,                !- Zone or ZoneList Name
+    ALWAYS_ON,               !- Schedule Name
+    AirChanges/Hour,         !- Design Flow Rate Calculation Method
+    ,                        !- Design Flow Rate {m3/s}
+    ,                        !- Flow per Zone Floor Area {m3/s-m2}
+    ,                        !- Flow per Exterior Surface Area {m3/s-m2}
+    0.5;      !- Air Changes per Hour {1/hr}
+
+  DesignSpecification:OutdoorAir,
+    ZONE ONE OA,             !- Name
+    AirChanges/Hour,         !- Outdoor Air Method
+    0,                       !- Outdoor Air Flow per Person {m3/s-person}
+    0,                       !- Outdoor Air Flow per Zone Floor Area {m3/s-m2}
+    0,                       !- Outdoor Air Flow per Zone {m3/s}
+    0.5;       !- Outdoor Air Flow Air Changes per Hour {1/hr}
 
   WindowMaterial:SimpleGlazingSystem,
     Simple Window Glass,     !- Name
@@ -517,20 +737,20 @@
 !- Layer 4
 
   Construction,
-    Medium Roof/Ceiling,     !- Name
-    M14a 100mm heavyweight concrete,  !- Outside Layer
+    Light Roof/Ceiling,      !- Name
+    M11 100mm lightweight concrete,  !- Outside Layer
     F05 Ceiling air space resistance,  !- Layer 2
     F16 Acoustic tile;
 
 !- Specific Heat {J/kg-K}
 
   Material,
-    M14a 100mm heavyweight concrete,  !- Name
+    M11 100mm lightweight concrete,  !- Name
     MediumRough,             !- Roughness
     0.1016,                  !- Thickness {m}
-    1.95,                    !- Conductivity {W/m-K}
-    2240,                    !- Density {kg/m3}
-    900;
+    0.53,                    !- Conductivity {W/m-K}
+    1280,                    !- Density {kg/m3}
+    840;
 
 !- Thermal Resistance {m2-K/W}
 
@@ -548,92 +768,26 @@
     368,                     !- Density {kg/m3}
     590;
 
-!===============================================================================
-! CompositeWallConstructions.idf
-!
-! COMPOSITE WALL CONSTRUCTIONS. The thickness, conductivity, density and specific heat values of the
-! material layers for these constructions have been taken from the ASHRAE report "Modeling Two- and
-! Three-Dimensional Heat Transfer through Composite Wall and Roof Assemblies in Hourly Energy Simulation
-! Programs (1145-TRP)," by EnerModal Engineering Limited, Oak Ridge National Laboratory, and the
-! Polish Academy of Sciences, January 2001.
-!
-! Revised March 2006:  The referenced report lists materials from inside to outside.  The layer numbers
-!                      from the report are retained, but are now listed in EnergyPlus order, from outside
-!                      to inside in the CONSTRUCTION object.
-!
-! ASHRAE 1145-RP Wall Assembly 1
-! 2"x4" wood studs at 24" on center with between-stud R11 fibreglass insulation.
-! Layers are 1/2" wood siding, 1/2" plywood, 2x4 wood studs and R11 insulation, 1/2" gypsum board.
-! Area-average R-Value = 11.391 ft2-F-h/Btu (2.005 m2-K/W).
-! Total wall thickness = 5.00in (0.127m)
-! Material layer names follow:
-! The objects and syntax in this dataset comply with EnergyPlus, Version 8.4.0 and above, unless otherwise noted.
-
-  Construction,
-    Composite 2x4 Wood Stud R11,  !- Name
-    Composite 2x4 Wood Stud R11 #3,  !- Outside Layer
-    Composite 2x4 Wood Stud R11 #2,  !- Layer 2
-    Composite 2x4 Wood Stud R11 #1;
-
-!- Visible Absorptance
-
-  Material,
-    Composite 2x4 Wood Stud R11 #3,  !- Name
-    Smooth,                  !- Roughness
-    0.025,                   !- Thickness {m}
-    0.124,                   !- Conductivity {W/m-K}
-    508.45,                  !- Density {kg/m3}
-    1048,                    !- Specific Heat {J/kg-K}
-    0.9,                     !- Thermal Absorptance
-    0.7,                     !- Solar Absorptance
-    0.7;
-
-!- Visible Absorptance
-
-  Material,
-    Composite 2x4 Wood Stud R11 #2,  !- Name
-    Smooth,                  !- Roughness
-    0.083,                   !- Thickness {m}
-    0.049,                   !- Conductivity {W/m-K}
-    119.63,                  !- Density {kg/m3}
-    1048,                    !- Specific Heat {J/kg-K}
-    0.9,                     !- Thermal Absorptance
-    0.7,                     !- Solar Absorptance
-    0.7;
-
-!- Layer 3
-
-  Material,
-    Composite 2x4 Wood Stud R11 #1,  !- Name
-    Smooth,                  !- Roughness
-    0.019,                   !- Thickness {m}
-    0.186,                   !- Conductivity {W/m-K}
-    640.0,                   !- Density {kg/m3}
-    1048,                    !- Specific Heat {J/kg-K}
-    0.9,                     !- Thermal Absorptance
-    0.7,                     !- Solar Absorptance
-    0.7;
-
 
   Zone,
-    Office,                  !- Name
+    ZONE ONE,             !- Name
     0,                       !- Direction of Relative North {deg}
-    0.00,                !- X Origin {m}
-    0.00,                !- Y Origin {m}
-    0.00,                !- Z Origin {m}
+    0,                       !- X Origin {m}
+    0,                       !- Y Origin {m}
+    0,                       !- Z Origin {m}
     1,                       !- Type
     1,                       !- Multiplier
     autocalculate,           !- Ceiling Height {m}
     autocalculate;           !- Volume {m3}
 
   BuildingSurface:Detailed,
-    Office_Wall_South,                  !- Name
+    Wall_South,                  !- Name
     Wall,             !- Surface Type
     Medium Exterior Wall,                !- Construction Name
-    Office,             !- Zone Name
+    ZONE ONE,             !- Zone Name
     ,                        !- Space Name
     Outdoors,             !- Outside Boundary Condition
-    ,         !- Outside Boundary Condition Object
+    ,                        !- Outside Boundary Condition Object
     SunExposed,                   !- Sun Exposure
     WindExposed,                  !- Wind Exposure
     0.50,                    !- View Factor to Ground
@@ -644,10 +798,10 @@
     0.00, 0.00, 4.00;  !- X,Y,Z ==> Vertex 4
 
   FenestrationSurface:Detailed,
-    Office_Wall_South_Window,      !- Name
+    Wall_South_Window,      !- Name
     Window,                  !- Surface Type
     Theoretical Glass [167],         !- Construction Name
-    Office_Wall_South,             !- Building Surface Name
+    Wall_South,             !- Building Surface Name
     ,                        !- Outside Boundary Condition Object
     0.5,                     !- View Factor to Ground
     ,                        !- Frame and Divider Name
@@ -659,15 +813,15 @@
     2.00, 0.00, 3.00;  !- X,Y,Z ==> Vertex 4
 
   BuildingSurface:Detailed,
-    Office_Wall_East,                  !- Name
+    Wall_East,                  !- Name
     Wall,             !- Surface Type
-    Interior_Partition,                !- Construction Name
-    Office,             !- Zone Name
+    Medium Exterior Wall,                !- Construction Name
+    ZONE ONE,             !- Zone Name
     ,                        !- Space Name
-    Surface,             !- Outside Boundary Condition
-    Lobby_Wall_West,         !- Outside Boundary Condition Object
-    NoSun,                   !- Sun Exposure
-    NoWind,                  !- Wind Exposure
+    Outdoors,             !- Outside Boundary Condition
+    ,                        !- Outside Boundary Condition Object
+    SunExposed,                   !- Sun Exposure
+    WindExposed,                  !- Wind Exposure
     0.50,                    !- View Factor to Ground
     4,                       !- Number of Vertices
     6.00, 0.00, 0.00,  !- X,Y,Z ==> Vertex 1
@@ -676,15 +830,15 @@
     6.00, 0.00, 4.00;  !- X,Y,Z ==> Vertex 4
 
   BuildingSurface:Detailed,
-    Office_Wall_North,                  !- Name
+    Wall_North,                  !- Name
     Wall,             !- Surface Type
-    Interior_Partition,                !- Construction Name
-    Office,             !- Zone Name
+    Medium Exterior Wall,                !- Construction Name
+    ZONE ONE,             !- Zone Name
     ,                        !- Space Name
-    Surface,             !- Outside Boundary Condition
-    Meeting Room_Wall_South,         !- Outside Boundary Condition Object
-    NoSun,                   !- Sun Exposure
-    NoWind,                  !- Wind Exposure
+    Outdoors,             !- Outside Boundary Condition
+    ,                        !- Outside Boundary Condition Object
+    SunExposed,                   !- Sun Exposure
+    WindExposed,                  !- Wind Exposure
     0.50,                    !- View Factor to Ground
     4,                       !- Number of Vertices
     6.00, 8.00, 0.00,  !- X,Y,Z ==> Vertex 1
@@ -693,13 +847,13 @@
     6.00, 8.00, 4.00;  !- X,Y,Z ==> Vertex 4
 
   BuildingSurface:Detailed,
-    Office_Wall_West,                  !- Name
+    Wall_West,                  !- Name
     Wall,             !- Surface Type
     Medium Exterior Wall,                !- Construction Name
-    Office,             !- Zone Name
+    ZONE ONE,             !- Zone Name
     ,                        !- Space Name
     Outdoors,             !- Outside Boundary Condition
-    ,         !- Outside Boundary Condition Object
+    ,                        !- Outside Boundary Condition Object
     SunExposed,                   !- Sun Exposure
     WindExposed,                  !- Wind Exposure
     0.50,                    !- View Factor to Ground
@@ -710,10 +864,10 @@
     0.00, 8.00, 4.00;  !- X,Y,Z ==> Vertex 4
 
   FenestrationSurface:Detailed,
-    Office_Wall_West_Window,      !- Name
+    Wall_West_Window,      !- Name
     Window,                  !- Surface Type
     Theoretical Glass [167],         !- Construction Name
-    Office_Wall_West,             !- Building Surface Name
+    Wall_West,             !- Building Surface Name
     ,                        !- Outside Boundary Condition Object
     0.5,                     !- View Factor to Ground
     ,                        !- Frame and Divider Name
@@ -725,10 +879,10 @@
     0.00, 6.00, 2.50;  !- X,Y,Z ==> Vertex 4
 
   FenestrationSurface:Detailed,
-    Office_Wall_West_Door,      !- Name
+    Wall_West_Door,      !- Name
     Door,                  !- Surface Type
     Generic_Door_Constr,  !- Construction Name
-    Office_Wall_West,             !- Building Surface Name
+    Wall_West,             !- Building Surface Name
     ,                        !- Outside Boundary Condition Object
     0.5,                     !- View Factor to Ground
     ,                        !- Frame and Divider Name
@@ -740,13 +894,13 @@
     0.00, 3.00, 2.50;  !- X,Y,Z ==> Vertex 4
 
   BuildingSurface:Detailed,
-    Office_Roof,                  !- Name
+    Roof,                  !- Name
     Roof,             !- Surface Type
-    Medium Roof/Ceiling,                !- Construction Name
-    Office,             !- Zone Name
+    Light Roof/Ceiling,                !- Construction Name
+    ZONE ONE,             !- Zone Name
     ,                        !- Space Name
     Outdoors,             !- Outside Boundary Condition
-    ,         !- Outside Boundary Condition Object
+    ,                        !- Outside Boundary Condition Object
     SunExposed,                   !- Sun Exposure
     WindExposed,                  !- Wind Exposure
     0,                    !- View Factor to Ground
@@ -757,13 +911,13 @@
     6.00, 8.00, 4.00;  !- X,Y,Z ==> Vertex 4
 
   BuildingSurface:Detailed,
-    Office_Floor,                  !- Name
+    Floor,                  !- Name
     Floor,             !- Surface Type
     Medium Exterior Wall,                !- Construction Name
-    Office,             !- Zone Name
+    ZONE ONE,             !- Zone Name
     ,                        !- Space Name
     Ground,             !- Outside Boundary Condition
-    ,         !- Outside Boundary Condition Object
+    ,                        !- Outside Boundary Condition Object
     NoSun,                   !- Sun Exposure
     NoWind,                  !- Wind Exposure
     0,                    !- View Factor to Ground
@@ -772,756 +926,6 @@
     6.00, 8.00, 0.00,  !- X,Y,Z ==> Vertex 2
     6.00, 0.00, 0.00,  !- X,Y,Z ==> Vertex 3
     0.00, 0.00, 0.00;  !- X,Y,Z ==> Vertex 4
-
-  Zone,
-    Meeting Room,                  !- Name
-    0,                       !- Direction of Relative North {deg}
-    0.00,                !- X Origin {m}
-    8.00,                !- Y Origin {m}
-    0.00,                !- Z Origin {m}
-    1,                       !- Type
-    1,                       !- Multiplier
-    autocalculate,           !- Ceiling Height {m}
-    autocalculate;           !- Volume {m3}
-
-  BuildingSurface:Detailed,
-    Meeting Room_Wall_South,                  !- Name
-    Wall,             !- Surface Type
-    Interior_Partition,                !- Construction Name
-    Meeting Room,             !- Zone Name
-    ,                        !- Space Name
-    Surface,             !- Outside Boundary Condition
-    Office_Wall_North,         !- Outside Boundary Condition Object
-    NoSun,                   !- Sun Exposure
-    NoWind,                  !- Wind Exposure
-    0.50,                    !- View Factor to Ground
-    4,                       !- Number of Vertices
-    0.00, 0.00, 0.00,  !- X,Y,Z ==> Vertex 1
-    6.00, 0.00, 0.00,  !- X,Y,Z ==> Vertex 2
-    6.00, 0.00, 4.00,  !- X,Y,Z ==> Vertex 3
-    0.00, 0.00, 4.00;  !- X,Y,Z ==> Vertex 4
-
-  BuildingSurface:Detailed,
-    Meeting Room_Wall_East,                  !- Name
-    Wall,             !- Surface Type
-    Interior_Partition,                !- Construction Name
-    Meeting Room,             !- Zone Name
-    ,                        !- Space Name
-    Surface,             !- Outside Boundary Condition
-    Rest Room_Wall_West,         !- Outside Boundary Condition Object
-    NoSun,                   !- Sun Exposure
-    NoWind,                  !- Wind Exposure
-    0.50,                    !- View Factor to Ground
-    4,                       !- Number of Vertices
-    6.00, 0.00, 0.00,  !- X,Y,Z ==> Vertex 1
-    6.00, 4.00, 0.00,  !- X,Y,Z ==> Vertex 2
-    6.00, 4.00, 4.00,  !- X,Y,Z ==> Vertex 3
-    6.00, 0.00, 4.00;  !- X,Y,Z ==> Vertex 4
-
-  BuildingSurface:Detailed,
-    Meeting Room_Wall_North,                  !- Name
-    Wall,             !- Surface Type
-    Medium Exterior Wall,                !- Construction Name
-    Meeting Room,             !- Zone Name
-    ,                        !- Space Name
-    Outdoors,             !- Outside Boundary Condition
-    ,         !- Outside Boundary Condition Object
-    SunExposed,                   !- Sun Exposure
-    WindExposed,                  !- Wind Exposure
-    0.50,                    !- View Factor to Ground
-    4,                       !- Number of Vertices
-    6.00, 4.00, 0.00,  !- X,Y,Z ==> Vertex 1
-    0.00, 4.00, 0.00,  !- X,Y,Z ==> Vertex 2
-    0.00, 4.00, 4.00,  !- X,Y,Z ==> Vertex 3
-    6.00, 4.00, 4.00;  !- X,Y,Z ==> Vertex 4
-
-  FenestrationSurface:Detailed,
-    Meeting Room_Wall_North_Window,      !- Name
-    Window,                  !- Surface Type
-    Theoretical Glass [167],         !- Construction Name
-    Meeting Room_Wall_North,             !- Building Surface Name
-    ,                        !- Outside Boundary Condition Object
-    0.5,                     !- View Factor to Ground
-    ,                        !- Frame and Divider Name
-    1,                       !- Multiplier
-    4,                       !- Number of Vertices
-    4.00, 4.00, 1.50,  !- X,Y,Z ==> Vertex 1
-    3.00, 4.00, 1.50,  !- X,Y,Z ==> Vertex 2
-    3.00, 4.00, 2.50,  !- X,Y,Z ==> Vertex 3
-    4.00, 4.00, 2.50;  !- X,Y,Z ==> Vertex 4
-
-  BuildingSurface:Detailed,
-    Meeting Room_Wall_West,                  !- Name
-    Wall,             !- Surface Type
-    Medium Exterior Wall,                !- Construction Name
-    Meeting Room,             !- Zone Name
-    ,                        !- Space Name
-    Outdoors,             !- Outside Boundary Condition
-    ,         !- Outside Boundary Condition Object
-    SunExposed,                   !- Sun Exposure
-    WindExposed,                  !- Wind Exposure
-    0.50,                    !- View Factor to Ground
-    4,                       !- Number of Vertices
-    0.00, 4.00, 0.00,  !- X,Y,Z ==> Vertex 1
-    0.00, 0.00, 0.00,  !- X,Y,Z ==> Vertex 2
-    0.00, 0.00, 4.00,  !- X,Y,Z ==> Vertex 3
-    0.00, 4.00, 4.00;  !- X,Y,Z ==> Vertex 4
-
-  FenestrationSurface:Detailed,
-    Meeting Room_Wall_West_Window,      !- Name
-    Window,                  !- Surface Type
-    Theoretical Glass [167],         !- Construction Name
-    Meeting Room_Wall_West,             !- Building Surface Name
-    ,                        !- Outside Boundary Condition Object
-    0.5,                     !- View Factor to Ground
-    ,                        !- Frame and Divider Name
-    1,                       !- Multiplier
-    4,                       !- Number of Vertices
-    0.00, 3.00, 1.00,  !- X,Y,Z ==> Vertex 1
-    0.00, 2.20, 1.00,  !- X,Y,Z ==> Vertex 2
-    0.00, 2.20, 2.50,  !- X,Y,Z ==> Vertex 3
-    0.00, 3.00, 2.50;  !- X,Y,Z ==> Vertex 4
-
-  BuildingSurface:Detailed,
-    Meeting Room_Roof,                  !- Name
-    Roof,             !- Surface Type
-    Medium Roof/Ceiling,                !- Construction Name
-    Meeting Room,             !- Zone Name
-    ,                        !- Space Name
-    Outdoors,             !- Outside Boundary Condition
-    ,         !- Outside Boundary Condition Object
-    SunExposed,                   !- Sun Exposure
-    WindExposed,                  !- Wind Exposure
-    0,                    !- View Factor to Ground
-    4,                       !- Number of Vertices
-    0.00, 4.00, 4.00,  !- X,Y,Z ==> Vertex 1
-    0.00, 0.00, 4.00,  !- X,Y,Z ==> Vertex 2
-    6.00, 0.00, 4.00,  !- X,Y,Z ==> Vertex 3
-    6.00, 4.00, 4.00;  !- X,Y,Z ==> Vertex 4
-
-  BuildingSurface:Detailed,
-    Meeting Room_Floor,                  !- Name
-    Floor,             !- Surface Type
-    Medium Exterior Wall,                !- Construction Name
-    Meeting Room,             !- Zone Name
-    ,                        !- Space Name
-    Ground,             !- Outside Boundary Condition
-    ,         !- Outside Boundary Condition Object
-    NoSun,                   !- Sun Exposure
-    NoWind,                  !- Wind Exposure
-    0,                    !- View Factor to Ground
-    4,                       !- Number of Vertices
-    0.00, 4.00, 0.00,  !- X,Y,Z ==> Vertex 1
-    6.00, 4.00, 0.00,  !- X,Y,Z ==> Vertex 2
-    6.00, 0.00, 0.00,  !- X,Y,Z ==> Vertex 3
-    0.00, 0.00, 0.00;  !- X,Y,Z ==> Vertex 4
-
-  Zone,
-    Lobby,                  !- Name
-    0,                       !- Direction of Relative North {deg}
-    6.00,                !- X Origin {m}
-    0.00,                !- Y Origin {m}
-    0.00,                !- Z Origin {m}
-    1,                       !- Type
-    1,                       !- Multiplier
-    autocalculate,           !- Ceiling Height {m}
-    autocalculate;           !- Volume {m3}
-
-  BuildingSurface:Detailed,
-    Lobby_Wall_South,                  !- Name
-    Wall,             !- Surface Type
-    Composite 2x4 Wood Stud R11,                !- Construction Name
-    Lobby,             !- Zone Name
-    ,                        !- Space Name
-    Outdoors,             !- Outside Boundary Condition
-    ,         !- Outside Boundary Condition Object
-    SunExposed,                   !- Sun Exposure
-    WindExposed,                  !- Wind Exposure
-    0.50,                    !- View Factor to Ground
-    4,                       !- Number of Vertices
-    0.00, 0.00, 0.00,  !- X,Y,Z ==> Vertex 1
-    5.00, 0.00, 0.00,  !- X,Y,Z ==> Vertex 2
-    5.00, 0.00, 4.00,  !- X,Y,Z ==> Vertex 3
-    0.00, 0.00, 4.00;  !- X,Y,Z ==> Vertex 4
-
-  FenestrationSurface:Detailed,
-    Lobby_Wall_South_Window,      !- Name
-    Window,                  !- Surface Type
-    Theoretical Glass [167],         !- Construction Name
-    Lobby_Wall_South,             !- Building Surface Name
-    ,                        !- Outside Boundary Condition Object
-    0.5,                     !- View Factor to Ground
-    ,                        !- Frame and Divider Name
-    1,                       !- Multiplier
-    4,                       !- Number of Vertices
-    4.50, 0.00, 1.00,  !- X,Y,Z ==> Vertex 1
-    5.50, 0.00, 1.00,  !- X,Y,Z ==> Vertex 2
-    5.50, 0.00, 2.50,  !- X,Y,Z ==> Vertex 3
-    4.50, 0.00, 2.50;  !- X,Y,Z ==> Vertex 4
-
-  FenestrationSurface:Detailed,
-    Lobby_Wall_South_Door,      !- Name
-    Door,                  !- Surface Type
-    Generic_Door_Constr,  !- Construction Name
-    Lobby_Wall_South,             !- Building Surface Name
-    ,                        !- Outside Boundary Condition Object
-    0.5,                     !- View Factor to Ground
-    ,                        !- Frame and Divider Name
-    1,                       !- Multiplier
-    4,                       !- Number of Vertices
-    2.00, 0.00, 0.00,  !- X,Y,Z ==> Vertex 1
-    3.00, 0.00, 0.00,  !- X,Y,Z ==> Vertex 2
-    3.00, 0.00, 2.50,  !- X,Y,Z ==> Vertex 3
-    2.00, 0.00, 2.50;  !- X,Y,Z ==> Vertex 4
-
-  BuildingSurface:Detailed,
-    Lobby_Wall_East,                  !- Name
-    Wall,             !- Surface Type
-    Composite 2x4 Wood Stud R11,                !- Construction Name
-    Lobby,             !- Zone Name
-    ,                        !- Space Name
-    Outdoors,             !- Outside Boundary Condition
-    ,         !- Outside Boundary Condition Object
-    SunExposed,                   !- Sun Exposure
-    WindExposed,                  !- Wind Exposure
-    0.50,                    !- View Factor to Ground
-    4,                       !- Number of Vertices
-    5.00, 0.00, 0.00,  !- X,Y,Z ==> Vertex 1
-    5.00, 8.00, 0.00,  !- X,Y,Z ==> Vertex 2
-    5.00, 8.00, 4.00,  !- X,Y,Z ==> Vertex 3
-    5.00, 0.00, 4.00;  !- X,Y,Z ==> Vertex 4
-
-  FenestrationSurface:Detailed,
-    Lobby_Wall_East_Window,      !- Name
-    Window,                  !- Surface Type
-    Theoretical Glass [167],         !- Construction Name
-    Lobby_Wall_East,             !- Building Surface Name
-    ,                        !- Outside Boundary Condition Object
-    0.5,                     !- View Factor to Ground
-    ,                        !- Frame and Divider Name
-    1,                       !- Multiplier
-    4,                       !- Number of Vertices
-    5.00, 2.21, 1.11,  !- X,Y,Z ==> Vertex 1
-    5.00, 5.79, 1.11,  !- X,Y,Z ==> Vertex 2
-    5.00, 5.79, 2.89,  !- X,Y,Z ==> Vertex 3
-    5.00, 2.21, 2.89;  !- X,Y,Z ==> Vertex 4
-
-  FenestrationSurface:Detailed,
-    Lobby_Wall_East_Door,      !- Name
-    Door,                  !- Surface Type
-    Generic_Door_Constr,  !- Construction Name
-    Lobby_Wall_East,             !- Building Surface Name
-    ,                        !- Outside Boundary Condition Object
-    0.5,                     !- View Factor to Ground
-    ,                        !- Frame and Divider Name
-    1,                       !- Multiplier
-    4,                       !- Number of Vertices
-    5.00, 3.00, 0.00,  !- X,Y,Z ==> Vertex 1
-    5.00, 5.00, 0.00,  !- X,Y,Z ==> Vertex 2
-    5.00, 5.00, 2.50,  !- X,Y,Z ==> Vertex 3
-    5.00, 3.00, 2.50;  !- X,Y,Z ==> Vertex 4
-
-  BuildingSurface:Detailed,
-    Lobby_Wall_North,                  !- Name
-    Wall,             !- Surface Type
-    Interior_Partition,                !- Construction Name
-    Lobby,             !- Zone Name
-    ,                        !- Space Name
-    Surface,             !- Outside Boundary Condition
-    Rest Room_Wall_South,         !- Outside Boundary Condition Object
-    NoSun,                   !- Sun Exposure
-    NoWind,                  !- Wind Exposure
-    0.50,                    !- View Factor to Ground
-    4,                       !- Number of Vertices
-    5.00, 8.00, 0.00,  !- X,Y,Z ==> Vertex 1
-    0.00, 8.00, 0.00,  !- X,Y,Z ==> Vertex 2
-    0.00, 8.00, 4.00,  !- X,Y,Z ==> Vertex 3
-    5.00, 8.00, 4.00;  !- X,Y,Z ==> Vertex 4
-
-  BuildingSurface:Detailed,
-    Lobby_Wall_West,                  !- Name
-    Wall,             !- Surface Type
-    Interior_Partition,                !- Construction Name
-    Lobby,             !- Zone Name
-    ,                        !- Space Name
-    Surface,             !- Outside Boundary Condition
-    Office_Wall_East,         !- Outside Boundary Condition Object
-    NoSun,                   !- Sun Exposure
-    NoWind,                  !- Wind Exposure
-    0.50,                    !- View Factor to Ground
-    4,                       !- Number of Vertices
-    0.00, 8.00, 0.00,  !- X,Y,Z ==> Vertex 1
-    0.00, 0.00, 0.00,  !- X,Y,Z ==> Vertex 2
-    0.00, 0.00, 4.00,  !- X,Y,Z ==> Vertex 3
-    0.00, 8.00, 4.00;  !- X,Y,Z ==> Vertex 4
-
-  BuildingSurface:Detailed,
-    Lobby_Roof,                  !- Name
-    Roof,             !- Surface Type
-    Medium Roof/Ceiling,                !- Construction Name
-    Lobby,             !- Zone Name
-    ,                        !- Space Name
-    Outdoors,             !- Outside Boundary Condition
-    ,         !- Outside Boundary Condition Object
-    SunExposed,                   !- Sun Exposure
-    WindExposed,                  !- Wind Exposure
-    0,                    !- View Factor to Ground
-    4,                       !- Number of Vertices
-    0.00, 8.00, 4.00,  !- X,Y,Z ==> Vertex 1
-    0.00, 0.00, 4.00,  !- X,Y,Z ==> Vertex 2
-    5.00, 0.00, 4.00,  !- X,Y,Z ==> Vertex 3
-    5.00, 8.00, 4.00;  !- X,Y,Z ==> Vertex 4
-
-  BuildingSurface:Detailed,
-    Lobby_Floor,                  !- Name
-    Floor,             !- Surface Type
-    Medium Exterior Wall,                !- Construction Name
-    Lobby,             !- Zone Name
-    ,                        !- Space Name
-    Ground,             !- Outside Boundary Condition
-    ,         !- Outside Boundary Condition Object
-    NoSun,                   !- Sun Exposure
-    NoWind,                  !- Wind Exposure
-    0,                    !- View Factor to Ground
-    4,                       !- Number of Vertices
-    0.00, 8.00, 0.00,  !- X,Y,Z ==> Vertex 1
-    5.00, 8.00, 0.00,  !- X,Y,Z ==> Vertex 2
-    5.00, 0.00, 0.00,  !- X,Y,Z ==> Vertex 3
-    0.00, 0.00, 0.00;  !- X,Y,Z ==> Vertex 4
-
-  Zone,
-    Rest Room,                  !- Name
-    0,                       !- Direction of Relative North {deg}
-    6.00,                !- X Origin {m}
-    8.00,                !- Y Origin {m}
-    0.00,                !- Z Origin {m}
-    1,                       !- Type
-    1,                       !- Multiplier
-    autocalculate,           !- Ceiling Height {m}
-    autocalculate;           !- Volume {m3}
-
-  BuildingSurface:Detailed,
-    Rest Room_Wall_South,                  !- Name
-    Wall,             !- Surface Type
-    Interior_Partition,                !- Construction Name
-    Rest Room,             !- Zone Name
-    ,                        !- Space Name
-    Surface,             !- Outside Boundary Condition
-    Lobby_Wall_North,         !- Outside Boundary Condition Object
-    NoSun,                   !- Sun Exposure
-    NoWind,                  !- Wind Exposure
-    0.50,                    !- View Factor to Ground
-    4,                       !- Number of Vertices
-    0.00, 0.00, 0.00,  !- X,Y,Z ==> Vertex 1
-    5.00, 0.00, 0.00,  !- X,Y,Z ==> Vertex 2
-    5.00, 0.00, 4.00,  !- X,Y,Z ==> Vertex 3
-    0.00, 0.00, 4.00;  !- X,Y,Z ==> Vertex 4
-
-  BuildingSurface:Detailed,
-    Rest Room_Wall_East,                  !- Name
-    Wall,             !- Surface Type
-    Medium Exterior Wall,                !- Construction Name
-    Rest Room,             !- Zone Name
-    ,                        !- Space Name
-    Outdoors,             !- Outside Boundary Condition
-    ,         !- Outside Boundary Condition Object
-    SunExposed,                   !- Sun Exposure
-    WindExposed,                  !- Wind Exposure
-    0.50,                    !- View Factor to Ground
-    4,                       !- Number of Vertices
-    5.00, 0.00, 0.00,  !- X,Y,Z ==> Vertex 1
-    5.00, 4.00, 0.00,  !- X,Y,Z ==> Vertex 2
-    5.00, 4.00, 4.00,  !- X,Y,Z ==> Vertex 3
-    5.00, 0.00, 4.00;  !- X,Y,Z ==> Vertex 4
-
-  FenestrationSurface:Detailed,
-    Rest Room_Wall_East_Window,      !- Name
-    Window,                  !- Surface Type
-    Theoretical Glass [167],         !- Construction Name
-    Rest Room_Wall_East,             !- Building Surface Name
-    ,                        !- Outside Boundary Condition Object
-    0.5,                     !- View Factor to Ground
-    ,                        !- Frame and Divider Name
-    1,                       !- Multiplier
-    4,                       !- Number of Vertices
-    5.00, 1.00, 1.00,  !- X,Y,Z ==> Vertex 1
-    5.00, 2.00, 1.00,  !- X,Y,Z ==> Vertex 2
-    5.00, 2.00, 2.50,  !- X,Y,Z ==> Vertex 3
-    5.00, 1.00, 2.50;  !- X,Y,Z ==> Vertex 4
-
-  BuildingSurface:Detailed,
-    Rest Room_Wall_North,                  !- Name
-    Wall,             !- Surface Type
-    Medium Exterior Wall,                !- Construction Name
-    Rest Room,             !- Zone Name
-    ,                        !- Space Name
-    Outdoors,             !- Outside Boundary Condition
-    ,         !- Outside Boundary Condition Object
-    SunExposed,                   !- Sun Exposure
-    WindExposed,                  !- Wind Exposure
-    0.50,                    !- View Factor to Ground
-    4,                       !- Number of Vertices
-    5.00, 4.00, 0.00,  !- X,Y,Z ==> Vertex 1
-    0.00, 4.00, 0.00,  !- X,Y,Z ==> Vertex 2
-    0.00, 4.00, 4.00,  !- X,Y,Z ==> Vertex 3
-    5.00, 4.00, 4.00;  !- X,Y,Z ==> Vertex 4
-
-  FenestrationSurface:Detailed,
-    Rest Room_Wall_North_Window,      !- Name
-    Window,                  !- Surface Type
-    Theoretical Glass [167],         !- Construction Name
-    Rest Room_Wall_North,             !- Building Surface Name
-    ,                        !- Outside Boundary Condition Object
-    0.5,                     !- View Factor to Ground
-    ,                        !- Frame and Divider Name
-    1,                       !- Multiplier
-    4,                       !- Number of Vertices
-    3.00, 4.00, 2.00,  !- X,Y,Z ==> Vertex 1
-    1.50, 4.00, 2.00,  !- X,Y,Z ==> Vertex 2
-    1.50, 4.00, 3.00,  !- X,Y,Z ==> Vertex 3
-    3.00, 4.00, 3.00;  !- X,Y,Z ==> Vertex 4
-
-  BuildingSurface:Detailed,
-    Rest Room_Wall_West,                  !- Name
-    Wall,             !- Surface Type
-    Interior_Partition,                !- Construction Name
-    Rest Room,             !- Zone Name
-    ,                        !- Space Name
-    Surface,             !- Outside Boundary Condition
-    Meeting Room_Wall_East,         !- Outside Boundary Condition Object
-    NoSun,                   !- Sun Exposure
-    NoWind,                  !- Wind Exposure
-    0.50,                    !- View Factor to Ground
-    4,                       !- Number of Vertices
-    0.00, 4.00, 0.00,  !- X,Y,Z ==> Vertex 1
-    0.00, 0.00, 0.00,  !- X,Y,Z ==> Vertex 2
-    0.00, 0.00, 4.00,  !- X,Y,Z ==> Vertex 3
-    0.00, 4.00, 4.00;  !- X,Y,Z ==> Vertex 4
-
-  BuildingSurface:Detailed,
-    Rest Room_Roof,                  !- Name
-    Roof,             !- Surface Type
-    Medium Roof/Ceiling,                !- Construction Name
-    Rest Room,             !- Zone Name
-    ,                        !- Space Name
-    Outdoors,             !- Outside Boundary Condition
-    ,         !- Outside Boundary Condition Object
-    SunExposed,                   !- Sun Exposure
-    WindExposed,                  !- Wind Exposure
-    0,                    !- View Factor to Ground
-    4,                       !- Number of Vertices
-    0.00, 4.00, 4.00,  !- X,Y,Z ==> Vertex 1
-    0.00, 0.00, 4.00,  !- X,Y,Z ==> Vertex 2
-    5.00, 0.00, 4.00,  !- X,Y,Z ==> Vertex 3
-    5.00, 4.00, 4.00;  !- X,Y,Z ==> Vertex 4
-
-  BuildingSurface:Detailed,
-    Rest Room_Floor,                  !- Name
-    Floor,             !- Surface Type
-    Medium Exterior Wall,                !- Construction Name
-    Rest Room,             !- Zone Name
-    ,                        !- Space Name
-    Ground,             !- Outside Boundary Condition
-    ,         !- Outside Boundary Condition Object
-    NoSun,                   !- Sun Exposure
-    NoWind,                  !- Wind Exposure
-    0,                    !- View Factor to Ground
-    4,                       !- Number of Vertices
-    0.00, 4.00, 0.00,  !- X,Y,Z ==> Vertex 1
-    5.00, 4.00, 0.00,  !- X,Y,Z ==> Vertex 2
-    5.00, 0.00, 0.00,  !- X,Y,Z ==> Vertex 3
-    0.00, 0.00, 0.00;  !- X,Y,Z ==> Vertex 4
-
-  Material,
-    Interior_Partition_Material, !- Name
-    MediumSmooth,            !- Roughness
-    0.1,                     !- Thickness {m}
-    0.5,                     !- Conductivity {W/m-K}
-    1000.0,                  !- Density {kg/m3}
-    1000.0,                  !- Specific Heat {J/kg-K}
-    0.9,                     !- Thermal Absorptance
-    0.7,                     !- Solar Absorptance
-    0.7;                     !- Visible Absorptance
-
-  Construction,
-    Interior_Partition,      !- Name
-    Interior_Partition_Material; !- Outside Layer
-
-
-
-  People,
-    Office_PEOPLE,              !- Name
-    Office,                     !- Zone or ZoneList Name
-    OCCUPANCY_SCH,            !- Number of People Schedule Name
-    Area/Person,              !- Number of People Calculation Method
-    ,                         !- Number of People
-    ,                         !- People per Zone Floor Area {person/m2}
-    30.0,               !- Zone Floor Area per Person {m2/person}
-    0.3,                      !- Fraction Radiant
-    ,                         !- Sensible Heat Fraction
-    ACTIVITY_SCH;             !- Activity Level Schedule Name
-
-  Lights,
-    Office_LIGHTS,              !- Name
-    Office,                     !- Zone or ZoneList Name
-    LIGHTING_SCH,             !- Schedule Name
-    Watts/Area,               !- Design Level Calculation Method
-    ,                         !- Lighting Level {W}
-    6.0,               !- Watts per Zone Floor Area {W/m2}
-    ,                         !- Watts per Person {W/person}
-    0,                        !- Return Air Fraction
-    0.42,                     !- Fraction Radiant
-    0.18,                     !- Fraction Visible
-    1;                        !- Fraction Replaceable
-
-  ElectricEquipment,
-    Office_EQUIP,               !- Name
-    Office,                     !- Zone or ZoneList Name
-    EQUIPMENT_SCH,            !- Schedule Name
-    Watts/Area,               !- Design Level Calculation Method
-    ,                         !- Design Level {W}
-    45.8,                !- Watts per Zone Floor Area {W/m2}
-    ,                         !- Watts per Person {W/person}
-    0,                        !- Fraction Latent
-    0.3,                      !- Fraction Radiant
-    0,                        !- Fraction Lost
-    General;                  !- End-Use Subcategory
-
-  ZoneInfiltration:DesignFlowRate,
-    Office_Infiltration,        !- Name
-    Office,                     !- Zone or ZoneList Name
-    ALWAYS_ON,                !- Schedule Name
-    AirChanges/Hour,          !- Design Flow Rate Calculation Method
-    ,                         !- Design Flow Rate {m3/s}
-    ,                         !- Flow per Zone Floor Area {m3/s-m2}
-    ,                         !- Flow per Exterior Surface Area {m3/s-m2}
-    0.5;                !- Air Changes per Hour {1/hr}
-
-  DesignSpecification:OutdoorAir,
-    Office_OA,                  !- Name
-    AirChanges/Hour,          !- Outdoor Air Method
-    0,                        !- Outdoor Air Flow per Person {m3/s-person}
-    0,                        !- Outdoor Air Flow per Zone Floor Area {m3/s-m2}
-    0,                        !- Outdoor Air Flow per Zone {m3/s}
-    0.5;                 !- Outdoor Air Flow Air Changes per Hour {1/hr}
-
-  ZoneControl:Thermostat,
-    Office_Thermostat,          !- Name
-    Office,                     !- Zone or ZoneList Name
-    ALWAYS 4,                 !- Control Type Schedule Name
-    ThermostatSetpoint:DualSetpoint,  !- Control 1 Object Type
-    Office_DualSP;              !- Control 1 Name
-
-  ThermostatSetpoint:DualSetpoint,
-    Office_DualSP,              !- Name
-    HEATING_SETPOINT_SCH,     !- Heating Setpoint Temperature Schedule Name
-    COOLING_SETPOINT_SCH;     !- Cooling Setpoint Temperature Schedule Name
-
-  People,
-    Meeting Room_PEOPLE,              !- Name
-    Meeting Room,                     !- Zone or ZoneList Name
-    OCCUPANCY_SCH,            !- Number of People Schedule Name
-    Area/Person,              !- Number of People Calculation Method
-    ,                         !- Number of People
-    ,                         !- People per Zone Floor Area {person/m2}
-    30.0,               !- Zone Floor Area per Person {m2/person}
-    0.3,                      !- Fraction Radiant
-    ,                         !- Sensible Heat Fraction
-    ACTIVITY_SCH;             !- Activity Level Schedule Name
-
-  Lights,
-    Meeting Room_LIGHTS,              !- Name
-    Meeting Room,                     !- Zone or ZoneList Name
-    LIGHTING_SCH,             !- Schedule Name
-    Watts/Area,               !- Design Level Calculation Method
-    ,                         !- Lighting Level {W}
-    6.0,               !- Watts per Zone Floor Area {W/m2}
-    ,                         !- Watts per Person {W/person}
-    0,                        !- Return Air Fraction
-    0.42,                     !- Fraction Radiant
-    0.18,                     !- Fraction Visible
-    1;                        !- Fraction Replaceable
-
-  ElectricEquipment,
-    Meeting Room_EQUIP,               !- Name
-    Meeting Room,                     !- Zone or ZoneList Name
-    EQUIPMENT_SCH,            !- Schedule Name
-    Watts/Area,               !- Design Level Calculation Method
-    ,                         !- Design Level {W}
-    45.8,                !- Watts per Zone Floor Area {W/m2}
-    ,                         !- Watts per Person {W/person}
-    0,                        !- Fraction Latent
-    0.3,                      !- Fraction Radiant
-    0,                        !- Fraction Lost
-    General;                  !- End-Use Subcategory
-
-  ZoneInfiltration:DesignFlowRate,
-    Meeting Room_Infiltration,        !- Name
-    Meeting Room,                     !- Zone or ZoneList Name
-    ALWAYS_ON,                !- Schedule Name
-    AirChanges/Hour,          !- Design Flow Rate Calculation Method
-    ,                         !- Design Flow Rate {m3/s}
-    ,                         !- Flow per Zone Floor Area {m3/s-m2}
-    ,                         !- Flow per Exterior Surface Area {m3/s-m2}
-    0.5;                !- Air Changes per Hour {1/hr}
-
-  DesignSpecification:OutdoorAir,
-    Meeting Room_OA,                  !- Name
-    AirChanges/Hour,          !- Outdoor Air Method
-    0,                        !- Outdoor Air Flow per Person {m3/s-person}
-    0,                        !- Outdoor Air Flow per Zone Floor Area {m3/s-m2}
-    0,                        !- Outdoor Air Flow per Zone {m3/s}
-    0.5;                 !- Outdoor Air Flow Air Changes per Hour {1/hr}
-
-  ZoneControl:Thermostat,
-    Meeting Room_Thermostat,          !- Name
-    Meeting Room,                     !- Zone or ZoneList Name
-    ALWAYS 4,                 !- Control Type Schedule Name
-    ThermostatSetpoint:DualSetpoint,  !- Control 1 Object Type
-    Meeting Room_DualSP;              !- Control 1 Name
-
-  ThermostatSetpoint:DualSetpoint,
-    Meeting Room_DualSP,              !- Name
-    HEATING_SETPOINT_SCH,     !- Heating Setpoint Temperature Schedule Name
-    COOLING_SETPOINT_SCH;     !- Cooling Setpoint Temperature Schedule Name
-
-  People,
-    Lobby_PEOPLE,              !- Name
-    Lobby,                     !- Zone or ZoneList Name
-    OCCUPANCY_SCH,            !- Number of People Schedule Name
-    Area/Person,              !- Number of People Calculation Method
-    ,                         !- Number of People
-    ,                         !- People per Zone Floor Area {person/m2}
-    30.0,               !- Zone Floor Area per Person {m2/person}
-    0.3,                      !- Fraction Radiant
-    ,                         !- Sensible Heat Fraction
-    ACTIVITY_SCH;             !- Activity Level Schedule Name
-
-  Lights,
-    Lobby_LIGHTS,              !- Name
-    Lobby,                     !- Zone or ZoneList Name
-    LIGHTING_SCH,             !- Schedule Name
-    Watts/Area,               !- Design Level Calculation Method
-    ,                         !- Lighting Level {W}
-    6.0,               !- Watts per Zone Floor Area {W/m2}
-    ,                         !- Watts per Person {W/person}
-    0,                        !- Return Air Fraction
-    0.42,                     !- Fraction Radiant
-    0.18,                     !- Fraction Visible
-    1;                        !- Fraction Replaceable
-
-  ElectricEquipment,
-    Lobby_EQUIP,               !- Name
-    Lobby,                     !- Zone or ZoneList Name
-    EQUIPMENT_SCH,            !- Schedule Name
-    Watts/Area,               !- Design Level Calculation Method
-    ,                         !- Design Level {W}
-    45.8,                !- Watts per Zone Floor Area {W/m2}
-    ,                         !- Watts per Person {W/person}
-    0,                        !- Fraction Latent
-    0.3,                      !- Fraction Radiant
-    0,                        !- Fraction Lost
-    General;                  !- End-Use Subcategory
-
-  ZoneInfiltration:DesignFlowRate,
-    Lobby_Infiltration,        !- Name
-    Lobby,                     !- Zone or ZoneList Name
-    ALWAYS_ON,                !- Schedule Name
-    AirChanges/Hour,          !- Design Flow Rate Calculation Method
-    ,                         !- Design Flow Rate {m3/s}
-    ,                         !- Flow per Zone Floor Area {m3/s-m2}
-    ,                         !- Flow per Exterior Surface Area {m3/s-m2}
-    0.5;                !- Air Changes per Hour {1/hr}
-
-  DesignSpecification:OutdoorAir,
-    Lobby_OA,                  !- Name
-    AirChanges/Hour,          !- Outdoor Air Method
-    0,                        !- Outdoor Air Flow per Person {m3/s-person}
-    0,                        !- Outdoor Air Flow per Zone Floor Area {m3/s-m2}
-    0,                        !- Outdoor Air Flow per Zone {m3/s}
-    0.5;                 !- Outdoor Air Flow Air Changes per Hour {1/hr}
-
-  ZoneControl:Thermostat,
-    Lobby_Thermostat,          !- Name
-    Lobby,                     !- Zone or ZoneList Name
-    ALWAYS 4,                 !- Control Type Schedule Name
-    ThermostatSetpoint:DualSetpoint,  !- Control 1 Object Type
-    Lobby_DualSP;              !- Control 1 Name
-
-  ThermostatSetpoint:DualSetpoint,
-    Lobby_DualSP,              !- Name
-    HEATING_SETPOINT_SCH,     !- Heating Setpoint Temperature Schedule Name
-    COOLING_SETPOINT_SCH;     !- Cooling Setpoint Temperature Schedule Name
-
-  People,
-    Rest Room_PEOPLE,              !- Name
-    Rest Room,                     !- Zone or ZoneList Name
-    OCCUPANCY_SCH,            !- Number of People Schedule Name
-    Area/Person,              !- Number of People Calculation Method
-    ,                         !- Number of People
-    ,                         !- People per Zone Floor Area {person/m2}
-    30.0,               !- Zone Floor Area per Person {m2/person}
-    0.3,                      !- Fraction Radiant
-    ,                         !- Sensible Heat Fraction
-    ACTIVITY_SCH;             !- Activity Level Schedule Name
-
-  Lights,
-    Rest Room_LIGHTS,              !- Name
-    Rest Room,                     !- Zone or ZoneList Name
-    LIGHTING_SCH,             !- Schedule Name
-    Watts/Area,               !- Design Level Calculation Method
-    ,                         !- Lighting Level {W}
-    6.0,               !- Watts per Zone Floor Area {W/m2}
-    ,                         !- Watts per Person {W/person}
-    0,                        !- Return Air Fraction
-    0.42,                     !- Fraction Radiant
-    0.18,                     !- Fraction Visible
-    1;                        !- Fraction Replaceable
-
-  ElectricEquipment,
-    Rest Room_EQUIP,               !- Name
-    Rest Room,                     !- Zone or ZoneList Name
-    EQUIPMENT_SCH,            !- Schedule Name
-    Watts/Area,               !- Design Level Calculation Method
-    ,                         !- Design Level {W}
-    45.8,                !- Watts per Zone Floor Area {W/m2}
-    ,                         !- Watts per Person {W/person}
-    0,                        !- Fraction Latent
-    0.3,                      !- Fraction Radiant
-    0,                        !- Fraction Lost
-    General;                  !- End-Use Subcategory
-
-  ZoneInfiltration:DesignFlowRate,
-    Rest Room_Infiltration,        !- Name
-    Rest Room,                     !- Zone or ZoneList Name
-    ALWAYS_ON,                !- Schedule Name
-    AirChanges/Hour,          !- Design Flow Rate Calculation Method
-    ,                         !- Design Flow Rate {m3/s}
-    ,                         !- Flow per Zone Floor Area {m3/s-m2}
-    ,                         !- Flow per Exterior Surface Area {m3/s-m2}
-    0.5;                !- Air Changes per Hour {1/hr}
-
-  DesignSpecification:OutdoorAir,
-    Rest Room_OA,                  !- Name
-    AirChanges/Hour,          !- Outdoor Air Method
-    0,                        !- Outdoor Air Flow per Person {m3/s-person}
-    0,                        !- Outdoor Air Flow per Zone Floor Area {m3/s-m2}
-    0,                        !- Outdoor Air Flow per Zone {m3/s}
-    0.5;                 !- Outdoor Air Flow Air Changes per Hour {1/hr}
-
-  ZoneControl:Thermostat,
-    Rest Room_Thermostat,          !- Name
-    Rest Room,                     !- Zone or ZoneList Name
-    ALWAYS 4,                 !- Control Type Schedule Name
-    ThermostatSetpoint:DualSetpoint,  !- Control 1 Object Type
-    Rest Room_DualSP;              !- Control 1 Name
-
-  ThermostatSetpoint:DualSetpoint,
-    Rest Room_DualSP,              !- Name
-    HEATING_SETPOINT_SCH,     !- Heating Setpoint Temperature Schedule Name
-    COOLING_SETPOINT_SCH;     !- Cooling Setpoint Temperature Schedule Name
-
-
 
   Material,
     Generic_Door_Material,   !- Name

@@ -7,7 +7,10 @@ def generate_zone_geometry(
     wall_e="{EXTERIOR_WALL_CONSTR}", wall_w="{EXTERIOR_WALL_CONSTR}",
     door_s=None, door_n=None, door_e=None, door_w=None,
     window_s=None, window_n=None, window_e=None, window_w=None,
-    zone_name="ZONE ONE"):
+    zone_name="ZONE ONE",
+    roof_type="flat",
+    roof_pitch_height=2.0,
+    skylight_data=None):
     """
     Generates standard CCW EnergyPlus vertices for a rectangular zone.
     L = Length (X-axis)
@@ -50,6 +53,63 @@ def generate_zone_geometry(
     {v2[0]:.2f}, {v2[1]:.2f}, {v2[2]:.2f},  !- X,Y,Z ==> Vertex 2
     {v3[0]:.2f}, {v3[1]:.2f}, {v3[2]:.2f},  !- X,Y,Z ==> Vertex 3
     {v4[0]:.2f}, {v4[1]:.2f}, {v4[2]:.2f};  !- X,Y,Z ==> Vertex 4
+"""
+
+    def make_triangle_surface(name, surf_type, constr, out_bound, sun, wind, v1, v2, v3):
+        vf = "0.50" if surf_type == "Wall" else "0"
+        return f"""
+  BuildingSurface:Detailed,
+    {name},                  !- Name
+    {surf_type},             !- Surface Type
+    {constr},                !- Construction Name
+    {zone_name},             !- Zone Name
+    ,                        !- Space Name
+    {out_bound},             !- Outside Boundary Condition
+    ,                        !- Outside Boundary Condition Object
+    {sun},                   !- Sun Exposure
+    {wind},                  !- Wind Exposure
+    {vf},                    !- View Factor to Ground
+    3,                       !- Number of Vertices
+    {v1[0]:.2f}, {v1[1]:.2f}, {v1[2]:.2f},  !- X,Y,Z ==> Vertex 1
+    {v2[0]:.2f}, {v2[1]:.2f}, {v2[2]:.2f},  !- X,Y,Z ==> Vertex 2
+    {v3[0]:.2f}, {v3[1]:.2f}, {v3[2]:.2f};  !- X,Y,Z ==> Vertex 3
+"""
+
+    def make_skylight(roof_name, v1, v2, v3, v4, roof_width, roof_height_slant, skylight_data):
+        if not skylight_data or not isinstance(skylight_data, dict):
+            return ""
+        sky_w = float(skylight_data.get("width", 1.0))
+        sky_l = float(skylight_data.get("length", 1.0))
+        
+        w_off = (roof_width - sky_w) / 2.0
+        h_off = (roof_height_slant - sky_l) / 2.0
+        
+        def interpolate_2d(p_bl, p_br, p_tl, frac_w, frac_h):
+            x = p_bl[0] + (p_br[0]-p_bl[0])*frac_w + (p_tl[0]-p_bl[0])*frac_h
+            y = p_bl[1] + (p_br[1]-p_bl[1])*frac_w + (p_tl[1]-p_bl[1])*frac_h
+            z = p_bl[2] + (p_br[2]-p_bl[2])*frac_w + (p_tl[2]-p_bl[2])*frac_h
+            return (x, y, z)
+            
+        win_v1 = interpolate_2d(v1, v2, v4, w_off/roof_width, h_off/roof_height_slant) # bottom-left
+        win_v2 = interpolate_2d(v1, v2, v4, (w_off+sky_w)/roof_width, h_off/roof_height_slant) # bottom-right
+        win_v3 = interpolate_2d(v1, v2, v4, (w_off+sky_w)/roof_width, (h_off+sky_l)/roof_height_slant) # top-right
+        win_v4 = interpolate_2d(v1, v2, v4, w_off/roof_width, (h_off+sky_l)/roof_height_slant) # top-left
+        
+        return f"""
+  FenestrationSurface:Detailed,
+    {roof_name}_Skylight,  !- Name
+    Window,                  !- Surface Type
+    {{WINDOW_CONSTR}},         !- Construction Name
+    {roof_name},             !- Building Surface Name
+    ,                        !- Outside Boundary Condition Object
+    0,                       !- View Factor to Ground
+    ,                        !- Frame and Divider Name
+    1,                       !- Multiplier
+    4,                       !- Number of Vertices
+    {win_v1[0]:.2f}, {win_v1[1]:.2f}, {win_v1[2]:.2f},  !- X,Y,Z ==> Vertex 1
+    {win_v2[0]:.2f}, {win_v2[1]:.2f}, {win_v2[2]:.2f},  !- X,Y,Z ==> Vertex 2
+    {win_v3[0]:.2f}, {win_v3[1]:.2f}, {win_v3[2]:.2f},  !- X,Y,Z ==> Vertex 3
+    {win_v4[0]:.2f}, {win_v4[1]:.2f}, {win_v4[2]:.2f};  !- X,Y,Z ==> Vertex 4
 """
 
     def make_window(wall_name, v1, v2, wall_width, wall_height, wwr_val, window_data=None):
@@ -109,7 +169,7 @@ def generate_zone_geometry(
     {win_bl_x:.2f}, {win_bl_y:.2f}, {z_top:.2f};  !- X,Y,Z ==> Vertex 4
 """
 
-    def make_door(wall_name, v1, v2, wall_width, wall_height, door_data):
+    def make_door(wall_name, v1, v2, wall_width, wall_height, door_data=None):
         if not door_data: return ""
         
         if isinstance(door_data, dict):
@@ -194,9 +254,32 @@ def generate_zone_geometry(
     idf_str += make_window("Wall_West", v1, v2, W, H, wwr_w, window_w)
     idf_str += make_door("Wall_West", v1, v2, W, H, door_w)
     
-    # Roof (Facing +Z)
-    idf_str += make_surface("Roof", "Roof", roof_constr, "Outdoors", "SunExposed", "WindExposed", 
-                       (0, W, H), (0, 0, H), (L, 0, H), (L, W, H))
+    # Roof & Gable
+    if roof_type.lower() == "pitched":
+        slant_w = L
+        slant_h = math.sqrt((W/2)**2 + roof_pitch_height**2)
+        
+        # South Slope
+        s_v1, s_v2, s_v3, s_v4 = (0, 0, H), (L, 0, H), (L, W/2, H+roof_pitch_height), (0, W/2, H+roof_pitch_height)
+        idf_str += make_surface("Roof_South", "Roof", roof_constr, "Outdoors", "SunExposed", "WindExposed", s_v1, s_v2, s_v3, s_v4)
+        
+        # North Slope
+        n_v1, n_v2, n_v3, n_v4 = (L, W, H), (0, W, H), (0, W/2, H+roof_pitch_height), (L, W/2, H+roof_pitch_height)
+        idf_str += make_surface("Roof_North", "Roof", roof_constr, "Outdoors", "SunExposed", "WindExposed", n_v1, n_v2, n_v3, n_v4)
+        
+        # East Gable
+        idf_str += make_triangle_surface("Gable_East", "Wall", wall_e, "Outdoors", "SunExposed", "WindExposed", (L, 0, H), (L, W, H), (L, W/2, H+roof_pitch_height))
+        # West Gable
+        idf_str += make_triangle_surface("Gable_West", "Wall", wall_w, "Outdoors", "SunExposed", "WindExposed", (0, W, H), (0, 0, H), (0, W/2, H+roof_pitch_height))
+        
+        if skylight_data:
+            idf_str += make_skylight("Roof_South", s_v1, s_v2, s_v3, s_v4, slant_w, slant_h, skylight_data)
+    else:
+        # Flat Roof
+        r_v1, r_v2, r_v3, r_v4 = (0, W, H), (0, 0, H), (L, 0, H), (L, W, H)
+        idf_str += make_surface("Roof", "Roof", roof_constr, "Outdoors", "SunExposed", "WindExposed", r_v1, r_v2, r_v3, r_v4)
+        if skylight_data:
+            idf_str += make_skylight("Roof", r_v1, r_v2, r_v3, r_v4, L, W, skylight_data)
                        
     # Floor (Facing -Z)
     idf_str += make_surface("Floor", "Floor", floor_constr, "Ground", "NoSun", "NoWind", 
@@ -405,6 +488,63 @@ def generate_multizone_geometry(zones, zone_origins):
     {v3[0]:.2f}, {v3[1]:.2f}, {v3[2]:.2f},  !- X,Y,Z ==> Vertex 3
     {v4[0]:.2f}, {v4[1]:.2f}, {v4[2]:.2f};  !- X,Y,Z ==> Vertex 4
 """
+    def make_triangle_surface(name, surf_type, constr, zone_name, out_bound, bound_obj, sun, wind, v1, v2, v3):
+        vf = "0.50" if surf_type == "Wall" else "0"
+        bound_obj_str = bound_obj if bound_obj else ""
+        return f"""
+  BuildingSurface:Detailed,
+    {name},                  !- Name
+    {surf_type},             !- Surface Type
+    {constr},                !- Construction Name
+    {zone_name},             !- Zone Name
+    ,                        !- Space Name
+    {out_bound},             !- Outside Boundary Condition
+    {bound_obj_str},         !- Outside Boundary Condition Object
+    {sun},                   !- Sun Exposure
+    {wind},                  !- Wind Exposure
+    {vf},                    !- View Factor to Ground
+    3,                       !- Number of Vertices
+    {v1[0]:.2f}, {v1[1]:.2f}, {v1[2]:.2f},  !- X,Y,Z ==> Vertex 1
+    {v2[0]:.2f}, {v2[1]:.2f}, {v2[2]:.2f},  !- X,Y,Z ==> Vertex 2
+    {v3[0]:.2f}, {v3[1]:.2f}, {v3[2]:.2f};  !- X,Y,Z ==> Vertex 3
+"""
+
+    def make_skylight_mz(roof_name, v1, v2, v3, v4, roof_width, roof_height_slant, skylight_data):
+        if not skylight_data or not isinstance(skylight_data, dict):
+            return ""
+        sky_w = float(skylight_data.get("width", 1.0))
+        sky_l = float(skylight_data.get("length", 1.0))
+        
+        w_off = (roof_width - sky_w) / 2.0
+        h_off = (roof_height_slant - sky_l) / 2.0
+        
+        def interpolate_2d(p_bl, p_br, p_tl, frac_w, frac_h):
+            x = p_bl[0] + (p_br[0]-p_bl[0])*frac_w + (p_tl[0]-p_bl[0])*frac_h
+            y = p_bl[1] + (p_br[1]-p_bl[1])*frac_w + (p_tl[1]-p_bl[1])*frac_h
+            z = p_bl[2] + (p_br[2]-p_bl[2])*frac_w + (p_tl[2]-p_bl[2])*frac_h
+            return (x, y, z)
+            
+        win_v1 = interpolate_2d(v1, v2, v4, w_off/roof_width, h_off/roof_height_slant) # bottom-left
+        win_v2 = interpolate_2d(v1, v2, v4, (w_off+sky_w)/roof_width, h_off/roof_height_slant) # bottom-right
+        win_v3 = interpolate_2d(v1, v2, v4, (w_off+sky_w)/roof_width, (h_off+sky_l)/roof_height_slant) # top-right
+        win_v4 = interpolate_2d(v1, v2, v4, w_off/roof_width, (h_off+sky_l)/roof_height_slant) # top-left
+        
+        return f"""
+  FenestrationSurface:Detailed,
+    {roof_name}_Skylight,  !- Name
+    Window,                  !- Surface Type
+    {{WINDOW_CONSTR}},         !- Construction Name
+    {roof_name},             !- Building Surface Name
+    ,                        !- Outside Boundary Condition Object
+    0,                       !- View Factor to Ground
+    ,                        !- Frame and Divider Name
+    1,                       !- Multiplier
+    4,                       !- Number of Vertices
+    {win_v1[0]:.2f}, {win_v1[1]:.2f}, {win_v1[2]:.2f},  !- X,Y,Z ==> Vertex 1
+    {win_v2[0]:.2f}, {win_v2[1]:.2f}, {win_v2[2]:.2f},  !- X,Y,Z ==> Vertex 2
+    {win_v3[0]:.2f}, {win_v3[1]:.2f}, {win_v3[2]:.2f},  !- X,Y,Z ==> Vertex 3
+    {win_v4[0]:.2f}, {win_v4[1]:.2f}, {win_v4[2]:.2f};  !- X,Y,Z ==> Vertex 4
+"""
 
     def make_window_mz(wall_name, v1, v2, wall_width, wall_height, wwr_val, window_data=None):
         """Generate window for multi-zone (same logic as single-zone make_window)."""
@@ -612,12 +752,59 @@ def generate_multizone_geometry(zones, zone_origins):
                 idf_str += make_window_mz(surf_name, v1, v2, wall_w_dim, wall_h_dim, wwr, win_data)
                 idf_str += make_door_mz(surf_name, v1, v2, wall_w_dim, wall_h_dim, dr_data)
         
-        # Roof
-        idf_str += make_surface(
-            f"{name}_Roof", "Roof", roof_constr, name,
-            "Outdoors", None, "SunExposed", "WindExposed",
-            (0, W, H), (0, 0, H), (L, 0, H), (L, W, H)
-        )
+        # Roof & Gable
+        roof_type = z.get("roof_type", "flat").lower()
+        roof_pitch_height = float(z.get("roof_pitch_height", 2.0))
+        skylight_data = z.get("skylight", None)
+        
+        if roof_type == "pitched":
+            # Ridge is at Y = W/2, parallel to X-axis
+            import math
+            slant_w = L
+            slant_h = math.sqrt((W/2)**2 + roof_pitch_height**2)
+            
+            # South Slope: From South Wall (Y=0) up to Ridge (Y=W/2)
+            s_v1, s_v2, s_v3, s_v4 = (0, 0, H), (L, 0, H), (L, W/2, H+roof_pitch_height), (0, W/2, H+roof_pitch_height)
+            idf_str += make_surface(
+                f"{name}_Roof_South", "Roof", roof_constr, name,
+                "Outdoors", None, "SunExposed", "WindExposed",
+                s_v1, s_v2, s_v3, s_v4
+            )
+            # North Slope: From North Wall (Y=W) up to Ridge (Y=W/2)
+            n_v1, n_v2, n_v3, n_v4 = (L, W, H), (0, W, H), (0, W/2, H+roof_pitch_height), (L, W/2, H+roof_pitch_height)
+            idf_str += make_surface(
+                f"{name}_Roof_North", "Roof", roof_constr, name,
+                "Outdoors", None, "SunExposed", "WindExposed",
+                n_v1, n_v2, n_v3, n_v4
+            )
+            
+            # East Gable Triangle
+            idf_str += make_triangle_surface(
+                f"{name}_Gable_East", "Wall", wall_constr, name,
+                "Outdoors", None, "SunExposed", "WindExposed",
+                (L, 0, H), (L, W, H), (L, W/2, H+roof_pitch_height)
+            )
+            # West Gable Triangle
+            idf_str += make_triangle_surface(
+                f"{name}_Gable_West", "Wall", wall_constr, name,
+                "Outdoors", None, "SunExposed", "WindExposed",
+                (0, W, H), (0, 0, H), (0, W/2, H+roof_pitch_height)
+            )
+            
+            # Add skylight on the South Slope if specified
+            if skylight_data:
+                idf_str += make_skylight_mz(f"{name}_Roof_South", s_v1, s_v2, s_v3, s_v4, slant_w, slant_h, skylight_data)
+                
+        else:
+            # Flat Roof
+            r_v1, r_v2, r_v3, r_v4 = (0, W, H), (0, 0, H), (L, 0, H), (L, W, H)
+            idf_str += make_surface(
+                f"{name}_Roof", "Roof", roof_constr, name,
+                "Outdoors", None, "SunExposed", "WindExposed",
+                r_v1, r_v2, r_v3, r_v4
+            )
+            if skylight_data:
+                idf_str += make_skylight_mz(f"{name}_Roof", r_v1, r_v2, r_v3, r_v4, L, W, skylight_data)
         
         # Floor
         idf_str += make_surface(
