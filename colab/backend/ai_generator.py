@@ -86,10 +86,24 @@ class AIPipelines:
             # Sort by score and take the top 15 most relevant walls/roofs!
             construction_menu = sorted(all_constructions, key=score_item, reverse=True)[:15]
             print(f"[AI RAG] Filtered Menu down to 15 items: {construction_menu}")
+            
+            # Extract raw materials for dynamic constructions
+            raw_materials = []
+            for cat in ["Material", "Material:NoMass", "Material:AirGap"]:
+                raw_materials.extend(list(index_data.get(cat, {}).keys()))
+            raw_materials = sorted(raw_materials, key=score_item, reverse=True)[:15]
+            
+            # Extract window materials for dynamic windows
+            window_materials = []
+            for cat in ["WindowMaterial:Glazing", "WindowMaterial:Gas"]:
+                window_materials.extend(list(index_data.get(cat, {}).keys()))
+            window_materials = sorted(window_materials, key=score_item, reverse=True)[:10]
 
         except Exception as e:
             print(f"Warning: Could not load index.json or RAG failed: {e}")
             construction_menu = ["Composite 2x4 Wood Stud R11"]
+            raw_materials = ["M01 100mm brick", "I02 50mm insulation board"]
+            window_materials = ["Clear 3mm"]
 
         # 2. Construct Prompt for JSON
         weather_file = config.get('weather_file', 'Unknown')
@@ -104,8 +118,9 @@ class AIPipelines:
             "Required JSON keys:\n"
             "   - 'is_multizone' (boolean, false)\n"
             "   - 'length' (float), 'width' (float), 'height' (float)\n"
-            "   - 'wall_construction' (string, default global wall). 'wall_constr_south', 'wall_constr_north', 'wall_constr_east', 'wall_constr_west' (strings, specific wall constructions. Pick EXACTLY from menu. If not specified, leave empty or same as global)\n"
-            "   - 'roof_construction' (string)\n"
+            "   - 'wall_layers' (string or array of strings, default global wall). 'wall_layers_south', 'wall_layers_north', 'wall_layers_east', 'wall_layers_west' (string or array of strings). If using a pre-built construction, provide a single string from the CONSTRUCTION MENU. If building a custom wall, provide an ordered array of strings (outside to inside) from the RAW MATERIAL MENU. If not specified, leave empty or same as global.\n"
+            "   - 'roof_layers' (string or array of strings)\n"
+            "   - 'window_layers' (string or array of strings). If using pre-built, pick from CONSTRUCTION MENU. If custom, pick from WINDOW MATERIAL MENU.\n"
             "   - 'roof_type' (string, 'flat' or 'pitched'. Default 'flat')\n"
             "   - 'roof_pitch_height' (float, height of pitched roof apex above wall. Default 2.0)\n"
             "   - 'skylight' (object for custom skylight on roof. Schema: {\"width\": float, \"length\": float} or null. Default null)\n"
@@ -138,8 +153,9 @@ class AIPipelines:
             "     - 'height' (float, Z-axis extent in meters)\n"
             "     - 'relative_to' (string or null): CRITICAL! You MUST provide the name of the adjacent zone this one is attached to. ONLY the FIRST zone can be null. All others MUST reference a previously defined zone.\n"
             "     - 'direction' (string or null): CRITICAL! Which wall of 'relative_to' this zone attaches to. Pick from: 'North', 'South', 'East', 'West'. ONLY null for the first zone.\n"
-            "     - 'wall_construction' (string, from menu)\n"
-            "     - 'roof_construction' (string, from menu)\n"
+            "     - 'wall_layers' (string or array of strings)\n"
+            "     - 'roof_layers' (string or array of strings)\n"
+            "     - 'window_layers' (string or array of strings)\n"
             "     - 'roof_type' (string, 'flat' or 'pitched'. Default 'flat')\n"
             "     - 'roof_pitch_height' (float, height of pitched roof apex above wall. Default 2.0)\n"
             "     - 'skylight' (object for custom skylight. Schema: {\"width\": float, \"length\": float} or null. Default null)\n"
@@ -165,8 +181,12 @@ class AIPipelines:
             "   - Adjacent zones share a wall. The shared dimension MUST match (e.g., if Bedroom is North of LivingRoom, both must have the same 'length').\n"
             "   - DO NOT compute coordinates. Python will compute all coordinates from relative_to and direction.\n"
             "   - CRITICAL: DO NOT duplicate/repeat schedule or setpoint fields (like occ_weekday_start, heat_set_occ, window_u_factor, etc.) inside the zone objects. Keep them strictly at the global root level only.\n\n"
-            "3. For the construction keys, you MUST pick the closest matching name from this exact menu array:\n"
-            f"{construction_menu}\n"
+            "3. For wall/roof layers, pick from:\n"
+            f"CONSTRUCTION MENU: {construction_menu}\n"
+            f"RAW MATERIAL MENU: {raw_materials}\n\n"
+            "4. For window layers, pick from:\n"
+            f"CONSTRUCTION MENU: {construction_menu}\n"
+            f"WINDOW MATERIAL MENU: {window_materials}\n"
         )
 
         user_prompt = (
@@ -206,23 +226,39 @@ class AIPipelines:
             # ========== MULTI-ZONE vs SINGLE-ZONE ROUTER ==========
             is_multizone = params.get("is_multizone", False)
             
+            custom_constructions_list = []
+            extracted_blocks = {}
+            
             if is_multizone:
                 print("[AI Assembler] *** MULTI-ZONE mode detected ***")
-                return self._assemble_multizone_idf(params, config, construction_menu, index_data, idf_extractor)
+                return self._assemble_multizone_idf(params, config, construction_menu, index_data, idf_extractor, custom_constructions_list, extracted_blocks)
             
             # ========== SINGLE-ZONE PATH (existing, untouched) ==========
             print("[AI Assembler] Single-zone mode")
             L = params.get("length", 10.0)
             W = params.get("width", 10.0)
             H = params.get("height", 3.0)
-            # Wall and Roof Parsing
-            global_wall = params.get("wall_construction", "Composite 2x4 Wood Stud R11")
-            wall_s = params.get("wall_constr_south", global_wall) or global_wall
-            wall_n = params.get("wall_constr_north", global_wall) or global_wall
-            wall_e = params.get("wall_constr_east", global_wall) or global_wall
-            wall_w = params.get("wall_constr_west", global_wall) or global_wall
+            # Wall, Roof, and Window Parsing
+            global_wall_layers = params.get("wall_layers", "Composite 2x4 Wood Stud R11")
+            global_wall = self._resolve_construction(global_wall_layers, "Wall_Global", custom_constructions_list, idf_extractor, extracted_blocks)
             
-            roof_name = params.get("roof_construction", "Composite 2x4 Wood Stud R11")
+            wall_s_layers = params.get("wall_layers_south", global_wall_layers) or global_wall_layers
+            wall_s = self._resolve_construction(wall_s_layers, "Wall_S", custom_constructions_list, idf_extractor, extracted_blocks)
+            
+            wall_n_layers = params.get("wall_layers_north", global_wall_layers) or global_wall_layers
+            wall_n = self._resolve_construction(wall_n_layers, "Wall_N", custom_constructions_list, idf_extractor, extracted_blocks)
+            
+            wall_e_layers = params.get("wall_layers_east", global_wall_layers) or global_wall_layers
+            wall_e = self._resolve_construction(wall_e_layers, "Wall_E", custom_constructions_list, idf_extractor, extracted_blocks)
+            
+            wall_w_layers = params.get("wall_layers_west", global_wall_layers) or global_wall_layers
+            wall_w = self._resolve_construction(wall_w_layers, "Wall_W", custom_constructions_list, idf_extractor, extracted_blocks)
+            
+            roof_layers = params.get("roof_layers", "Composite 2x4 Wood Stud R11")
+            roof_name = self._resolve_construction(roof_layers, "Roof", custom_constructions_list, idf_extractor, extracted_blocks)
+
+            window_layers = params.get("window_layers", "Theoretical Glass [167]")
+            window_constr = self._resolve_construction(window_layers, "Window", custom_constructions_list, idf_extractor, extracted_blocks)
             
             # WWR Parsing
             global_wwr = params.get("wwr", 0.0) # Fallback if AI hallucinates old key
@@ -330,45 +366,22 @@ class AIPipelines:
 
             print(f"[AI Assembler] AI Selected -> L:{L}, W:{W}, Wall_S:{wall_s}, WWR_S:{wwr_s}, Door_S:{door_s}, HVAC:{hvac_type}")
 
-            # 5. Extract and Validate Dependencies
-            extracted_blocks = {}
-            default_constr = "Composite 2x4 Wood Stud R11"
-
-            # Validate walls
-            idf_extractor.resolve_dependencies("Construction", wall_s, extracted_blocks)
-            if f"Construction::{wall_s}" not in extracted_blocks and wall_s != default_constr:
-                print(f"[AI Assembler] Fallback: Wall South '{wall_s}' not found, using default.")
-                wall_s = default_constr
-                idf_extractor.resolve_dependencies("Construction", default_constr, extracted_blocks)
-                
-            idf_extractor.resolve_dependencies("Construction", wall_n, extracted_blocks)
-            if f"Construction::{wall_n}" not in extracted_blocks and wall_n != default_constr:
-                print(f"[AI Assembler] Fallback: Wall North '{wall_n}' not found, using default.")
-                wall_n = default_constr
-                idf_extractor.resolve_dependencies("Construction", default_constr, extracted_blocks)
-                
-            idf_extractor.resolve_dependencies("Construction", wall_e, extracted_blocks)
-            if f"Construction::{wall_e}" not in extracted_blocks and wall_e != default_constr:
-                print(f"[AI Assembler] Fallback: Wall East '{wall_e}' not found, using default.")
-                wall_e = default_constr
-                idf_extractor.resolve_dependencies("Construction", default_constr, extracted_blocks)
-                
-            idf_extractor.resolve_dependencies("Construction", wall_w, extracted_blocks)
-            if f"Construction::{wall_w}" not in extracted_blocks and wall_w != default_constr:
-                print(f"[AI Assembler] Fallback: Wall West '{wall_w}' not found, using default.")
-                wall_w = default_constr
-                idf_extractor.resolve_dependencies("Construction", default_constr, extracted_blocks)
-
-            idf_extractor.resolve_dependencies("Construction", roof_name, extracted_blocks)
-            if f"Construction::{roof_name}" not in extracted_blocks and roof_name != default_constr:
-                print(f"[AI Assembler] Fallback: Roof '{roof_name}' not found, using default.")
-                roof_name = default_constr
-                idf_extractor.resolve_dependencies("Construction", default_constr, extracted_blocks)
-
-            idf_extractor.resolve_dependencies("Construction", global_wall, extracted_blocks)
-            if f"Construction::{global_wall}" not in extracted_blocks and global_wall != default_constr:
-                global_wall = default_constr
-                idf_extractor.resolve_dependencies("Construction", default_constr, extracted_blocks)
+            # 6. Extract material blocks from Datasets
+            # 6. Extract material blocks from Datasets
+            default_wall = "Composite 2x4 Wood Stud R11"
+            default_win = "Theoretical Glass [167]"
+            for constr in [global_wall, wall_s, wall_n, wall_e, wall_w, roof_name]:
+                if constr and not constr.startswith("Custom_"):
+                    idf_extractor.resolve_dependencies("Construction", constr, extracted_blocks)
+                    if f"Construction::{constr}" not in extracted_blocks and constr != default_wall:
+                        print(f"[AI Assembler] Fallback: Construction '{constr}' not found.")
+                        idf_extractor.resolve_dependencies("Construction", default_wall, extracted_blocks)
+            
+            if window_constr and not window_constr.startswith("Custom_"):
+                idf_extractor.resolve_dependencies("Construction", window_constr, extracted_blocks)
+                if f"Construction::{window_constr}" not in extracted_blocks and window_constr != default_win:
+                    print(f"[AI Assembler] Fallback: Window Construction '{window_constr}' not found.")
+                    idf_extractor.resolve_dependencies("Construction", default_win, extracted_blocks)
 
             # 6. Build Geometry (Now passing directional WWRs, Materials, and custom Windows/Doors)
             # Roof properties
@@ -409,6 +422,8 @@ class AIPipelines:
 
             # 7. Stitch it all together
             final_idf = self.base_idf + "\n\n"
+            for block in custom_constructions_list:
+                final_idf += block + "\n\n"
             for block in extracted_blocks.values():
                 final_idf += block + "\n\n"
             
@@ -466,7 +481,9 @@ class AIPipelines:
             final_idf = final_idf.replace("{LIGHTING_SCH}", "LIGHTING_SCH")
             final_idf = final_idf.replace("{EQUIPMENT_SCH}", "EQUIPMENT_SCH")
             
-            final_idf = final_idf.replace("{WINDOW_CONSTR}", "Theoretical Glass [167]")
+            if not window_constr:
+                window_constr = "Theoretical Glass [167]"
+            final_idf = final_idf.replace("{WINDOW_CONSTR}", window_constr)
 
             return final_idf
 
@@ -543,6 +560,28 @@ class AIPipelines:
             return self._sanitize_output(content)
         except Exception as e:
             return f"! Analysis Error: Ollama Local Exception -> {str(e)}"
+
+    def _resolve_construction(self, layers, prefix, custom_constructions_list, idf_extractor, extracted_blocks):
+        if not layers:
+            return None
+        if isinstance(layers, str):
+            return layers
+        if isinstance(layers, list) and len(layers) > 0:
+            if len(layers) == 1:
+                return layers[0]
+            # Build custom construction
+            name = f"Custom_{prefix}_{len(custom_constructions_list) + 1}"
+            block = f"Construction,\n  {name},"
+            for i, layer in enumerate(layers):
+                idf_extractor.resolve_dependencies("Material", layer, extracted_blocks)
+                if i == len(layers) - 1:
+                    block += f"\n  {layer};"
+                else:
+                    block += f"\n  {layer},"
+            block += "\n"
+            custom_constructions_list.append(block)
+            return name
+        return None
 
     def _generate_search_keywords(self, nlp_text, model_type):
         """Pass 1: Asks the AI to extract or infer search keywords."""
@@ -645,7 +684,7 @@ class AIPipelines:
                 
         raise ValueError("Could not repair JSON")
 
-    def _assemble_multizone_idf(self, params, config, construction_menu, index_data, idf_extractor):
+    def _assemble_multizone_idf(self, params, config, construction_menu, index_data, idf_extractor, custom_constructions_list, extracted_blocks):
         """
         Assembles a multi-zone IDF from the AI's JSON output.
         Called when is_multizone is True.
@@ -737,22 +776,35 @@ class AIPipelines:
         print(f"[AI Assembler MZ] Zone origins: {zone_origins}")
 
         # --- Step 3: Extract and validate material dependencies ---
-        extracted_blocks = {}
         default_constr = "Composite 2x4 Wood Stud R11"
         for z in zones:
-            w_name = z.get("wall_construction") or default_constr
-            idf_extractor.resolve_dependencies("Construction", w_name, extracted_blocks)
-            if f"Construction::{w_name}" not in extracted_blocks and w_name != default_constr:
-                print(f"[AI Assembler MZ] Fallback: Wall '{w_name}' not found, using default.")
-                z["wall_construction"] = default_constr
-                idf_extractor.resolve_dependencies("Construction", default_constr, extracted_blocks)
+            w_layers = z.get("wall_layers") or z.get("wall_construction") or default_constr
+            w_name = self._resolve_construction(w_layers, f"Wall_{z['name']}", custom_constructions_list, idf_extractor, extracted_blocks)
+            if w_name and not w_name.startswith("Custom_"):
+                idf_extractor.resolve_dependencies("Construction", w_name, extracted_blocks)
+                if f"Construction::{w_name}" not in extracted_blocks and w_name != default_constr:
+                    print(f"[AI Assembler MZ] Fallback: Wall '{w_name}' not found, using default.")
+                    w_name = default_constr
+                    idf_extractor.resolve_dependencies("Construction", default_constr, extracted_blocks)
+            z["wall_construction"] = w_name
 
-            r_name = z.get("roof_construction") or default_constr
-            idf_extractor.resolve_dependencies("Construction", r_name, extracted_blocks)
-            if f"Construction::{r_name}" not in extracted_blocks and r_name != default_constr:
-                print(f"[AI Assembler MZ] Fallback: Roof '{r_name}' not found, using default.")
-                z["roof_construction"] = default_constr
-                idf_extractor.resolve_dependencies("Construction", default_constr, extracted_blocks)
+            r_layers = z.get("roof_layers") or z.get("roof_construction") or default_constr
+            r_name = self._resolve_construction(r_layers, f"Roof_{z['name']}", custom_constructions_list, idf_extractor, extracted_blocks)
+            if r_name and not r_name.startswith("Custom_"):
+                idf_extractor.resolve_dependencies("Construction", r_name, extracted_blocks)
+                if f"Construction::{r_name}" not in extracted_blocks and r_name != default_constr:
+                    print(f"[AI Assembler MZ] Fallback: Roof '{r_name}' not found, using default.")
+                    r_name = default_constr
+                    idf_extractor.resolve_dependencies("Construction", default_constr, extracted_blocks)
+            z["roof_construction"] = r_name
+            
+            win_layers = z.get("window_layers") or z.get("window_construction")
+            win_name = None
+            if win_layers:
+                win_name = self._resolve_construction(win_layers, f"Window_{z['name']}", custom_constructions_list, idf_extractor, extracted_blocks)
+                if win_name and not win_name.startswith("Custom_"):
+                    idf_extractor.resolve_dependencies("Construction", win_name, extracted_blocks)
+            z["window_construction"] = win_name
 
         # --- Step 4: Generate multi-zone geometry with adjacencies ---
         geometry_idf, adjacency_info = geometry_util.generate_multizone_geometry(zones, zone_origins)
@@ -883,6 +935,8 @@ class AIPipelines:
         base_idf = re.sub(r'\n\s*ThermostatSetpoint:DualSetpoint,.*?;', '', base_idf, flags=re.DOTALL)
 
         final_idf = base_idf + "\n\n"
+        for block in custom_constructions_list:
+            final_idf += block + "\n\n"
         for block in extracted_blocks.values():
             final_idf += block + "\n\n"
 
@@ -916,10 +970,11 @@ class AIPipelines:
         # Global replacements
         global_wall = zones[0].get("wall_construction") or "Composite 2x4 Wood Stud R11"
         roof_name = zones[0].get("roof_construction") or "Composite 2x4 Wood Stud R11"
+        window_name = zones[0].get("window_construction") or "Theoretical Glass [167]"
         final_idf = final_idf.replace("{EXTERIOR_WALL_CONSTR}", global_wall)
         final_idf = final_idf.replace("{ROOF_CONSTR}", roof_name)
         final_idf = final_idf.replace("{FLOOR_CONSTR}", global_wall)
-        final_idf = final_idf.replace("{WINDOW_CONSTR}", "Theoretical Glass [167]")
+        final_idf = final_idf.replace("{WINDOW_CONSTR}", window_name)
 
         final_idf = final_idf.replace("{WINDOW_U_FACTOR}", str(win_u))
         final_idf = final_idf.replace("{WINDOW_SHGC}", str(win_shgc))

@@ -689,6 +689,41 @@
   Output:Meter,NaturalGas:Facility,Hourly;
 
 
+Construction,
+  Custom_Wall_Global_1,
+  Medium Exterior Wall,
+  I02 50mm insulation board,
+  M01 100mm brick;
+
+
+Construction,
+  Custom_Wall_S_2,
+  Medium Exterior Wall,
+  I02 50mm insulation board,
+  M01 100mm brick;
+
+
+Construction,
+  Custom_Wall_N_3,
+  Medium Exterior Wall,
+  I02 50mm insulation board,
+  M01 100mm brick;
+
+
+Construction,
+  Custom_Wall_E_4,
+  Medium Exterior Wall,
+  I02 50mm insulation board,
+  M01 100mm brick;
+
+
+Construction,
+  Custom_Wall_W_5,
+  Medium Exterior Wall,
+  I02 50mm insulation board,
+  M01 100mm brick;
+
+
 !- Outside Layer
 
   Construction,
@@ -734,39 +769,89 @@
     800,                     !- Density {kg/m3}
     1090;
 
-!- Layer 4
+!===============================================================================
+! CompositeWallConstructions.idf
+!
+! COMPOSITE WALL CONSTRUCTIONS. The thickness, conductivity, density and specific heat values of the
+! material layers for these constructions have been taken from the ASHRAE report "Modeling Two- and
+! Three-Dimensional Heat Transfer through Composite Wall and Roof Assemblies in Hourly Energy Simulation
+! Programs (1145-TRP)," by EnerModal Engineering Limited, Oak Ridge National Laboratory, and the
+! Polish Academy of Sciences, January 2001.
+!
+! Revised March 2006:  The referenced report lists materials from inside to outside.  The layer numbers
+!                      from the report are retained, but are now listed in EnergyPlus order, from outside
+!                      to inside in the CONSTRUCTION object.
+!
+! ASHRAE 1145-RP Wall Assembly 1
+! 2"x4" wood studs at 24" on center with between-stud R11 fibreglass insulation.
+! Layers are 1/2" wood siding, 1/2" plywood, 2x4 wood studs and R11 insulation, 1/2" gypsum board.
+! Area-average R-Value = 11.391 ft2-F-h/Btu (2.005 m2-K/W).
+! Total wall thickness = 5.00in (0.127m)
+! Material layer names follow:
+! The objects and syntax in this dataset comply with EnergyPlus, Version 8.4.0 and above, unless otherwise noted.
 
   Construction,
-    Light Roof/Ceiling,      !- Name
-    M11 100mm lightweight concrete,  !- Outside Layer
-    F05 Ceiling air space resistance,  !- Layer 2
-    F16 Acoustic tile;
+    Composite 2x4 Wood Stud R11,  !- Name
+    Composite 2x4 Wood Stud R11 #3,  !- Outside Layer
+    Composite 2x4 Wood Stud R11 #2,  !- Layer 2
+    Composite 2x4 Wood Stud R11 #1;
 
-!- Specific Heat {J/kg-K}
-
-  Material,
-    M11 100mm lightweight concrete,  !- Name
-    MediumRough,             !- Roughness
-    0.1016,                  !- Thickness {m}
-    0.53,                    !- Conductivity {W/m-K}
-    1280,                    !- Density {kg/m3}
-    840;
-
-!- Thermal Resistance {m2-K/W}
-
-  Material:AirGap,
-    F05 Ceiling air space resistance,  !- Name
-    0.18;
-
-!- Specific Heat {J/kg-K}
+!- Visible Absorptance
 
   Material,
-    F16 Acoustic tile,       !- Name
-    MediumSmooth,            !- Roughness
-    0.0191,                  !- Thickness {m}
-    0.06,                    !- Conductivity {W/m-K}
-    368,                     !- Density {kg/m3}
-    590;
+    Composite 2x4 Wood Stud R11 #3,  !- Name
+    Smooth,                  !- Roughness
+    0.025,                   !- Thickness {m}
+    0.124,                   !- Conductivity {W/m-K}
+    508.45,                  !- Density {kg/m3}
+    1048,                    !- Specific Heat {J/kg-K}
+    0.9,                     !- Thermal Absorptance
+    0.7,                     !- Solar Absorptance
+    0.7;
+
+!- Visible Absorptance
+
+  Material,
+    Composite 2x4 Wood Stud R11 #2,  !- Name
+    Smooth,                  !- Roughness
+    0.083,                   !- Thickness {m}
+    0.049,                   !- Conductivity {W/m-K}
+    119.63,                  !- Density {kg/m3}
+    1048,                    !- Specific Heat {J/kg-K}
+    0.9,                     !- Thermal Absorptance
+    0.7,                     !- Solar Absorptance
+    0.7;
+
+!- Layer 3
+
+  Material,
+    Composite 2x4 Wood Stud R11 #1,  !- Name
+    Smooth,                  !- Roughness
+    0.019,                   !- Thickness {m}
+    0.186,                   !- Conductivity {W/m-K}
+    640.0,                   !- Density {kg/m3}
+    1048,                    !- Specific Heat {J/kg-K}
+    0.9,                     !- Thermal Absorptance
+    0.7,                     !- Solar Absorptance
+    0.7;
+
+!- Conductivity {W/m-K}
+
+  WindowMaterial:Glazing,
+    CLEAR 3MM,               !- Name
+    SpectralAverage,         !- Optical Data Type
+    ,                        !- Window Glass Spectral Data Set Name
+    .003,                    !- Thickness {m}
+    .837,                    !- Solar Transmittance at Normal Incidence
+    .075,                    !- Front Side Solar Reflectance at Normal Incidence
+    .075,                    !- Back Side Solar Reflectance at Normal Incidence
+    .898,                    !- Visible Transmittance at Normal Incidence
+    .081,                    !- Front Side Visible Reflectance at Normal Incidence
+    .081,                    !- Back Side Visible Reflectance at Normal Incidence
+    .0,                      !- Infrared Transmittance at Normal Incidence
+    .84,                     !- Front Side Infrared Hemispherical Emissivity
+    .84,                     !- Back Side Infrared Hemispherical Emissivity
+    .9;
 
 
   Zone,
@@ -783,7 +868,7 @@
   BuildingSurface:Detailed,
     Wall_South,                  !- Name
     Wall,             !- Surface Type
-    Medium Exterior Wall,                !- Construction Name
+    Custom_Wall_S_2,                !- Construction Name
     ZONE ONE,             !- Zone Name
     ,                        !- Space Name
     Outdoors,             !- Outside Boundary Condition
@@ -800,7 +885,7 @@
   FenestrationSurface:Detailed,
     Wall_South_Window,      !- Name
     Window,                  !- Surface Type
-    Theoretical Glass [167],         !- Construction Name
+    CLEAR 3MM,         !- Construction Name
     Wall_South,             !- Building Surface Name
     ,                        !- Outside Boundary Condition Object
     0.5,                     !- View Factor to Ground
@@ -815,7 +900,7 @@
   BuildingSurface:Detailed,
     Wall_East,                  !- Name
     Wall,             !- Surface Type
-    Medium Exterior Wall,                !- Construction Name
+    Custom_Wall_E_4,                !- Construction Name
     ZONE ONE,             !- Zone Name
     ,                        !- Space Name
     Outdoors,             !- Outside Boundary Condition
@@ -832,7 +917,7 @@
   BuildingSurface:Detailed,
     Wall_North,                  !- Name
     Wall,             !- Surface Type
-    Medium Exterior Wall,                !- Construction Name
+    Custom_Wall_N_3,                !- Construction Name
     ZONE ONE,             !- Zone Name
     ,                        !- Space Name
     Outdoors,             !- Outside Boundary Condition
@@ -849,7 +934,7 @@
   BuildingSurface:Detailed,
     Wall_West,                  !- Name
     Wall,             !- Surface Type
-    Medium Exterior Wall,                !- Construction Name
+    Custom_Wall_W_5,                !- Construction Name
     ZONE ONE,             !- Zone Name
     ,                        !- Space Name
     Outdoors,             !- Outside Boundary Condition
@@ -866,7 +951,7 @@
   FenestrationSurface:Detailed,
     Wall_West_Window,      !- Name
     Window,                  !- Surface Type
-    Theoretical Glass [167],         !- Construction Name
+    CLEAR 3MM,         !- Construction Name
     Wall_West,             !- Building Surface Name
     ,                        !- Outside Boundary Condition Object
     0.5,                     !- View Factor to Ground
@@ -894,9 +979,9 @@
     0.00, 3.00, 2.50;  !- X,Y,Z ==> Vertex 4
 
   BuildingSurface:Detailed,
-    Roof,                  !- Name
+    Roof_South,                  !- Name
     Roof,             !- Surface Type
-    Light Roof/Ceiling,                !- Construction Name
+    Clear Roof,                !- Construction Name
     ZONE ONE,             !- Zone Name
     ,                        !- Space Name
     Outdoors,             !- Outside Boundary Condition
@@ -905,15 +990,79 @@
     WindExposed,                  !- Wind Exposure
     0,                    !- View Factor to Ground
     4,                       !- Number of Vertices
+    0.00, 0.00, 4.00,  !- X,Y,Z ==> Vertex 1
+    6.00, 0.00, 4.00,  !- X,Y,Z ==> Vertex 2
+    6.00, 4.00, 6.50,  !- X,Y,Z ==> Vertex 3
+    0.00, 4.00, 6.50;  !- X,Y,Z ==> Vertex 4
+
+  BuildingSurface:Detailed,
+    Roof_North,                  !- Name
+    Roof,             !- Surface Type
+    Clear Roof,                !- Construction Name
+    ZONE ONE,             !- Zone Name
+    ,                        !- Space Name
+    Outdoors,             !- Outside Boundary Condition
+    ,                        !- Outside Boundary Condition Object
+    SunExposed,                   !- Sun Exposure
+    WindExposed,                  !- Wind Exposure
+    0,                    !- View Factor to Ground
+    4,                       !- Number of Vertices
+    6.00, 8.00, 4.00,  !- X,Y,Z ==> Vertex 1
+    0.00, 8.00, 4.00,  !- X,Y,Z ==> Vertex 2
+    0.00, 4.00, 6.50,  !- X,Y,Z ==> Vertex 3
+    6.00, 4.00, 6.50;  !- X,Y,Z ==> Vertex 4
+
+  BuildingSurface:Detailed,
+    Gable_East,                  !- Name
+    Wall,             !- Surface Type
+    Custom_Wall_E_4,                !- Construction Name
+    ZONE ONE,             !- Zone Name
+    ,                        !- Space Name
+    Outdoors,             !- Outside Boundary Condition
+    ,                        !- Outside Boundary Condition Object
+    SunExposed,                   !- Sun Exposure
+    WindExposed,                  !- Wind Exposure
+    0.50,                    !- View Factor to Ground
+    3,                       !- Number of Vertices
+    6.00, 0.00, 4.00,  !- X,Y,Z ==> Vertex 1
+    6.00, 8.00, 4.00,  !- X,Y,Z ==> Vertex 2
+    6.00, 4.00, 6.50;  !- X,Y,Z ==> Vertex 3
+
+  BuildingSurface:Detailed,
+    Gable_West,                  !- Name
+    Wall,             !- Surface Type
+    Custom_Wall_W_5,                !- Construction Name
+    ZONE ONE,             !- Zone Name
+    ,                        !- Space Name
+    Outdoors,             !- Outside Boundary Condition
+    ,                        !- Outside Boundary Condition Object
+    SunExposed,                   !- Sun Exposure
+    WindExposed,                  !- Wind Exposure
+    0.50,                    !- View Factor to Ground
+    3,                       !- Number of Vertices
     0.00, 8.00, 4.00,  !- X,Y,Z ==> Vertex 1
     0.00, 0.00, 4.00,  !- X,Y,Z ==> Vertex 2
-    6.00, 0.00, 4.00,  !- X,Y,Z ==> Vertex 3
-    6.00, 8.00, 4.00;  !- X,Y,Z ==> Vertex 4
+    0.00, 4.00, 6.50;  !- X,Y,Z ==> Vertex 3
+
+  FenestrationSurface:Detailed,
+    Roof_South_Skylight,  !- Name
+    Window,                  !- Surface Type
+    CLEAR 3MM,         !- Construction Name
+    Roof_South,             !- Building Surface Name
+    ,                        !- Outside Boundary Condition Object
+    0,                       !- View Factor to Ground
+    ,                        !- Frame and Divider Name
+    1,                       !- Multiplier
+    4,                       !- Number of Vertices
+    2.00, 1.36, 4.85,  !- X,Y,Z ==> Vertex 1
+    4.00, 1.36, 4.85,  !- X,Y,Z ==> Vertex 2
+    4.00, 2.64, 5.65,  !- X,Y,Z ==> Vertex 3
+    2.00, 2.64, 5.65;  !- X,Y,Z ==> Vertex 4
 
   BuildingSurface:Detailed,
     Floor,                  !- Name
     Floor,             !- Surface Type
-    Medium Exterior Wall,                !- Construction Name
+    Custom_Wall_Global_1,                !- Construction Name
     ZONE ONE,             !- Zone Name
     ,                        !- Space Name
     Ground,             !- Outside Boundary Condition
