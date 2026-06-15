@@ -57,6 +57,13 @@ def _set_env_for_current_process():
     if EPLUS_DEST not in sys.path:
         sys.path.insert(0, EPLUS_DEST)
 
+def _ensure_openstudio():
+    try:
+        import openstudio
+    except ImportError:
+        print("[Bootstrap] Installing openstudio python bindings (v3.10.0)...")
+        _run([sys.executable, "-m", "pip", "install", "openstudio==3.10.0"], quiet=False, check=True)
+
 def prepare_colab_eplus(silent: bool = True) -> None:
     """
     Perform Colab runtime prep silently (no prints). Raises on hard failures.
@@ -65,6 +72,7 @@ def prepare_colab_eplus(silent: bool = True) -> None:
       - install libssl1.1
       - download & extract EnergyPlus 25.1.0
       - set ENERGYPLUSDIR, LD_LIBRARY_PATH, and sys.path in this process
+      - install openstudio python bindings
     """
     # base libs
     _apt_install(APT_BASE_PKGS)
@@ -76,6 +84,8 @@ def prepare_colab_eplus(silent: bool = True) -> None:
     _set_env_for_current_process()
     # quick smoke (silent; raises if fails)
     _run([f"{EPLUS_DEST}/energyplus", "--version"])
+    # ensure openstudio is installed
+    _ensure_openstudio()
 
 def main():
     # CLI entry point: --verbose optional

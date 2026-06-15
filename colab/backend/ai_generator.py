@@ -223,14 +223,21 @@ class AIPipelines:
                     print(f"[AI] Repair failed: {re}")
                     raise je
             
-            # ========== MULTI-ZONE vs SINGLE-ZONE ROUTER ==========
+            # ========== ROUTER: Custom Template vs OpenStudio SDK ==========
+            generator_type = config.get("generator_type", "custom")
+            if generator_type == "openstudio":
+                print("[AI Assembler] *** Routing to OpenStudio SDK Builder ***")
+                from backend import openstudio_builder
+                return openstudio_builder.build_idf_from_params(params)
+
+            # ========== MULTI-ZONE vs SINGLE-ZONE ROUTER (Custom Engine) ==========
             is_multizone = params.get("is_multizone", False)
             
             custom_constructions_list = []
             extracted_blocks = {}
             
             if is_multizone:
-                print("[AI Assembler] *** MULTI-ZONE mode detected ***")
+                print("[AI Assembler MZ] *** MULTI-ZONE mode detected ***")
                 return self._assemble_multizone_idf(params, config, construction_menu, index_data, idf_extractor, custom_constructions_list, extracted_blocks)
             
             # ========== SINGLE-ZONE PATH (existing, untouched) ==========

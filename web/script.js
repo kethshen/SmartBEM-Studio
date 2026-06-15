@@ -160,7 +160,8 @@ function submitDescription() {
       run_type: document.getElementById("simType") ? document.getElementById("simType").value : "design_day",
       weather_file: "USA_IL_Chicago-OHare.Intl.AP.725300_TMY3.epw", 
       epw_url: document.getElementById("weatherEpwUrl") ? document.getElementById("weatherEpwUrl").value : "",
-      model_type: document.getElementById("aiModel") ? document.getElementById("aiModel").value : "ollama"
+      model_type: document.getElementById("aiModel") ? document.getElementById("aiModel").value : "ollama",
+      generator_type: document.getElementById("generatorType") ? document.getElementById("generatorType").value : "custom"
     }
   };
 

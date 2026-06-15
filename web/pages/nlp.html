@@ -122,6 +122,14 @@
                         </select>
                     </div>
 
+                    <div class="form-group">
+                        <label for="generatorType">IDF Generation Engine</label>
+                        <select id="generatorType">
+                            <option value="custom">Custom Template Engine (Default)</option>
+                            <option value="openstudio">OpenStudio SDK Engine (Experimental)</option>
+                        </select>
+                    </div>
+
                     <div class="mt-4">
                         <button onclick="submitDescription()" class="btn btn-primary btn-block">
                             Queue Simulation Job
