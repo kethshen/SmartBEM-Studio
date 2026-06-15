@@ -40,65 +40,24 @@
             <section class="card" style="margin-bottom: 2rem;">
                 <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
                     <h2 class="card-title">System Status</h2>
-                    <button onclick="checkAllConnections()" class="btn btn-primary"
-                        style="padding: 0.4rem 1rem; font-size: 0.85rem;">
-                        Check Connections
-                    </button>
-                    <!-- Hidden trigger for original logic -->
-                    <button id="btnTestAI" onclick="testAIConnection()" style="display: none;"></button>
-                    <!-- Use SILENT mode for Firebase so no popup -->
-                    <button id="btnTestFirebase" onclick="testFirestoreWrite(true)" style="display: none;"></button>
                 </div>
 
-                <div style="display: flex; gap: 2rem; align-items: center;">
-                    <!-- Firebase Status -->
-                    <div
-                        style="flex: 1; text-align: center; padding: 1rem; border: 1px dashed var(--border-subtle); border-radius: var(--radius-sm); position: relative;">
-                        <input type="checkbox" id="checkFirebase" checked
-                            style="position: absolute; top: 8px; right: 8px; cursor: pointer;"
-                            title="Toggle Firebase Check">
-                        <div style="font-weight: 600; margin-bottom: 0.5rem;">Firebase</div>
-                        <span id="statusFirebase" class="badge"
-                            style="background: var(--bg-app); color: var(--text-muted);">Unknown</span>
-                    </div>
-
-                    <!-- Gemini API Status -->
-                    <div
-                        style="flex: 1; text-align: center; padding: 1rem; border: 1px dashed var(--border-subtle); border-radius: var(--radius-sm); position: relative;">
-                        <input type="checkbox" id="checkGemini" checked
-                            style="position: absolute; top: 8px; right: 8px; cursor: pointer;"
-                            title="Toggle Gemini Check">
-                        <div style="font-weight: 600; margin-bottom: 0.5rem;">Gemini API</div>
-                        <span id="statusGemini" class="badge"
-                            style="background: var(--bg-app); color: var(--text-muted);">Unknown</span>
-                    </div>
-
-                    <!-- OpenAI API Status -->
-                    <div
-                        style="flex: 1; text-align: center; padding: 1rem; border: 1px dashed var(--border-subtle); border-radius: var(--radius-sm); position: relative;">
-                        <input type="checkbox" id="checkOpenAI" checked
-                            style="position: absolute; top: 8px; right: 8px; cursor: pointer;"
-                            title="Toggle OpenAI Check">
-                        <div style="font-weight: 600; margin-bottom: 0.5rem;">OpenAI API</div>
-                        <span id="statusOpenAI" class="badge"
-                            style="background: var(--bg-app); color: var(--text-muted);">Unknown</span>
-                    </div>
-
-                    <!-- HuggingFace API Status -->
-                    <div
-                        style="flex: 1; text-align: center; padding: 1rem; border: 1px dashed var(--border-subtle); border-radius: var(--radius-sm); position: relative;">
-                        <input type="checkbox" id="checkHF" checked
-                            style="position: absolute; top: 8px; right: 8px; cursor: pointer;"
-                            title="Toggle HuggingFace Check">
-                        <div style="font-weight: 600; margin-bottom: 0.5rem;">HuggingFace</div>
-                        <span id="statusHF" class="badge"
-                            style="background: var(--bg-app); color: var(--text-muted);">Unknown</span>
-                    </div>
+                <div id="backendUrlRow" style="display: flex; gap: 1rem; align-items: center; padding: 1rem; border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); transition: background-color 0.3s;">
+                    <label style="font-weight: bold; color: var(--text-secondary); white-space: nowrap;">Backend URL:</label>
+                    <input type="text" id="backendUrlInput" style="padding: 0.5rem; border-radius: 4px; border: 1px solid #ccc; flex: 1; font-family: monospace;" placeholder="https://xyz.ngrok-free.app">
+                    <button onclick="setBackendUrl(document.getElementById('backendUrlInput').value); testBackendConnection()" class="btn btn-primary" style="padding: 0.5rem 1rem;">Connect</button>
+                    <span id="statusMsg" style="font-size: 0.9em; font-weight: bold; white-space: nowrap;"></span>
                 </div>
-
-                <!-- Hidden outputs for script.js to write to, we will observe these -->
-                <div id="connectionResults" style="display: none;"></div>
-                <p id="statusMsg" style="display: none;"></p>
+                
+                <script>
+                    window.addEventListener('load', () => {
+                        const input = document.getElementById('backendUrlInput');
+                        if(input && typeof getBackendUrl === 'function') {
+                            input.value = getBackendUrl();
+                            testBackendConnection(true); // Test silently on load
+                        }
+                    });
+                </script>
             </section>
 
             <div class="grid-2">

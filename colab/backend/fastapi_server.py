@@ -28,8 +28,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Ensure the sim_runs directory exists and mount it so frontend can access images/CSVs
-OUTPUT_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "sim_runs")
+# Ensure the sim_runs directory exists on the FAST LOCAL DISK, not Google Drive!
+# EnergyPlus creates hundreds of files which chokes Google Drive sync.
+import tempfile
+OUTPUT_DIR = os.path.join(tempfile.gettempdir(), "smarthvac_sim_runs")
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 app.mount("/results", StaticFiles(directory=OUTPUT_DIR), name="results")
 
@@ -54,7 +56,7 @@ def run_simulation_pipeline(job_id: str, prompt: str, settings: dict):
         
         # 1. AI Generation (Generate IDF)
         print(f"[{job_id}] Starting AI Generation...")
-        ai = AIPipelines(secrets_path="secrets.json", template_path="../templates/Base.idf")
+        ai = AIPipelines(secrets_path="secrets.json", template_path="templates/Base.idf")
         # Ensure we use ollama by default or what is in settings
         model_type = settings.get("model_type", "ollama")
         idf_content = ai.generate_idf_from_text(prompt, settings, model_type=model_type)
@@ -62,21 +64,21 @@ def run_simulation_pipeline(job_id: str, prompt: str, settings: dict):
         if not idf_content:
             raise Exception("AI Pipeline failed to generate an IDF.")
 
-        # Save generated IDF to job folder
-        job_dir = os.path.join(OUTPUT_DIR, job_id)
-        os.makedirs(job_dir, exist_ok=True)
-        raw_idf_path = os.path.join(job_dir, "model.idf")
+        # Save generated IDF to a temporary file outside the run directory
+        # (Because simulation_runner will wipe the run directory before starting)
+        raw_idf_path = os.path.join(OUTPUT_DIR, f"{job_id}_raw.idf")
         with open(raw_idf_path, "w", encoding="utf-8") as f:
             f.write(idf_content)
+        
+        job_dir = os.path.join(OUTPUT_DIR, job_id)
 
         # 2. Run EnergyPlus Simulation
         print(f"[{job_id}] Starting EnergyPlus Simulation...")
         epw_url = settings.get("epw_url")
         
         # We need to resolve the EPW to a local path (Download it if necessary)
-        from backend.weather_resolver import WeatherResolver
-        wr = WeatherResolver(storage_dir="../weather_files")
-        epw_local_path = wr.resolve_epw(epw_url)
+        from backend.weather_resolver import resolve_epw
+        epw_local_path = resolve_epw(settings, cache_dir="../weather_files")
         if not epw_local_path:
              raise Exception(f"Failed to resolve EPW file from {epw_url}")
 
@@ -166,6 +168,20 @@ def start_server(port=8000):
     """
     Starts the FastAPI server with Ngrok tunneling in a Colab environment.
     """
+    # Load Ngrok token from secrets.json (located one folder up in colab/)
+    secrets_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "secrets.json")
+    if os.path.exists(secrets_path):
+        import json
+        with open(secrets_path, "r") as f:
+            secrets = json.load(f)
+            token = secrets.get("NGROK_AUTHTOKEN")
+            if token and token != "YOUR_NGROK_AUTHTOKEN_HERE":
+                ngrok.set_auth_token(token)
+            else:
+                print("⚠️ Warning: NGROK_AUTHTOKEN not set in secrets.json. Tunnel might fail or be restricted.")
+    else:
+        print(f"⚠️ Warning: {secrets_path} not found. Ngrok auth token not set.")
+
     # Open a ngrok tunnel to the dev server
     public_url = ngrok.connect(port).public_url
     print("*" * 60)
@@ -173,9 +189,15 @@ def start_server(port=8000):
     print(f"🔗 COPY THIS URL TO YOUR WEB DASHBOARD: {public_url}")
     print("*" * 60)
     
-    # Apply nest_asyncio to allow running Uvicorn within a Jupyter Notebook cell
-    nest_asyncio.apply()
-    uvicorn.run(app, host="0.0.0.0", port=port)
+    # Run Uvicorn in a separate thread to avoid Jupyter's asyncio loop conflict
+    def run_uvicorn():
+        # uvicorn.run needs a clean event loop
+        uvicorn.run(app, host="0.0.0.0", port=port)
+        
+    server_thread = threading.Thread(target=run_uvicorn, daemon=True)
+    server_thread.start()
+    
+    print(f"Server is running in the background. You can continue using the notebook.")
 
 if __name__ == "__main__":
     start_server()

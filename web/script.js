@@ -64,10 +64,12 @@ function populateWeatherDatalist() {
 function testBackendConnection(silent = false) {
   const url = getBackendUrl();
   const statusMsg = document.getElementById("statusMsg");
+  const row = document.getElementById("backendUrlRow");
   
   if (!silent && statusMsg) {
     statusMsg.innerText = "Checking connection...";
     statusMsg.style.color = "blue";
+    if (row) row.style.backgroundColor = "transparent";
   }
 
   fetch(`${url}/api/ping`, {
@@ -78,24 +80,28 @@ function testBackendConnection(silent = false) {
       return res.json();
     })
     .then(data => {
-      if (!silent) {
-        if(statusMsg) {
-          statusMsg.innerText = "Connection successful! " + data.message;
-          statusMsg.style.color = "green";
-        } else {
-          alert("Connection successful! " + data.message);
-        }
+      if (statusMsg) {
+        statusMsg.innerText = "Connection successful! " + data.message;
+        statusMsg.style.color = "green";
+      } else if (!silent) {
+        alert("Connection successful! " + data.message);
+      }
+      if (row) {
+        row.style.backgroundColor = "#e6ffe6"; // light green
+        row.style.borderColor = "green";
       }
     })
     .catch(err => {
       console.error("Backend connection error:", err);
-      if (!silent) {
-        if(statusMsg) {
-          statusMsg.innerText = "Connection failed. Please check your Backend URL.";
-          statusMsg.style.color = "red";
-        } else {
-          alert("Connection failed. Please check your Backend URL.");
-        }
+      if (statusMsg) {
+        statusMsg.innerText = "Connection failed. Please check your Backend URL.";
+        statusMsg.style.color = "red";
+      } else if (!silent) {
+        alert("Connection failed. Please check your Backend URL.");
+      }
+      if (row) {
+        row.style.backgroundColor = "#ffe6e6"; // light red
+        row.style.borderColor = "red";
       }
     });
 }
@@ -236,6 +242,15 @@ function startPolling(jobId) {
           if(statusMsg) {
             statusMsg.innerText = data.status === "done" ? "Simulation Complete!" : "Simulation Failed.";
             statusMsg.style.color = data.status === "done" ? "green" : "red";
+            
+            if (data.status === "error") {
+              // Instead of an uncopyable alert, create a copyable div and append it
+              const errBox = document.createElement("pre");
+              errBox.style.cssText = "color:red; background:#ffe6e6; border:1px solid red; padding:10px; margin-top:10px; font-size:12px; white-space:pre-wrap; max-height:400px; overflow-y:auto; overflow-x:hidden; user-select:text;";
+              errBox.innerText = data.error_message;
+              statusMsg.parentNode.appendChild(errBox);
+              console.error(data.error_message);
+            }
           }
         }
       })
@@ -339,131 +354,110 @@ function showJobDetails(jobId, data) {
     }
   }
 
-  // Handle Results Visualization
-  const plots = [
-    { key: "plot", imgId: "zonePlot", msgId: "zonePlotMsg", fallbackText: "Zone Temperature" },
-    { key: "plot_ekf", imgId: "ekfPlot", msgId: "ekfPlotMsg", fallbackText: "Mass Flow Rate" },
-    { key: "plot_weather", imgId: "weatherPlot", msgId: "weatherPlotMsg", fallbackText: "Weather Data" },
-    { key: "plot_energy", imgId: "energyPlot", msgId: "energyPlotMsg", fallbackText: "Energy Consumption" }
-  ];
+  // Handle Results Visualization (Frontend Plotly)
+  const plotlyZoneTemp = document.getElementById("plotlyZoneTemp");
+  const plotlyZoneEnergy = document.getElementById("plotlyZoneEnergy");
+  const plotlyAirflow = document.getElementById("plotlyAirflow");
+  const plotlyUtility = document.getElementById("plotlyUtility");
 
-  plots.forEach(plotDef => {
-    const imgInfo = document.getElementById(plotDef.imgId);
-    const msgInfo = document.getElementById(plotDef.msgId);
-    if (!imgInfo || !msgInfo) return;
-
-    if (data.status === "done" && data.result && data.result.files) {
-      const plotPath = data.result.files[plotDef.key];
-      if (plotPath) {
-        imgInfo.src = getBackendUrl() + plotPath;
-        msgInfo.innerText = "";
-        imgInfo.style.display = "block";
-      } else {
-        imgInfo.style.display = "none";
-        msgInfo.innerText = `${plotDef.fallbackText} not available.`;
-      }
-    } else if (data.status === "error") {
-      imgInfo.style.display = "none";
-      msgInfo.innerText = data.error_message || "Job failed.";
-      msgInfo.style.color = "var(--error)";
-    } else {
-      imgInfo.style.display = "none";
-      msgInfo.innerText = "Simulation in progress...";
-      msgInfo.style.color = "var(--text-secondary)";
-    }
-  });
-
-  // Multi-zone chart
   if (data.status === "done" && data.result && data.result.csv_data) {
-    loadAndPlotZoneTemperatures(data.result.csv_data);
+    renderPlotlyCharts(data.result.csv_data);
+  } else if (data.status === "error") {
+    if (plotlyZoneTemp) plotlyZoneTemp.innerHTML = `<p style="color:var(--error); padding:2rem;">Simulation failed.</p>`;
+    if (plotlyZoneEnergy) plotlyZoneEnergy.innerHTML = "";
+    if (plotlyAirflow) plotlyAirflow.innerHTML = "";
+    if (plotlyUtility) plotlyUtility.innerHTML = "";
+  } else {
+    if (plotlyZoneTemp) plotlyZoneTemp.innerHTML = `<p style="color:var(--text-secondary); padding:2rem;">Simulation in progress...</p>`;
+    if (plotlyZoneEnergy) plotlyZoneEnergy.innerHTML = "";
+    if (plotlyAirflow) plotlyAirflow.innerHTML = "";
+    if (plotlyUtility) plotlyUtility.innerHTML = "";
   }
 }
 
 // ----------------------------
-// Multi-Zone Temperature Chart
+// Frontend Plotly Render Logic
 // ----------------------------
-const ZONE_CHART_COLORS = [
-  'rgba(54,  162, 235, 1)', 'rgba(255, 159,  64, 1)', 'rgba( 75, 192, 100, 1)',
-  'rgba(255,  99, 132, 1)', 'rgba(153, 102, 255, 1)', 'rgba(255, 205,  86, 1)'
-];
-
-let _multiZoneChart = null;
-
-function loadAndPlotZoneTemperatures(csvText) {
-  const container = document.getElementById('multiZoneChartContainer');
-  if (!csvText) return;
-
-  const rows = csvText.trim().split('\n').map(r => r.split(','));
-  if (rows.length < 2) return;
-
-  const headers = rows[0].map(h => h.trim().replace(/"/g, ''));
-  const timeCol = 0;
-  
-  const tempCols = [];
-  headers.forEach((h, idx) => {
-    if (h.toLowerCase().includes('zone air temperature')) {
-      tempCols.push({ idx, label: h });
-    }
-  });
-
-  if (tempCols.length === 0) {
-    if (container) container.style.display = 'none';
+function renderPlotlyCharts(csvText) {
+  if (!csvText || !window.Papa || !window.Plotly) {
+    console.warn("Plotly or PapaParse not loaded, or CSV empty.");
     return;
   }
 
-  const timeLabels = rows.slice(1).map(r => r[timeCol] ? r[timeCol].trim() : '');
-  const datasets = tempCols.map((col, ci) => ({
-    label: col.label,
-    data: rows.slice(1).map(r => parseFloat(r[col.idx]) || null),
-    borderColor: ZONE_CHART_COLORS[ci % ZONE_CHART_COLORS.length],
-    backgroundColor: ZONE_CHART_COLORS[ci % ZONE_CHART_COLORS.length].replace(', 1)', ', 0.08)'),
-    borderWidth: 2,
-    pointRadius: 0,
-    tension: 0.3,
-    fill: false,
-  }));
-
-  if (!container) return;
-  container.style.display = 'block';
-  container.innerHTML = `
-    <div style="padding: 0.75rem 0 0.5rem;">
-      <h4 style="margin:0 0 0.5rem; color:var(--text-primary); font-size:0.95rem;">
-        🌡️ Zone Air Temperature Comparison
-      </h4>
-      <canvas id="multiZoneCanvas" style="max-height:320px;"></canvas>
-    </div>`;
-
-  const ctx = document.getElementById('multiZoneCanvas').getContext('2d');
-  if (_multiZoneChart) {
-    _multiZoneChart.destroy();
-    _multiZoneChart = null;
+  // Parse CSV
+  const parsed = Papa.parse(csvText.trim(), { header: true, skipEmptyLines: true });
+  if (parsed.errors.length > 0 || parsed.data.length === 0) {
+    console.error("PapaParse error or empty data:", parsed.errors);
+    return;
   }
 
-  const renderChart = () => {
-    _multiZoneChart = new Chart(ctx, {
-      type: 'line',
-      data: { labels: timeLabels, datasets },
-      options: {
-        responsive: true,
-        interaction: { mode: 'index', intersect: false },
-        plugins: {
-          legend: { position: 'top', labels: { boxWidth: 12, font: { size: 11 } } }
-        },
-        scales: {
-          x: { ticks: { maxRotation: 45, maxTicksLimit: 12 }, title: { display: true, text: 'Time' } },
-          y: { title: { display: true, text: 'Temperature (°C)' } }
-        }
+  const dataRows = parsed.data;
+  const headers = parsed.meta.fields;
+  console.log("[Plotly] CSV Headers found:", headers);
+  
+  // Extract Time array
+  const timeCol = headers.find(h => h.toLowerCase().includes("date/time"));
+  if (!timeCol) {
+    console.error("[Plotly] Could not find Date/Time column! Headers:", headers);
+    if (document.getElementById('plotlyZoneTemp')) {
+      document.getElementById('plotlyZoneTemp').innerHTML = `<p style="color:var(--error); padding:2rem;">Data error: Date/Time column missing from CSV.</p>`;
+    }
+    return;
+  }
+  const timeLabels = dataRows.map(row => row[timeCol].trim());
+
+  // Helper to extract trace data based on keyword
+  const createTraces = (keywords, title, yaxisLabel) => {
+    const traces = [];
+    headers.forEach(h => {
+      const lowerH = h.toLowerCase();
+      if (keywords.some(kw => lowerH.includes(kw))) {
+        // Format name to be readable (remove [C](Hourly) etc)
+        let name = h.replace(/\[.*?\]/g, '').replace(/\(Hourly\)/g, '').trim();
+        traces.push({
+          x: timeLabels,
+          y: dataRows.map(row => parseFloat(row[h]) || null),
+          type: 'scatter',
+          mode: 'lines',
+          name: name,
+          line: { width: 2 }
+        });
       }
     });
+    return traces;
   };
 
-  if (typeof Chart !== 'undefined') {
-    renderChart();
-  } else {
-    const script = document.createElement('script');
-    script.src = 'https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js';
-    script.onload = renderChart;
-    document.head.appendChild(script);
+  const layoutBase = {
+    margin: { t: 40, r: 20, l: 50, b: 60 },
+    legend: { orientation: "h", y: -0.2 },
+    paper_bgcolor: 'rgba(0,0,0,0)',
+    plot_bgcolor: 'rgba(0,0,0,0)',
+    hovermode: 'x unified',
+    font: { family: 'Inter, sans-serif' }
+  };
+
+  // Plot 1: Temperatures
+  const tempTraces = createTraces(['temperature'], 'Zone Temperatures', 'Temperature (°C)');
+  if (tempTraces.length > 0 && document.getElementById('plotlyZoneTemp')) {
+    Plotly.newPlot('plotlyZoneTemp', tempTraces, { ...layoutBase, yaxis: { title: 'Temperature (°C)' } }, { responsive: true });
+  }
+
+  // Plot 2: Energy (Sensible Heating/Cooling)
+  const energyTraces = createTraces(['sensible heating', 'sensible cooling'], 'HVAC Sensible Energy', 'Energy (J)');
+  if (energyTraces.length > 0 && document.getElementById('plotlyZoneEnergy')) {
+    Plotly.newPlot('plotlyZoneEnergy', energyTraces, { ...layoutBase, yaxis: { title: 'Energy (J)' } }, { responsive: true });
+  }
+
+  // Plot 3: Mass Flow Rate
+  const flowTraces = createTraces(['mass flow rate'], 'HVAC Mass Flow Rate', 'Flow Rate (kg/s)');
+  if (flowTraces.length > 0 && document.getElementById('plotlyAirflow')) {
+    Plotly.newPlot('plotlyAirflow', flowTraces, { ...layoutBase, yaxis: { title: 'Flow Rate (kg/s)' } }, { responsive: true });
+  }
+
+  // Plot 4: Utility Meters
+  const utilityTraces = createTraces(['electricity:facility', 'naturalgas:facility'], 'Utility Meters', 'Energy (J)');
+  if (utilityTraces.length > 0 && document.getElementById('plotlyUtility')) {
+    Plotly.newPlot('plotlyUtility', utilityTraces, { ...layoutBase, yaxis: { title: 'Energy (J)' } }, { responsive: true });
   }
 }
 
@@ -476,22 +470,6 @@ window.addEventListener("load", () => {
   }
   if (document.getElementById("weatherSearch")) {
     loadWeatherIndex();
-  }
-  
-  // Inject backend URL input into the header if it doesn't exist
-  if (!document.getElementById("backendUrlInput")) {
-      const header = document.querySelector(".page-header");
-      if (header) {
-          const div = document.createElement("div");
-          div.style = "margin-top: 10px; display: flex; gap: 10px; align-items: center;";
-          div.innerHTML = `
-            <label style="font-weight: bold; color: var(--text-secondary);">Backend URL:</label>
-            <input type="text" id="backendUrlInput" value="${getBackendUrl()}" style="padding: 5px; border-radius: 4px; border: 1px solid #ccc; width: 300px;" placeholder="https://xyz.ngrok-free.app">
-            <button onclick="setBackendUrl(document.getElementById('backendUrlInput').value); testBackendConnection()" style="padding: 5px 10px; border-radius: 4px; cursor:pointer; background: var(--primary); color: white; border: none;">Connect</button>
-            <span id="statusMsg" style="font-size: 0.9em; font-weight: bold; margin-left: 10px;"></span>
-          `;
-          header.appendChild(div);
-      }
   }
 });
 

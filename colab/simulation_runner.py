@@ -211,39 +211,41 @@ def run_simulation_job(job_id, idf_path, epw_path, config=None, output_dir_base=
             img_path = os.path.join(run_dir, "plot.png")
             _plot_series(df_temp, "Zone Air Temperature", img_path, job_id)
             results["plot"] = img_path
-            # Build a wide CSV with one column per zone for the frontend Chart.js
+            # Build a comprehensive wide CSV for the frontend Plotly charts
             try:
                 conn_tmp = __import__("sqlite3").connect(sql_path)
                 env_filter = "AND (ep.EnvironmentName IS NULL OR 1=1)" if is_design_day_run else \
                              "AND ep.EnvironmentType = 'WeatherRunPeriod'"
                 wide_sql = f"""
                     SELECT t.TimeIndex,
+                           d.Name AS var_name,
                            d.KeyValue AS zone,
                            r.Value
                     FROM ReportData r
                     JOIN ReportDataDictionary d ON r.ReportDataDictionaryIndex = d.ReportDataDictionaryIndex
                     JOIN Time t ON r.TimeIndex = t.TimeIndex
                     LEFT JOIN EnvironmentPeriods ep ON t.EnvironmentPeriodIndex = ep.EnvironmentPeriodIndex
-                    WHERE d.Name = 'Zone Air Temperature'
-                    {env_filter}
-                    ORDER BY t.TimeIndex, d.KeyValue
+                    WHERE 1=1 {env_filter}
+                    ORDER BY t.TimeIndex
                 """
                 import pandas as _pd
                 df_wide_raw = _pd.read_sql_query(wide_sql, conn_tmp)
                 conn_tmp.close()
                 if not df_wide_raw.empty:
-                    df_wide = df_wide_raw.pivot_table(index="TimeIndex", columns="zone", values="Value")
-                    df_wide.reset_index(drop=True, inplace=True)
-                    df_wide.columns = [f"Zone Air Temperature:{c}" for c in df_wide.columns]
+                    # Vectorized column name generation for speed
+                    df_wide_raw["zone"] = df_wide_raw["zone"].fillna("")
+                    mask = df_wide_raw["zone"] != ""
+                    df_wide_raw["col_name"] = df_wide_raw["var_name"]
+                    df_wide_raw.loc[mask, "col_name"] = df_wide_raw["var_name"] + ":" + df_wide_raw["zone"]
+                    
+                    df_wide = df_wide_raw.pivot_table(index="TimeIndex", columns="col_name", values="Value")
+                    df_wide.reset_index(inplace=True)
+                    df_wide.rename(columns={"TimeIndex": "Date/Time"}, inplace=True)
                     csv_path = os.path.join(run_dir, "results.csv")
                     df_wide.to_csv(csv_path, index=False)
                     results["csv"] = csv_path
             except Exception as csv_err:
                 print(f"[{job_id}] Wide CSV generation failed: {csv_err}")
-                # Fallback — save simple two-column CSV
-                csv_path = os.path.join(run_dir, "results.csv")
-                df_temp.to_csv(csv_path, index=False)
-                results["csv"] = csv_path
         else:
             print(f"[{job_id}] Warning: No data found for Zone Air Temperature")
             _make_placeholder_png(os.path.join(run_dir, "plot.png"), "Zone Air Temperature")

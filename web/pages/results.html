@@ -7,6 +7,11 @@
   <title>Results - SmartHVAC Studio</title>
   <link rel="icon" type="image/svg+xml" href="../assets/icons/bolt_boost_48dp_14EF10_FILL0_wght400_GRAD0_opsz48.svg">
   <link rel="stylesheet" href="../style.css">
+  
+  <!-- Plotly & PapaParse for Frontend CSV Rendering -->
+  <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+  
   <style>
     /* Specific enhancements for this page */
     .plot-grid {
@@ -164,65 +169,38 @@
       </h3>
       <div id="resultsContainer" class="plot-grid" style="grid-template-columns: repeat(2, 1fr);">
 
-        <!-- Plot 1: Zone Temp -->
-        <div class="plot-card">
-          <h4 style="font-size: 0.9rem; font-weight: 600; margin-bottom: 0.5rem;">Zone Temperature Plot</h4>
-          <div class="plot-placeholder">
-            <img id="zonePlot"
-              style="width: 100%; height: auto; object-fit: contain; display: none; border-radius: var(--radius-sm); cursor: pointer; transition: transform 0.2s;"
-              onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'"
-              onclick="window.open(this.src, '_blank')"
-              alt="Result Plot" title="Click to enlarge">
-            <p id="zonePlotMsg">Select a 'Done' job.</p>
+        <!-- Plot 1: Temperatures -->
+        <div class="plot-card" style="grid-column: 1 / -1;">
+          <h4 style="font-size: 0.9rem; font-weight: 600; margin-bottom: 0.5rem;">Zone Temperatures (°C)</h4>
+          <div class="plot-placeholder" style="min-height: 400px; padding: 0;">
+            <div id="plotlyZoneTemp" style="width: 100%; height: 400px; border-radius: var(--radius-sm);"></div>
           </div>
         </div>
 
-        <!-- Plot 2: EKF (Mass Flow) -->
+        <!-- Plot 2: HVAC Energy -->
         <div class="plot-card">
-          <h4 style="font-size: 0.9rem; font-weight: 600; margin-bottom: 0.5rem;">Mass Flow Rate</h4>
-          <div class="plot-placeholder">
-            <img id="ekfPlot"
-              style="width: 100%; height: auto; object-fit: contain; display: none; border-radius: var(--radius-sm); cursor: pointer; transition: transform 0.2s;"
-              onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'"
-              onclick="window.open(this.src, '_blank')"
-              alt="Result Plot" title="Click to enlarge">
-            <p id="ekfPlotMsg">Select a 'Done' job.</p>
+          <h4 style="font-size: 0.9rem; font-weight: 600; margin-bottom: 0.5rem;">HVAC Sensible Energy (J)</h4>
+          <div class="plot-placeholder" style="min-height: 300px; padding: 0;">
+            <div id="plotlyZoneEnergy" style="width: 100%; height: 300px; border-radius: var(--radius-sm);"></div>
           </div>
         </div>
 
-        <!-- Plot 3: Weather -->
+        <!-- Plot 3: Mass Flow Rates -->
         <div class="plot-card">
-          <h4 style="font-size: 0.9rem; font-weight: 600; margin-bottom: 0.5rem;">Weather Data</h4>
-          <div class="plot-placeholder">
-            <img id="weatherPlot"
-              style="width: 100%; height: auto; object-fit: contain; display: none; border-radius: var(--radius-sm); cursor: pointer; transition: transform 0.2s;"
-              onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'"
-              onclick="window.open(this.src, '_blank')"
-              alt="Result Plot" title="Click to enlarge">
-            <p id="weatherPlotMsg">Select a 'Done' job.</p>
+          <h4 style="font-size: 0.9rem; font-weight: 600; margin-bottom: 0.5rem;">HVAC Mass Flow Rate (kg/s)</h4>
+          <div class="plot-placeholder" style="min-height: 300px; padding: 0;">
+            <div id="plotlyAirflow" style="width: 100%; height: 300px; border-radius: var(--radius-sm);"></div>
+          </div>
+        </div>
+        
+        <!-- Plot 4: Whole Building Utility -->
+        <div class="plot-card" style="grid-column: 1 / -1;">
+          <h4 style="font-size: 0.9rem; font-weight: 600; margin-bottom: 0.5rem;">Building Utility Meters (J)</h4>
+          <div class="plot-placeholder" style="min-height: 300px; padding: 0;">
+            <div id="plotlyUtility" style="width: 100%; height: 300px; border-radius: var(--radius-sm);"></div>
           </div>
         </div>
 
-        <!-- Plot 4: Energy -->
-        <div class="plot-card">
-          <h4 style="font-size: 0.9rem; font-weight: 600; margin-bottom: 0.5rem;">Energy Consumption</h4>
-          <div class="plot-placeholder">
-            <img id="energyPlot"
-              style="width: 100%; height: auto; object-fit: contain; display: none; border-radius: var(--radius-sm); cursor: pointer; transition: transform 0.2s;"
-              onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'"
-              onclick="window.open(this.src, '_blank')"
-              alt="Result Plot" title="Click to enlarge">
-            <p id="energyPlotMsg">Select a 'Done' job.</p>
-          </div>
-        </div>
-
-      </div>
-
-      <!-- Multi-Zone Temperature Chart (shown automatically when CSV has >0 zone temp columns) -->
-      <div id="multiZoneChartContainer"
-        class="card"
-        style="display: none; margin-top: 1.5rem; padding: 1rem 1.5rem;">
-        <!-- Populated dynamically by loadAndPlotZoneTemperatures() in script.js -->
       </div>
 
     </main>
