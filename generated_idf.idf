@@ -251,7 +251,7 @@ BuildingSurface:Detailed,
 BuildingSurface:Detailed,
   Lobby_Gable_East,                       !- Name
   Wall,                                   !- Surface Type
-  Const_M14a_100mm_heavyweight_concrete_F05_Ceiling_air_space_resistance_F16_Acoustic_tile, !- Construction Name
+  Const_M11_100mm_lightweight_concrete_F05_Ceiling_air_space_resistance_F16_Acoustic_tile, !- Construction Name
   Lobby_ThermalZone,                      !- Zone Name
   Lobby,                                  !- Space Name
   Outdoors,                               !- Outside Boundary Condition
@@ -267,7 +267,7 @@ BuildingSurface:Detailed,
 BuildingSurface:Detailed,
   Lobby_Gable_West,                       !- Name
   Wall,                                   !- Surface Type
-  Const_M14a_100mm_heavyweight_concrete_F05_Ceiling_air_space_resistance_F16_Acoustic_tile, !- Construction Name
+  Const_M11_100mm_lightweight_concrete_F05_Ceiling_air_space_resistance_F16_Acoustic_tile, !- Construction Name
   Lobby_ThermalZone,                      !- Zone Name
   Lobby,                                  !- Space Name
   Surface,                                !- Outside Boundary Condition
@@ -283,7 +283,7 @@ BuildingSurface:Detailed,
 BuildingSurface:Detailed,
   Lobby_Roof_North,                       !- Name
   Roof,                                   !- Surface Type
-  Const_M14a_100mm_heavyweight_concrete_F05_Ceiling_air_space_resistance_F16_Acoustic_tile, !- Construction Name
+  Const_M11_100mm_lightweight_concrete_F05_Ceiling_air_space_resistance_F16_Acoustic_tile, !- Construction Name
   Lobby_ThermalZone,                      !- Zone Name
   Lobby,                                  !- Space Name
   Outdoors,                               !- Outside Boundary Condition
@@ -300,7 +300,7 @@ BuildingSurface:Detailed,
 BuildingSurface:Detailed,
   Lobby_Roof_South,                       !- Name
   Roof,                                   !- Surface Type
-  Const_M14a_100mm_heavyweight_concrete_F05_Ceiling_air_space_resistance_F16_Acoustic_tile, !- Construction Name
+  Const_M11_100mm_lightweight_concrete_F05_Ceiling_air_space_resistance_F16_Acoustic_tile, !- Construction Name
   Lobby_ThermalZone,                      !- Zone Name
   Lobby,                                  !- Space Name
   Outdoors,                               !- Outside Boundary Condition
@@ -451,8 +451,12 @@ Schedule:Day:Interval,
   LIGHTING_SCH_DefaultDay,                !- Name
   Fractional,                             !- Schedule Type Limits Name
   No,                                     !- Interpolate to Timestep
-  24:00,                                  !- Time 1 {hh:mm}
-  1;                                      !- Value Until Time 1
+  08:00,                                  !- Time 1 {hh:mm}
+  0,                                      !- Value Until Time 1
+  18:00,                                  !- Time 2 {hh:mm}
+  1,                                      !- Value Until Time 2
+  24:00,                                  !- Time 3 {hh:mm}
+  0;                                      !- Value Until Time 3
 
 Schedule:Day:Interval,
   LIGHTING_SCH_WeekendDay,                !- Name
@@ -521,8 +525,12 @@ Schedule:Day:Interval,
   OCCUPANCY_SCH_DefaultDay,               !- Name
   Fractional,                             !- Schedule Type Limits Name
   No,                                     !- Interpolate to Timestep
-  24:00,                                  !- Time 1 {hh:mm}
-  1;                                      !- Value Until Time 1
+  09:00,                                  !- Time 1 {hh:mm}
+  0,                                      !- Value Until Time 1
+  17:00,                                  !- Time 2 {hh:mm}
+  1,                                      !- Value Until Time 2
+  24:00,                                  !- Time 3 {hh:mm}
+  0;                                      !- Value Until Time 3
 
 Schedule:Day:Interval,
   OCCUPANCY_SCH_WeekendDay,               !- Name
@@ -943,7 +951,7 @@ BuildingSurface:Detailed,
 BuildingSurface:Detailed,
   Meeting Room_Gable_East,                !- Name
   Wall,                                   !- Surface Type
-  Const_M14a_100mm_heavyweight_concrete_F05_Ceiling_air_space_resistance_F16_Acoustic_tile, !- Construction Name
+  Const_M11_100mm_lightweight_concrete_F05_Ceiling_air_space_resistance_F16_Acoustic_tile, !- Construction Name
   Meeting Room_ThermalZone,               !- Zone Name
   Meeting Room,                           !- Space Name
   Outdoors,                               !- Outside Boundary Condition
@@ -959,7 +967,7 @@ BuildingSurface:Detailed,
 BuildingSurface:Detailed,
   Meeting Room_Gable_West,                !- Name
   Wall,                                   !- Surface Type
-  Const_M14a_100mm_heavyweight_concrete_F05_Ceiling_air_space_resistance_F16_Acoustic_tile, !- Construction Name
+  Const_M11_100mm_lightweight_concrete_F05_Ceiling_air_space_resistance_F16_Acoustic_tile, !- Construction Name
   Meeting Room_ThermalZone,               !- Zone Name
   Meeting Room,                           !- Space Name
   Outdoors,                               !- Outside Boundary Condition
@@ -975,7 +983,7 @@ BuildingSurface:Detailed,
 BuildingSurface:Detailed,
   Meeting Room_Roof_North,                !- Name
   Roof,                                   !- Surface Type
-  Const_M14a_100mm_heavyweight_concrete_F05_Ceiling_air_space_resistance_F16_Acoustic_tile, !- Construction Name
+  Const_M11_100mm_lightweight_concrete_F05_Ceiling_air_space_resistance_F16_Acoustic_tile, !- Construction Name
   Meeting Room_ThermalZone,               !- Zone Name
   Meeting Room,                           !- Space Name
   Outdoors,                               !- Outside Boundary Condition
@@ -992,7 +1000,7 @@ BuildingSurface:Detailed,
 BuildingSurface:Detailed,
   Meeting Room_Roof_South,                !- Name
   Roof,                                   !- Surface Type
-  Const_M14a_100mm_heavyweight_concrete_F05_Ceiling_air_space_resistance_F16_Acoustic_tile, !- Construction Name
+  Const_M11_100mm_lightweight_concrete_F05_Ceiling_air_space_resistance_F16_Acoustic_tile, !- Construction Name
   Meeting Room_ThermalZone,               !- Zone Name
   Meeting Room,                           !- Space Name
   Outdoors,                               !- Outside Boundary Condition
@@ -1326,7 +1334,7 @@ BuildingSurface:Detailed,
 BuildingSurface:Detailed,
   Office_Gable_East,                      !- Name
   Wall,                                   !- Surface Type
-  Const_M14a_100mm_heavyweight_concrete_F05_Ceiling_air_space_resistance_F16_Acoustic_tile Reversed, !- Construction Name
+  Const_M11_100mm_lightweight_concrete_F05_Ceiling_air_space_resistance_F16_Acoustic_tile Reversed, !- Construction Name
   Office_ThermalZone,                     !- Zone Name
   Office,                                 !- Space Name
   Surface,                                !- Outside Boundary Condition
@@ -1342,7 +1350,7 @@ BuildingSurface:Detailed,
 BuildingSurface:Detailed,
   Office_Gable_West,                      !- Name
   Wall,                                   !- Surface Type
-  Const_M14a_100mm_heavyweight_concrete_F05_Ceiling_air_space_resistance_F16_Acoustic_tile, !- Construction Name
+  Const_M11_100mm_lightweight_concrete_F05_Ceiling_air_space_resistance_F16_Acoustic_tile, !- Construction Name
   Office_ThermalZone,                     !- Zone Name
   Office,                                 !- Space Name
   Outdoors,                               !- Outside Boundary Condition
@@ -1358,7 +1366,7 @@ BuildingSurface:Detailed,
 BuildingSurface:Detailed,
   Office_Roof_North,                      !- Name
   Roof,                                   !- Surface Type
-  Const_M14a_100mm_heavyweight_concrete_F05_Ceiling_air_space_resistance_F16_Acoustic_tile, !- Construction Name
+  Const_M11_100mm_lightweight_concrete_F05_Ceiling_air_space_resistance_F16_Acoustic_tile, !- Construction Name
   Office_ThermalZone,                     !- Zone Name
   Office,                                 !- Space Name
   Outdoors,                               !- Outside Boundary Condition
@@ -1375,7 +1383,7 @@ BuildingSurface:Detailed,
 BuildingSurface:Detailed,
   Office_Roof_South,                      !- Name
   Roof,                                   !- Surface Type
-  Const_M14a_100mm_heavyweight_concrete_F05_Ceiling_air_space_resistance_F16_Acoustic_tile, !- Construction Name
+  Const_M11_100mm_lightweight_concrete_F05_Ceiling_air_space_resistance_F16_Acoustic_tile, !- Construction Name
   Office_ThermalZone,                     !- Zone Name
   Office,                                 !- Space Name
   Outdoors,                               !- Outside Boundary Condition
@@ -1763,12 +1771,12 @@ Material,
   0.7;                                    !- Visible Absorptance
 
 Material,
-  M14a 100mm heavyweight concrete,        !- Name
+  M11 100mm lightweight concrete,         !- Name
   MediumRough,                            !- Roughness
   0.1016,                                 !- Thickness {m}
-  1.95,                                   !- Conductivity {W/m-K}
-  2240,                                   !- Density {kg/m3}
-  900,                                    !- Specific Heat {J/kg-K}
+  0.53,                                   !- Conductivity {W/m-K}
+  1280,                                   !- Density {kg/m3}
+  840,                                    !- Specific Heat {J/kg-K}
   0.9,                                    !- Thermal Absorptance
   0.7,                                    !- Solar Absorptance
   0.7;                                    !- Visible Absorptance
@@ -1839,16 +1847,16 @@ Construction,
   M01 100mm brick;                        !- Layer 6
 
 Construction,
-  Const_M14a_100mm_heavyweight_concrete_F05_Ceiling_air_space_resistance_F16_Acoustic_tile, !- Name
-  M14a 100mm heavyweight concrete,        !- Layer 1
+  Const_M11_100mm_lightweight_concrete_F05_Ceiling_air_space_resistance_F16_Acoustic_tile, !- Name
+  M11 100mm lightweight concrete,         !- Layer 1
   F05 Ceiling air space resistance,       !- Layer 2
   F16 Acoustic tile;                      !- Layer 3
 
 Construction,
-  Const_M14a_100mm_heavyweight_concrete_F05_Ceiling_air_space_resistance_F16_Acoustic_tile Reversed, !- Name
+  Const_M11_100mm_lightweight_concrete_F05_Ceiling_air_space_resistance_F16_Acoustic_tile Reversed, !- Name
   F16 Acoustic tile,                      !- Layer 1
   F05 Ceiling air space resistance,       !- Layer 2
-  M14a 100mm heavyweight concrete;        !- Layer 3
+  M11 100mm lightweight concrete;         !- Layer 3
 
 Construction,
   Dbl Clr 3mm/13mm Air,                   !- Name
@@ -1857,17 +1865,17 @@ Construction,
   CLEAR 3MM;                              !- Layer 3
 
 Construction,
+  Light Roof/Ceiling,                     !- Name
+  M11 100mm lightweight concrete,         !- Layer 1
+  F05 Ceiling air space resistance,       !- Layer 2
+  F16 Acoustic tile;                      !- Layer 3
+
+Construction,
   Medium Exterior Wall,                   !- Name
   M01 100mm brick,                        !- Layer 1
   I02 50mm insulation board,              !- Layer 2
   F04 Wall air space resistance,          !- Layer 3
   G01a 19mm gypsum board;                 !- Layer 4
-
-Construction,
-  Medium Roof/Ceiling,                    !- Name
-  M14a 100mm heavyweight concrete,        !- Layer 1
-  F05 Ceiling air space resistance,       !- Layer 2
-  F16 Acoustic tile;                      !- Layer 3
 
 Schedule:Constant,
   Always On Discrete,                     !- Name

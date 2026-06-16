@@ -181,6 +181,18 @@ class AIPipelines:
             "   - Adjacent zones share a wall. The shared dimension MUST match (e.g., if Bedroom is North of LivingRoom, both must have the same 'length').\n"
             "   - DO NOT compute coordinates. Python will compute all coordinates from relative_to and direction.\n"
             "   - CRITICAL: DO NOT duplicate/repeat schedule or setpoint fields (like occ_weekday_start, heat_set_occ, window_u_factor, etc.) inside the zone objects. Keep them strictly at the global root level only.\n\n"
+            "=== CRITICAL WINDOW/DOOR PARAMETER EXTRACTION RULES ===\n"
+            "For any custom windows ('window_south', 'window_north', 'window_east', 'window_west') or doors ('door_south', 'door_north', 'door_east', 'door_west'):\n"
+            "1. NEVER do geometric vertex calculations. Instead, map the natural language description directly into the reference point and offset values.\n"
+            "2. Mapping rules:\n"
+            "   - \"fix to ground\" or \"on the ground\" -> set 'ref_z' to \"bottom\", and 'offset_z' to 0.0\n"
+            "   - \"X meters from left edge\" -> set 'ref_x' to \"left\", and 'offset_x' to X (float)\n"
+            "   - \"X meters from right edge\" -> set 'ref_x' to \"right\", and 'offset_x' to X (float)\n"
+            "   - \"X meters from top edge\" -> set 'ref_z' to \"top\", and 'offset_z' to X (float)\n"
+            "   - \"X meters from bottom edge\" -> set 'ref_z' to \"bottom\", and 'offset_z' to X (float)\n"
+            "   - If not specified, default to: 'ref_x': \"center\", 'offset_x': 0.0, 'ref_z': \"bottom\", 'offset_z': 1.0 (for windows) or 0.0 (for doors).\n"
+            "3. ZERO-HALLUCINATION CONSTRAINT: Do NOT include any custom windows or doors on any walls/zones unless they are explicitly requested by the user prompt. For example, if the user only specifies a window on the South wall of the office, do NOT generate default windows on other walls of the office or on any walls of other zones (set them to null).\n"
+            "4. NO-OVERLAP VALIDATION: If a wall has both a door and a window, ensure their X-axis offset spans do not overlap. The width of each opening extends from its reference point. Ensure they are placed at distinct parts of the wall.\n\n"
             "3. For wall/roof layers, pick from:\n"
             f"CONSTRUCTION MENU: {construction_menu}\n"
             f"RAW MATERIAL MENU: {raw_materials}\n\n"
@@ -554,9 +566,9 @@ class AIPipelines:
             raise ValueError("Ollama python package is not installed. Please install it in Colab: !pip install ollama")
             
         try:
-            # Using gemma3:4b since it successfully downloaded to your drive!
+            # Using qwen3.5:9b since it has a large context window and strong coding/logic capabilities!
             response = ollama.chat(
-                model='gemma3:4b', 
+                model='qwen3.5:9b', 
                 messages=[
                     {"role": "system", "content": system},
                     {"role": "user", "content": user}
