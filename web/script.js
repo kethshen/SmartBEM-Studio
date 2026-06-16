@@ -90,6 +90,11 @@ function testBackendConnection(silent = false) {
         row.style.backgroundColor = "#e6ffe6"; // light green
         row.style.borderColor = "green";
       }
+      const logsLink = document.getElementById("backendLogsLink");
+      if (logsLink) {
+        logsLink.href = `${url}/results/backend.log`;
+        logsLink.style.display = "inline";
+      }
     })
     .catch(err => {
       console.error("Backend connection error:", err);
@@ -102,6 +107,10 @@ function testBackendConnection(silent = false) {
       if (row) {
         row.style.backgroundColor = "#ffe6e6"; // light red
         row.style.borderColor = "red";
+      }
+      const logsLink = document.getElementById("backendLogsLink");
+      if (logsLink) {
+        logsLink.style.display = "none";
       }
     });
 }
@@ -179,7 +188,16 @@ function submitDescription() {
   })
   .then(data => {
     const jobId = data.job_id;
-    if(statusMsg) {
+    const simStatusContainer = document.getElementById("simStatusContainer");
+    const simStatusMsg = document.getElementById("simStatusMsg");
+    const simErrorBox = document.getElementById("simErrorBox");
+    
+    if (simStatusContainer && simStatusMsg) {
+      simStatusContainer.style.display = "block";
+      simStatusMsg.innerText = `Job ${jobId} submitted! Running...`;
+      simStatusMsg.style.color = "var(--warning)";
+      if (simErrorBox) simErrorBox.style.display = "none";
+    } else if (statusMsg) {
       statusMsg.innerText = `Job submitted! ID: ${jobId}. Simulation running...`;
       statusMsg.style.color = "orange";
     }
@@ -239,14 +257,35 @@ function startPolling(jobId) {
           saveLocalJob(jobData);
           if (typeof loadJobs === "function") loadJobs();
           
+          const simStatusContainer = document.getElementById("simStatusContainer");
+          const simStatusMsg = document.getElementById("simStatusMsg");
+          const simErrorBox = document.getElementById("simErrorBox");
           const statusMsg = document.getElementById("statusMsg");
-          if(statusMsg) {
+          
+          if (simStatusContainer && simStatusMsg) {
+            if (data.status === "done") {
+              simStatusMsg.innerText = `Job ${jobId} completed successfully!`;
+              simStatusMsg.style.color = "var(--success)";
+              if (simErrorBox) simErrorBox.style.display = "none";
+            } else if (data.status === "error") {
+              simStatusMsg.innerText = `Job ${jobId} failed.`;
+              simStatusMsg.style.color = "var(--error)";
+              if (simErrorBox) {
+                simErrorBox.innerText = data.error_message;
+                simErrorBox.style.display = "block";
+              }
+            }
+          } else if (statusMsg) {
             statusMsg.innerText = data.status === "done" ? "Simulation Complete!" : "Simulation Failed.";
             statusMsg.style.color = data.status === "done" ? "green" : "red";
             
             if (data.status === "error") {
-              // Instead of an uncopyable alert, create a copyable div and append it
+              // Fallback for pages without simStatusContainer
+              const oldErr = statusMsg.parentNode.querySelector(".sim-poll-error");
+              if (oldErr) oldErr.remove();
+              
               const errBox = document.createElement("pre");
+              errBox.className = "sim-poll-error";
               errBox.style.cssText = "color:red; background:#ffe6e6; border:1px solid red; padding:10px; margin-top:10px; font-size:12px; white-space:pre-wrap; max-height:400px; overflow-y:auto; overflow-x:hidden; user-select:text;";
               errBox.innerText = data.error_message;
               statusMsg.parentNode.appendChild(errBox);
@@ -320,6 +359,20 @@ function showJobDetails(jobId, data) {
     else if (data.status === "error") elStatus.style.color = "var(--error)";
   }
   if (elTime) elTime.innerText = new Date(data.createdAt).toLocaleString();
+
+  const elErrorLabel = document.getElementById("detailErrorLabel");
+  const elErrorBox = document.getElementById("detailErrorBox");
+  
+  if (data.status === "error" && data.error_message) {
+    if (elErrorLabel) elErrorLabel.style.display = "inline";
+    if (elErrorBox) {
+      elErrorBox.innerText = data.error_message;
+      elErrorBox.style.display = "block";
+    }
+  } else {
+    if (elErrorLabel) elErrorLabel.style.display = "none";
+    if (elErrorBox) elErrorBox.style.display = "none";
+  }
 
   // Handle Buttons
   const actionContainer = document.getElementById("actionButtonsContainer");

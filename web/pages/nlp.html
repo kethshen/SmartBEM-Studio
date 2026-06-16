@@ -47,6 +47,14 @@
                     <input type="text" id="backendUrlInput" style="padding: 0.5rem; border-radius: 4px; border: 1px solid #ccc; flex: 1; font-family: monospace;" placeholder="https://xyz.ngrok-free.app">
                     <button onclick="setBackendUrl(document.getElementById('backendUrlInput').value); testBackendConnection()" class="btn btn-primary" style="padding: 0.5rem 1rem;">Connect</button>
                     <span id="statusMsg" style="font-size: 0.9em; font-weight: bold; white-space: nowrap;"></span>
+                    <a id="backendLogsLink" href="#" target="_blank" style="display: none; font-size: 0.9em; margin-left: 1rem; text-decoration: underline; color: var(--primary); font-weight: 500; white-space: nowrap;">View Backend Logs 📋</a>
+                </div>
+
+                <!-- Dedicated container for simulation status updates (separate from connection status) -->
+                <div id="simStatusContainer" style="display: none; margin-top: 1rem; padding: 1rem; border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); background: var(--bg-app);">
+                    <div style="font-weight: 600; color: var(--text-primary); margin-bottom: 0.25rem;">Active Simulation Status:</div>
+                    <span id="simStatusMsg" style="font-size: 0.95em; font-weight: bold; color: var(--text-secondary);"></span>
+                    <div id="simErrorBox" style="display: none; margin-top: 0.75rem; color: var(--error); background: #ffe6e6; border: 1px solid var(--error); border-radius: var(--radius-sm); padding: 0.75rem; font-family: var(--font-mono); font-size: 0.8rem; white-space: pre-wrap; word-break: break-all; max-height: 250px; overflow-y: auto;"></div>
                 </div>
                 
                 <script>

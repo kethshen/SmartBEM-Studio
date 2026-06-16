@@ -3,6 +3,7 @@ import sys
 import threading
 import uuid
 import time
+import tempfile
 from fastapi import FastAPI, BackgroundTasks, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -10,6 +11,33 @@ from pydantic import BaseModel
 import uvicorn
 import nest_asyncio
 from pyngrok import ngrok
+
+# Setup scratch directories and redirect standard output/error to backend.log
+OUTPUT_DIR = os.path.join(tempfile.gettempdir(), "smarthvac_sim_runs")
+os.makedirs(OUTPUT_DIR, exist_ok=True)
+LOG_FILE_PATH = os.path.join(OUTPUT_DIR, "backend.log")
+
+class TeeStream:
+    def __init__(self, filename, original_stream):
+        self.file = open(filename, "a", encoding="utf-8", buffering=1)
+        self.original_stream = original_stream
+
+    def write(self, message):
+        if self.original_stream:
+            self.original_stream.write(message)
+        self.file.write(message)
+
+    def flush(self):
+        if self.original_stream:
+            self.original_stream.flush()
+        self.file.flush()
+
+if not hasattr(sys.stdout, "is_tee"):
+    sys.stdout = TeeStream(LOG_FILE_PATH, sys.stdout)
+    sys.stdout.is_tee = True
+if not hasattr(sys.stderr, "is_tee"):
+    sys.stderr = TeeStream(LOG_FILE_PATH, sys.stderr)
+    sys.stderr.is_tee = True
 
 # Import our custom modules
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -28,11 +56,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Ensure the sim_runs directory exists on the FAST LOCAL DISK, not Google Drive!
-# EnergyPlus creates hundreds of files which chokes Google Drive sync.
-import tempfile
-OUTPUT_DIR = os.path.join(tempfile.gettempdir(), "smarthvac_sim_runs")
-os.makedirs(OUTPUT_DIR, exist_ok=True)
+# Mount the temp directory under /results static endpoint
 app.mount("/results", StaticFiles(directory=OUTPUT_DIR), name="results")
 
 # In-memory job tracking
@@ -118,10 +142,10 @@ def run_simulation_pipeline(job_id: str, prompt: str, settings: dict):
 
     except Exception as e:
         import traceback
-        traceback.print_exc()
+        tb_str = traceback.format_exc()
+        print(f"[{job_id}] Pipeline failed:\n{tb_str}")
         jobs_db[job_id]["status"] = "error"
-        jobs_db[job_id]["error_message"] = str(e)
-        print(f"[{job_id}] Pipeline failed: {str(e)}")
+        jobs_db[job_id]["error_message"] = f"Error: {str(e)}\n\nTraceback:\n{tb_str}"
 
 
 @app.post("/api/simulate", response_model=SimulateResponse)
@@ -187,6 +211,8 @@ def start_server(port=8000):
     print("*" * 60)
     print(f"🚀 SMART HVAC BACKEND IS LIVE!")
     print(f"🔗 COPY THIS URL TO YOUR WEB DASHBOARD: {public_url}")
+    print(f"📄 VIEW SYSTEM LOGS AT: {public_url}/results/backend.log")
+    print(f"💡 TO VIEW LIVE LOGS IN COLAB RUN: !tail -n 100 -f {LOG_FILE_PATH}")
     print("*" * 60)
     
     # Run Uvicorn in a separate thread to avoid Jupyter's asyncio loop conflict
