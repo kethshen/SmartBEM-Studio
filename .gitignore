@@ -23,6 +23,7 @@ colab/secrets.json
 # OS junk
 .DS_Store
 Thumbs.db
+.vscode
 
 # Node / tooling (future-proof)
 node_modules/
@@ -70,3 +71,8 @@ Desktop.ini
 
 test_mz_os.idf
 test_sz_os.idf
+
+
+EnergyPlus_Documentation/
+
+generated_idf.idf
