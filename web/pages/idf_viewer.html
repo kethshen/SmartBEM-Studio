@@ -138,123 +138,18 @@
         <div class="loading">Loading files for comparison...</div>
     </div>
 
-    <script type="module">
-        import { firebaseConfig } from "../firebaseConfig.js";
-
-        // Initialize Firebase
-        firebase.initializeApp(firebaseConfig);
-        const storage = firebase.storage();
-
-        // Get Job ID from URL Params
-        const urlParams = new URLSearchParams(window.location.search);
-        const jobId = urlParams.get('jobId');
-
+    <script>
+        // IDF Diff Viewer — Firebase dependency removed.
+        // This page previously fetched IDF files from Firebase Storage.
+        // TODO: Rewire to fetch from FastAPI backend endpoint (e.g. GET /jobs/{id}/idf)
         const container = document.getElementById("diffContainer");
-        const titleDisplay = document.getElementById("pageTitle");
-        const idDisplay = document.getElementById("jobIdDisplay");
-
-        if (!jobId) {
-            container.innerHTML = "<div style='padding:2rem; color:red;'>Error: No Job ID provided in URL.</div>";
-        } else {
-            idDisplay.innerText = `Job: ${jobId}`;
-            loadAndCompare(jobId);
-        }
-
-        async function checkFileExists(path) {
-            try {
-                await storage.ref(path).getMetadata();
-                return true;
-            } catch {
-                return false;
-            }
-        }
-
-        async function loadAndCompare(id) {
-            try {
-                // Paths
-                // 1. Template (Before) - Base.idf
-                const templatePath = "templates/Base.idf";
-
-                // 2. Generated (After) - jobs/{id}/in.idf
-                const generatedPath = `jobs/${id}/in.idf`;
-
-                // Check if files exist first
-                const [templateExists, generatedExists] = await Promise.all([
-                    checkFileExists(templatePath),
-                    checkFileExists(generatedPath)
-                ]);
-
-                if (!templateExists) throw new Error(`Base Template not found at ${templatePath}`);
-                if (!generatedExists) throw new Error(`Generated IDF not found at ${generatedPath}`);
-
-                // Get URLs
-                const templateUrl = await storage.ref(templatePath).getDownloadURL();
-                const generatedUrl = await storage.ref(generatedPath).getDownloadURL();
-
-                // Fetch Text Content
-                const [resTemplate, resGenerated] = await Promise.all([
-                    fetch(templateUrl),
-                    fetch(generatedUrl)
-                ]);
-
-                const textTemplate = await resTemplate.text();
-                const textGenerated = await resGenerated.text();
-
-                // Compute Diff
-                renderDiff(textTemplate, textGenerated);
-
-            } catch (error) {
-                console.error(error);
-                container.innerHTML = `<div style="padding:2rem; color: #f44336;">
-          <strong>Error loading files:</strong><br>${error.message}<br><br>
-          Ensure data is uploaded to Firebase Storage correctly.
+        container.innerHTML = `<div style="padding:2rem; color: #f59e0b; text-align:center;">
+            <strong>⚠️ IDF Viewer Temporarily Unavailable</strong><br><br>
+            This viewer has been migrated away from Firebase.<br>
+            It will be rewired to the FastAPI backend in a future update.
         </div>`;
-            }
-        }
-
-        function renderDiff(oldText, newText) {
-            container.innerHTML = ""; // Clear loading
-
-            // Use jsdiff to compute line-by-line diff
-            const diff = Diff.diffLines(oldText, newText);
-
-            const fragment = document.createDocumentFragment();
-
-            diff.forEach((part) => {
-                // part.added, part.removed, part.value
-
-                // If unchanged, showing it adds context but too much noise for large files.
-                // Let's show everything to be safe, but style differently.
-
-                // Split into lines to handle styling per line
-                const lines = part.value.split('\n');
-
-                // Remove last empty string if split causes it
-                if (lines[lines.length - 1] === '') lines.pop();
-
-                lines.forEach(line => {
-                    const div = document.createElement('div');
-                    div.className = 'diff-line';
-                    div.textContent = line; // Safe text
-
-                    if (part.added) {
-                        div.classList.add('diff-added');
-                        div.textContent = "+ " + line;
-                    } else if (part.removed) {
-                        div.classList.add('diff-removed');
-                        div.textContent = "- " + line;
-                    } else {
-                        div.style.color = "#666"; // Dim unchanged text
-                        div.textContent = "  " + line;
-                    }
-
-                    fragment.appendChild(div);
-                });
-            });
-
-            container.appendChild(fragment);
-        }
     </script>
+
 </body>
 
 </html>
