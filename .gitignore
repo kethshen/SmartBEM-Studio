@@ -1,78 +1,110 @@
-# Firebase / secrets
-serviceAccountKey.json
-*.json
-
-# Colab temporary files
-*.png
-*.csv
-
-desktop.ini
-
-
-# Python cache
-__pycache__/
-
-# Environment files
+# ==============================================================
+# 1. SECURITY — Never commit these
+# ==============================================================
 .env
 *.env
-
-firebaseConfig.js
-serviceAccountKey.json
 colab/secrets.json
+colab/serviceAccountKey.json
 
-# OS junk
-.DS_Store
-Thumbs.db
-.vscode
-
-# Node / tooling (future-proof)
-node_modules/
-
-# from obsidian notes
+# ==============================================================
+# 2. PERSONAL NOTES, ACADEMIC & STUDY MATERIAL
+# ==============================================================
 Obsidian/
 daily summary/
 Research/
-3. ME420_Evaluation scheme.pdf
-Datasets/
-colab/RunFiles/
-colab/sim_runs/
-EKF/Datasets for EKF/
-Example IDF files/
-EP Launch results/
-colab/ollama_models/
 docs/
-web/simone-hutsch-l8fyK9RS-OU-unsplash.jpg
+3. ME420_Evaluation scheme.pdf
+EKF/Datasets for EKF/
 EKF/results/
 EKF/Exp setup/
+
+# ==============================================================
+# 3. DEVELOPMENT & TESTING ARTIFACTS (colab/)
+# ==============================================================
+
+# Test scripts
+colab/test_*.py
+colab/test_*.html
+colab/test_*.idf
+colab/test_mz_os.idf
+colab/test_sz_os.idf
+colab/verify_phase2.py
+colab/rewrite_geom.py
+colab/ollama_colab_youtube.py
+colab/simulation_runner.py
+colab/colab_notebook_cleanup.md
+
+# Legacy notebooks (not the main one)
+colab/EMS_Cookbook.ipynb
+colab/Energyplus_test.ipynb
+
+# ==============================================================
+# 4. ROOT-LEVEL JUNK & REDUNDANT FILES
+# ==============================================================
+
+# Leftover IDF files at root
+in.idf
+generated_idf.idf
+
+# Root-level duplicate of colab/eplus/ (the real one)
+EnergyPlus utility/
+
+# Unused reference folders
+EnergyPlus_Documentation/
+Example IDF files/
+EP Launch results/
+
+# Weather files (downloaded at runtime by Colab)
+weather_files/
+
+# ==============================================================
+# 5. AUTO-GENERATED RUNTIME FILES (Colab)
+# ==============================================================
+colab/sim_runs/
+colab/RunFiles/
 colab/RunFiles (1)/
 colab/sim_runs (1)/
-graphify-out/
-.agents/
+colab/ollama_models/
+colab/ollama.log
 colab/weather/
+colab/weather.epw
+colab/jobs_job_*.csv
+colab/EP Launch results/
 
-#idf
-in.idf
+# ==============================================================
+# 6. PYTHON CACHE
+# ==============================================================
+__pycache__/
+*.pyc
+*.pyo
 
-#LATEX files
+# ==============================================================
+# 7. LATEX COMPILATION ARTIFACTS
+# ==============================================================
 *.aux
 *.log
 *.out
 *.toc
 *.fls
 *.fdb_latexmk
+*.synctex.gz
 
-#drive mount
-.tmp.driveupload
-.tmp.drivedownload
-
-
+# ==============================================================
+# 8. OS & EDITOR JUNK
+# ==============================================================
+.DS_Store
+Thumbs.db
 desktop.ini
 Desktop.ini
+.vscode/
 
-test_mz_os.idf
-test_sz_os.idf
+# Google Drive sync temp folders
+.tmp.driveupload/
+.tmp.drivedownload/
 
-
-EnergyPlus_Documentation/
-
-generated_idf.idf
+# ==============================================================
+# 9. TOOLING (future-proof)
+# ==============================================================
+node_modules/
+graphify-out/
+.agents/
