@@ -74,7 +74,7 @@ def resolve_dependencies(obj_type, obj_name, extracted_blocks=None):
         extracted_blocks[key] = raw_block
         
         # DEPENDENCY RESOLVER: Extract Materials from inside Constructions
-        if "construction" in obj_type.lower():
+        if "construction" in true_type.lower():
             # Get clean parts, ignoring newlines and comments
             clean_str = ""
             for line in raw_block.split('\n'):

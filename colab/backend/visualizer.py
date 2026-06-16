@@ -113,7 +113,11 @@ def generate_3d_html(idf_path, output_path):
 
         num_vert_idx = 11 if obj_type == "BuildingSurface:Detailed" else 9
         try:
-            num_verts = int(fields[num_vert_idx])
+            num_verts_str = fields[num_vert_idx].strip()
+            if num_verts_str:
+                num_verts = int(num_verts_str)
+            else:
+                num_verts = (len(fields) - (num_vert_idx + 1)) // 3
             verts = []
             # Vertices in IDF are LOCAL to zone origin (Coordinate System = Relative).
             # We must add the zone origin offset to get absolute world coordinates for plotting.

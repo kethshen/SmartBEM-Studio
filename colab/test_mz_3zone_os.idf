@@ -1,3 +1,4 @@
+
 Version,
   25.1;                                   !- Version Identifier
 
@@ -210,7 +211,7 @@ Building,
   ;                                       !- Minimum Number of Warmup Days
 
 Zone,
-  Lobby_ThermalZone,                      !- Name
+  lobby_ThermalZone,                      !- Name
   ,                                       !- Direction of Relative North {deg}
   0,                                      !- X Origin {m}
   0,                                      !- Y Origin {m}
@@ -225,18 +226,18 @@ Zone,
   Yes;                                    !- Part of Total Floor Area
 
 Space,
-  Lobby,                                  !- Name
-  Lobby_ThermalZone,                      !- Zone Name
+  lobby,                                  !- Name
+  lobby_ThermalZone,                      !- Zone Name
   ,                                       !- Ceiling Height {m}
   ,                                       !- Volume {m3}
   ;                                       !- Floor Area {m2}
 
 BuildingSurface:Detailed,
-  Lobby_Floor,                            !- Name
+  lobby_Floor,                            !- Name
   Floor,                                  !- Surface Type
   Const_Composite_2x4_Wood_Stud_R11__3_Composite_2x4_Wood_Stud_R11__2_Composite_2x4_Wood_Stud_R11__1, !- Construction Name
-  Lobby_ThermalZone,                      !- Zone Name
-  Lobby,                                  !- Space Name
+  lobby_ThermalZone,                      !- Zone Name
+  lobby,                                  !- Space Name
   Ground,                                 !- Outside Boundary Condition
   ,                                       !- Outside Boundary Condition Object
   NoSun,                                  !- Sun Exposure
@@ -249,92 +250,28 @@ BuildingSurface:Detailed,
   6, 0, 0;                                !- X,Y,Z Vertex 4 {m}
 
 BuildingSurface:Detailed,
-  Lobby_Gable_East,                       !- Name
-  Wall,                                   !- Surface Type
-  Const_M14a_100mm_heavyweight_concrete_F05_Ceiling_air_space_resistance_F16_Acoustic_tile, !- Construction Name
-  Lobby_ThermalZone,                      !- Zone Name
-  Lobby,                                  !- Space Name
-  Outdoors,                               !- Outside Boundary Condition
-  ,                                       !- Outside Boundary Condition Object
-  SunExposed,                             !- Sun Exposure
-  WindExposed,                            !- Wind Exposure
-  ,                                       !- View Factor to Ground
-  ,                                       !- Number of Vertices
-  11, 0, 4,                               !- X,Y,Z Vertex 1 {m}
-  11, 8, 4,                               !- X,Y,Z Vertex 2 {m}
-  11, 4, 7;                               !- X,Y,Z Vertex 3 {m}
-
-BuildingSurface:Detailed,
-  Lobby_Gable_West,                       !- Name
-  Wall,                                   !- Surface Type
-  Const_M14a_100mm_heavyweight_concrete_F05_Ceiling_air_space_resistance_F16_Acoustic_tile, !- Construction Name
-  Lobby_ThermalZone,                      !- Zone Name
-  Lobby,                                  !- Space Name
-  Surface,                                !- Outside Boundary Condition
-  Office_Gable_East,                      !- Outside Boundary Condition Object
-  NoSun,                                  !- Sun Exposure
-  NoWind,                                 !- Wind Exposure
-  ,                                       !- View Factor to Ground
-  ,                                       !- Number of Vertices
-  6, 4, 7,                                !- X,Y,Z Vertex 1 {m}
-  6, 8, 4,                                !- X,Y,Z Vertex 2 {m}
-  6, 0, 4;                                !- X,Y,Z Vertex 3 {m}
-
-BuildingSurface:Detailed,
-  Lobby_Roof_North,                       !- Name
+  lobby_Roof,                             !- Name
   Roof,                                   !- Surface Type
-  Const_M14a_100mm_heavyweight_concrete_F05_Ceiling_air_space_resistance_F16_Acoustic_tile, !- Construction Name
-  Lobby_ThermalZone,                      !- Zone Name
-  Lobby,                                  !- Space Name
+  Const_Composite_2x4_Wood_Stud_R11__3_Composite_2x4_Wood_Stud_R11__2_Composite_2x4_Wood_Stud_R11__1, !- Construction Name
+  lobby_ThermalZone,                      !- Zone Name
+  lobby,                                  !- Space Name
   Outdoors,                               !- Outside Boundary Condition
   ,                                       !- Outside Boundary Condition Object
   SunExposed,                             !- Sun Exposure
   WindExposed,                            !- Wind Exposure
   ,                                       !- View Factor to Ground
   ,                                       !- Number of Vertices
-  11, 8, 4,                               !- X,Y,Z Vertex 1 {m}
-  6, 8, 4,                                !- X,Y,Z Vertex 2 {m}
-  6, 4, 7,                                !- X,Y,Z Vertex 3 {m}
-  11, 4, 7;                               !- X,Y,Z Vertex 4 {m}
+  6, 8, 4,                                !- X,Y,Z Vertex 1 {m}
+  6, 0, 4,                                !- X,Y,Z Vertex 2 {m}
+  11, 0, 4,                               !- X,Y,Z Vertex 3 {m}
+  11, 8, 4;                               !- X,Y,Z Vertex 4 {m}
 
 BuildingSurface:Detailed,
-  Lobby_Roof_South,                       !- Name
-  Roof,                                   !- Surface Type
-  Const_M14a_100mm_heavyweight_concrete_F05_Ceiling_air_space_resistance_F16_Acoustic_tile, !- Construction Name
-  Lobby_ThermalZone,                      !- Zone Name
-  Lobby,                                  !- Space Name
-  Outdoors,                               !- Outside Boundary Condition
-  ,                                       !- Outside Boundary Condition Object
-  SunExposed,                             !- Sun Exposure
-  WindExposed,                            !- Wind Exposure
-  ,                                       !- View Factor to Ground
-  ,                                       !- Number of Vertices
-  6, 0, 4,                                !- X,Y,Z Vertex 1 {m}
-  11, 0, 4,                               !- X,Y,Z Vertex 2 {m}
-  11, 4, 7,                               !- X,Y,Z Vertex 3 {m}
-  6, 4, 7;                                !- X,Y,Z Vertex 4 {m}
-
-FenestrationSurface:Detailed,
-  Lobby_Roof_South_Skylight,              !- Name
-  Window,                                 !- Surface Type
-  Const_CLEAR_3MM_AIR_13MM_CLEAR_3MM,     !- Construction Name
-  Lobby_Roof_South,                       !- Building Surface Name
-  ,                                       !- Outside Boundary Condition Object
-  ,                                       !- View Factor to Ground
-  ,                                       !- Frame and Divider Name
-  ,                                       !- Multiplier
-  ,                                       !- Number of Vertices
-  7.5, 1.4, 5.05,                         !- X,Y,Z Vertex 1 {m}
-  9.5, 1.4, 5.05,                         !- X,Y,Z Vertex 2 {m}
-  9.5, 2.6, 5.95,                         !- X,Y,Z Vertex 3 {m}
-  7.5, 2.6, 5.95;                         !- X,Y,Z Vertex 4 {m}
-
-BuildingSurface:Detailed,
-  Lobby_Wall_East,                        !- Name
+  lobby_Wall_East,                        !- Name
   Wall,                                   !- Surface Type
-  Const_M01_100mm_brick_I02_50mm_insulation_board_M01_100mm_brick_I02_50mm_insulation_board_F04_Wall_air_space_resistance_G01a_19mm_gypsum_board, !- Construction Name
-  Lobby_ThermalZone,                      !- Zone Name
-  Lobby,                                  !- Space Name
+  Const_Composite_2x4_Wood_Stud_R11__3_Composite_2x4_Wood_Stud_R11__2_Composite_2x4_Wood_Stud_R11__1, !- Construction Name
+  lobby_ThermalZone,                      !- Zone Name
+  lobby,                                  !- Space Name
   Outdoors,                               !- Outside Boundary Condition
   ,                                       !- Outside Boundary Condition Object
   SunExposed,                             !- Sun Exposure
@@ -347,11 +284,11 @@ BuildingSurface:Detailed,
   11, 0, 4;                               !- X,Y,Z Vertex 4 {m}
 
 BuildingSurface:Detailed,
-  Lobby_Wall_North,                       !- Name
+  lobby_Wall_North,                       !- Name
   Wall,                                   !- Surface Type
-  Const_M01_100mm_brick_I02_50mm_insulation_board_M01_100mm_brick_I02_50mm_insulation_board_F04_Wall_air_space_resistance_G01a_19mm_gypsum_board, !- Construction Name
-  Lobby_ThermalZone,                      !- Zone Name
-  Lobby,                                  !- Space Name
+  Const_Composite_2x4_Wood_Stud_R11__3_Composite_2x4_Wood_Stud_R11__2_Composite_2x4_Wood_Stud_R11__1, !- Construction Name
+  lobby_ThermalZone,                      !- Zone Name
+  lobby,                                  !- Space Name
   Outdoors,                               !- Outside Boundary Condition
   ,                                       !- Outside Boundary Condition Object
   SunExposed,                             !- Sun Exposure
@@ -364,11 +301,11 @@ BuildingSurface:Detailed,
   11, 8, 4;                               !- X,Y,Z Vertex 4 {m}
 
 BuildingSurface:Detailed,
-  Lobby_Wall_South,                       !- Name
+  lobby_Wall_South,                       !- Name
   Wall,                                   !- Surface Type
-  Const_M01_100mm_brick_I02_50mm_insulation_board_M01_100mm_brick_I02_50mm_insulation_board_F04_Wall_air_space_resistance_G01a_19mm_gypsum_board, !- Construction Name
-  Lobby_ThermalZone,                      !- Zone Name
-  Lobby,                                  !- Space Name
+  Const_Composite_2x4_Wood_Stud_R11__3_Composite_2x4_Wood_Stud_R11__2_Composite_2x4_Wood_Stud_R11__1, !- Construction Name
+  lobby_ThermalZone,                      !- Zone Name
+  lobby,                                  !- Space Name
   Outdoors,                               !- Outside Boundary Condition
   ,                                       !- Outside Boundary Condition Object
   SunExposed,                             !- Sun Exposure
@@ -380,44 +317,14 @@ BuildingSurface:Detailed,
   11, 0, 4,                               !- X,Y,Z Vertex 3 {m}
   6, 0, 4;                                !- X,Y,Z Vertex 4 {m}
 
-FenestrationSurface:Detailed,
-  Lobby_Wall_South_Door,                  !- Name
-  Door,                                   !- Surface Type
-  Const_M01_100mm_brick_I02_50mm_insulation_board_M01_100mm_brick_I02_50mm_insulation_board_F04_Wall_air_space_resistance_G01a_19mm_gypsum_board, !- Construction Name
-  Lobby_Wall_South,                       !- Building Surface Name
-  ,                                       !- Outside Boundary Condition Object
-  ,                                       !- View Factor to Ground
-  ,                                       !- Frame and Divider Name
-  ,                                       !- Multiplier
-  ,                                       !- Number of Vertices
-  8, 0, 0,                                !- X,Y,Z Vertex 1 {m}
-  9, 0, 0,                                !- X,Y,Z Vertex 2 {m}
-  9, 0, 2.5,                              !- X,Y,Z Vertex 3 {m}
-  8, 0, 2.5;                              !- X,Y,Z Vertex 4 {m}
-
-FenestrationSurface:Detailed,
-  Lobby_Wall_South_Window,                !- Name
-  Window,                                 !- Surface Type
-  Const_CLEAR_3MM_AIR_13MM_CLEAR_3MM,     !- Construction Name
-  Lobby_Wall_South,                       !- Building Surface Name
-  ,                                       !- Outside Boundary Condition Object
-  ,                                       !- View Factor to Ground
-  ,                                       !- Frame and Divider Name
-  ,                                       !- Multiplier
-  ,                                       !- Number of Vertices
-  9, 0, 0,                                !- X,Y,Z Vertex 1 {m}
-  11, 0, 0,                               !- X,Y,Z Vertex 2 {m}
-  11, 0, 2.5,                             !- X,Y,Z Vertex 3 {m}
-  9, 0, 2.5;                              !- X,Y,Z Vertex 4 {m}
-
 BuildingSurface:Detailed,
-  Lobby_Wall_West,                        !- Name
+  lobby_Wall_West,                        !- Name
   Wall,                                   !- Surface Type
-  Const_M01_100mm_brick_I02_50mm_insulation_board_M01_100mm_brick_I02_50mm_insulation_board_F04_Wall_air_space_resistance_G01a_19mm_gypsum_board, !- Construction Name
-  Lobby_ThermalZone,                      !- Zone Name
-  Lobby,                                  !- Space Name
+  Const_M01_100mm_brick_I02_50mm_insulation_board_F04_Wall_air_space_resistance_G01a_19mm_gypsum_board Reversed, !- Construction Name
+  lobby_ThermalZone,                      !- Zone Name
+  lobby,                                  !- Space Name
   Surface,                                !- Outside Boundary Condition
-  Office_Wall_East,                       !- Outside Boundary Condition Object
+  office_Wall_East,                       !- Outside Boundary Condition Object
   NoSun,                                  !- Sun Exposure
   NoWind,                                 !- Wind Exposure
   ,                                       !- View Factor to Ground
@@ -428,12 +335,12 @@ BuildingSurface:Detailed,
   6, 0, 4;                                !- X,Y,Z Vertex 4 {m}
 
 Lights,
-  Lobby_Lights,                           !- Name
-  Lobby,                                  !- Zone or ZoneList or Space or SpaceList Name
+  lobby_Lights,                           !- Name
+  lobby,                                  !- Zone or ZoneList or Space or SpaceList Name
   LIGHTING_SCH,                           !- Schedule Name
   Watts/Area,                             !- Design Level Calculation Method
   ,                                       !- Lighting Level {W}
-  6,                                      !- Watts per Floor Area {W/m2}
+  10,                                     !- Watts per Floor Area {W/m2}
   ,                                       !- Watts per Person {W/person}
   ,                                       !- Return Air Fraction
   ,                                       !- Fraction Radiant
@@ -506,13 +413,13 @@ Schedule:Year,
   31;                                     !- End Day 2
 
 People,
-  Lobby_People,                           !- Name
-  Lobby,                                  !- Zone or ZoneList or Space or SpaceList Name
+  lobby_People,                           !- Name
+  lobby,                                  !- Zone or ZoneList or Space or SpaceList Name
   OCCUPANCY_SCH,                          !- Number of People Schedule Name
   Area/Person,                            !- Number of People Calculation Method
   ,                                       !- Number of People
   ,                                       !- People per Floor Area {person/m2}
-  30,                                     !- Floor Area per Person {m2/person}
+  10,                                     !- Floor Area per Person {m2/person}
   0.3,                                    !- Fraction Radiant
   ,                                       !- Sensible Heat Fraction
   ACTIVITY_LEVEL_SCH;                     !- Activity Level Schedule Name
@@ -581,12 +488,12 @@ Schedule:Constant,
   120;                                    !- Hourly Value
 
 ElectricEquipment,
-  Lobby_Equip,                            !- Name
-  Lobby,                                  !- Zone or ZoneList or Space or SpaceList Name
+  lobby_Equip,                            !- Name
+  lobby,                                  !- Zone or ZoneList or Space or SpaceList Name
   EQUIPMENT_SCH,                          !- Schedule Name
   Watts/Area,                             !- Design Level Calculation Method
   ,                                       !- Design Level {W}
-  45.8,                                   !- Watts per Floor Area {W/m2}
+  10,                                     !- Watts per Floor Area {W/m2}
   ,                                       !- Watts per Person {W/person}
   ,                                       !- Fraction Latent
   ,                                       !- Fraction Radiant
@@ -652,8 +559,8 @@ Schedule:Year,
   31;                                     !- End Day 2
 
 ZoneInfiltration:DesignFlowRate,
-  Lobby_Infiltration,                     !- Name
-  Lobby,                                  !- Zone or ZoneList or Space or SpaceList Name
+  lobby_Infiltration,                     !- Name
+  lobby,                                  !- Zone or ZoneList or Space or SpaceList Name
   ,                                       !- Schedule Name
   AirChanges/Hour,                        !- Design Flow Rate Calculation Method
   ,                                       !- Design Flow Rate {m3/s}
@@ -667,9 +574,9 @@ ZoneInfiltration:DesignFlowRate,
   Outdoor;                                !- Density Basis
 
 ZoneControl:Thermostat,
-  Lobby_ThermalZone Thermostat,           !- Name
-  Lobby_ThermalZone,                      !- Zone or ZoneList Name
-  Lobby_ThermalZone Thermostat Schedule,  !- Control Type Schedule Name
+  lobby_ThermalZone Thermostat,           !- Name
+  lobby_ThermalZone,                      !- Zone or ZoneList Name
+  lobby_ThermalZone Thermostat Schedule,  !- Control Type Schedule Name
   ThermostatSetpoint:DualSetpoint,        !- Control 1 Object Type
   Thermostat Setpoint Dual Setpoint 3,    !- Control 1 Name
   ,                                       !- Control 2 Object Type
@@ -681,15 +588,15 @@ ZoneControl:Thermostat,
   0;                                      !- Temperature Difference Between Cutout And Setpoint {deltaC}
 
 Schedule:Compact,
-  Lobby_ThermalZone Thermostat Schedule,  !- Name
-  Lobby_ThermalZone Thermostat Schedule Type Limits, !- Schedule Type Limits Name
+  lobby_ThermalZone Thermostat Schedule,  !- Name
+  lobby_ThermalZone Thermostat Schedule Type Limits, !- Schedule Type Limits Name
   Through: 12/31,                         !- Field 1
   For: AllDays,                           !- Field 2
   Until: 24:00,                           !- Field 3
   4;                                      !- Field 4
 
 ScheduleTypeLimits,
-  Lobby_ThermalZone Thermostat Schedule Type Limits, !- Name
+  lobby_ThermalZone Thermostat Schedule Type Limits, !- Name
   0,                                      !- Lower Limit Value {BasedOnField A3}
   4,                                      !- Upper Limit Value {BasedOnField A3}
   DISCRETE;                               !- Numeric Type
@@ -839,22 +746,22 @@ Schedule:Year,
   31;                                     !- End Day 2
 
 ZoneHVAC:EquipmentConnections,
-  Lobby_ThermalZone,                      !- Zone Name
-  Lobby_ThermalZone Equipment List,       !- Zone Conditioning Equipment List Name
-  Lobby_ThermalZone Inlet Node List,      !- Zone Air Inlet Node or NodeList Name
-  Lobby_ThermalZone Exhaust Node List,    !- Zone Air Exhaust Node or NodeList Name
+  lobby_ThermalZone,                      !- Zone Name
+  lobby_ThermalZone Equipment List,       !- Zone Conditioning Equipment List Name
+  lobby_ThermalZone Inlet Node List,      !- Zone Air Inlet Node or NodeList Name
+  lobby_ThermalZone Exhaust Node List,    !- Zone Air Exhaust Node or NodeList Name
   Node 3;                                 !- Zone Air Node Name
 
 NodeList,
-  Lobby_ThermalZone Inlet Node List,      !- Name
+  lobby_ThermalZone Inlet Node List,      !- Name
   Node 9;                                 !- Node Name 1
 
 NodeList,
-  Lobby_ThermalZone Exhaust Node List,    !- Name
+  lobby_ThermalZone Exhaust Node List,    !- Name
   Node 8;                                 !- Node Name 1
 
 ZoneHVAC:IdealLoadsAirSystem,
-  Lobby_IdealLoads,                       !- Name
+  lobby_IdealLoads,                       !- Name
   ,                                       !- Availability Schedule Name
   Node 9,                                 !- Zone Supply Air Node Name
   Node 8,                                 !- Zone Exhaust Air Node Name
@@ -874,7 +781,7 @@ ZoneHVAC:IdealLoadsAirSystem,
   ,                                       !- Dehumidification Control Type
   ,                                       !- Cooling Sensible Heat Ratio {dimensionless}
   ,                                       !- Humidification Control Type
-  Lobby_OutdoorAir,                       !- Design Specification Outdoor Air Object Name
+  lobby_OutdoorAir,                       !- Design Specification Outdoor Air Object Name
   ,                                       !- Outdoor Air Inlet Node Name
   ,                                       !- Demand Controlled Ventilation Type
   ,                                       !- Outdoor Air Economizer Type
@@ -883,7 +790,7 @@ ZoneHVAC:IdealLoadsAirSystem,
   ;                                       !- Latent Heat Recovery Effectiveness {dimensionless}
 
 DesignSpecification:OutdoorAir,
-  Lobby_OutdoorAir,                       !- Name
+  lobby_OutdoorAir,                       !- Name
   Sum,                                    !- Outdoor Air Method
   0,                                      !- Outdoor Air Flow per Person {m3/s-person}
   0,                                      !- Outdoor Air Flow per Zone Floor Area {m3/s-m2}
@@ -892,17 +799,17 @@ DesignSpecification:OutdoorAir,
   OCCUPANCY_SCH;                          !- Outdoor Air Schedule Name
 
 ZoneHVAC:EquipmentList,
-  Lobby_ThermalZone Equipment List,       !- Name
+  lobby_ThermalZone Equipment List,       !- Name
   SequentialLoad,                         !- Load Distribution Scheme
   ZoneHVAC:IdealLoadsAirSystem,           !- Zone Equipment Object Type 1
-  Lobby_IdealLoads,                       !- Zone Equipment Name 1
+  lobby_IdealLoads,                       !- Zone Equipment Name 1
   1,                                      !- Zone Equipment Cooling Sequence 1
   1,                                      !- Zone Equipment Heating or No-Load Sequence 1
   ,                                       !- Zone Equipment Sequential Cooling Fraction Schedule Name 1
   ;                                       !- Zone Equipment Sequential Heating Fraction Schedule Name 1
 
 Zone,
-  Meeting Room_ThermalZone,               !- Name
+  meeting_room_ThermalZone,               !- Name
   ,                                       !- Direction of Relative North {deg}
   0,                                      !- X Origin {m}
   0,                                      !- Y Origin {m}
@@ -917,18 +824,18 @@ Zone,
   Yes;                                    !- Part of Total Floor Area
 
 Space,
-  Meeting Room,                           !- Name
-  Meeting Room_ThermalZone,               !- Zone Name
+  meeting_room,                           !- Name
+  meeting_room_ThermalZone,               !- Zone Name
   ,                                       !- Ceiling Height {m}
   ,                                       !- Volume {m3}
   ;                                       !- Floor Area {m2}
 
 BuildingSurface:Detailed,
-  Meeting Room_Floor,                     !- Name
+  meeting_room_Floor,                     !- Name
   Floor,                                  !- Surface Type
   Const_Composite_2x4_Wood_Stud_R11__3_Composite_2x4_Wood_Stud_R11__2_Composite_2x4_Wood_Stud_R11__1, !- Construction Name
-  Meeting Room_ThermalZone,               !- Zone Name
-  Meeting Room,                           !- Space Name
+  meeting_room_ThermalZone,               !- Zone Name
+  meeting_room,                           !- Space Name
   Ground,                                 !- Outside Boundary Condition
   ,                                       !- Outside Boundary Condition Object
   NoSun,                                  !- Sun Exposure
@@ -941,27 +848,11 @@ BuildingSurface:Detailed,
   0, 8, 0;                                !- X,Y,Z Vertex 4 {m}
 
 BuildingSurface:Detailed,
-  Meeting Room_Gable_East,                !- Name
-  Wall,                                   !- Surface Type
-  Const_M14a_100mm_heavyweight_concrete_F05_Ceiling_air_space_resistance_F16_Acoustic_tile, !- Construction Name
-  Meeting Room_ThermalZone,               !- Zone Name
-  Meeting Room,                           !- Space Name
-  Outdoors,                               !- Outside Boundary Condition
-  ,                                       !- Outside Boundary Condition Object
-  SunExposed,                             !- Sun Exposure
-  WindExposed,                            !- Wind Exposure
-  ,                                       !- View Factor to Ground
-  ,                                       !- Number of Vertices
-  6, 8, 4,                                !- X,Y,Z Vertex 1 {m}
-  6, 12, 4,                               !- X,Y,Z Vertex 2 {m}
-  6, 10, 7;                               !- X,Y,Z Vertex 3 {m}
-
-BuildingSurface:Detailed,
-  Meeting Room_Gable_West,                !- Name
-  Wall,                                   !- Surface Type
-  Const_M14a_100mm_heavyweight_concrete_F05_Ceiling_air_space_resistance_F16_Acoustic_tile, !- Construction Name
-  Meeting Room_ThermalZone,               !- Zone Name
-  Meeting Room,                           !- Space Name
+  meeting_room_Roof,                      !- Name
+  Roof,                                   !- Surface Type
+  Const_Composite_2x4_Wood_Stud_R11__3_Composite_2x4_Wood_Stud_R11__2_Composite_2x4_Wood_Stud_R11__1, !- Construction Name
+  meeting_room_ThermalZone,               !- Zone Name
+  meeting_room,                           !- Space Name
   Outdoors,                               !- Outside Boundary Condition
   ,                                       !- Outside Boundary Condition Object
   SunExposed,                             !- Sun Exposure
@@ -970,63 +861,15 @@ BuildingSurface:Detailed,
   ,                                       !- Number of Vertices
   0, 12, 4,                               !- X,Y,Z Vertex 1 {m}
   0, 8, 4,                                !- X,Y,Z Vertex 2 {m}
-  0, 10, 7;                               !- X,Y,Z Vertex 3 {m}
+  6, 8, 4,                                !- X,Y,Z Vertex 3 {m}
+  6, 12, 4;                               !- X,Y,Z Vertex 4 {m}
 
 BuildingSurface:Detailed,
-  Meeting Room_Roof_North,                !- Name
-  Roof,                                   !- Surface Type
-  Const_M14a_100mm_heavyweight_concrete_F05_Ceiling_air_space_resistance_F16_Acoustic_tile, !- Construction Name
-  Meeting Room_ThermalZone,               !- Zone Name
-  Meeting Room,                           !- Space Name
-  Outdoors,                               !- Outside Boundary Condition
-  ,                                       !- Outside Boundary Condition Object
-  SunExposed,                             !- Sun Exposure
-  WindExposed,                            !- Wind Exposure
-  ,                                       !- View Factor to Ground
-  ,                                       !- Number of Vertices
-  6, 12, 4,                               !- X,Y,Z Vertex 1 {m}
-  0, 12, 4,                               !- X,Y,Z Vertex 2 {m}
-  0, 10, 7,                               !- X,Y,Z Vertex 3 {m}
-  6, 10, 7;                               !- X,Y,Z Vertex 4 {m}
-
-BuildingSurface:Detailed,
-  Meeting Room_Roof_South,                !- Name
-  Roof,                                   !- Surface Type
-  Const_M14a_100mm_heavyweight_concrete_F05_Ceiling_air_space_resistance_F16_Acoustic_tile, !- Construction Name
-  Meeting Room_ThermalZone,               !- Zone Name
-  Meeting Room,                           !- Space Name
-  Outdoors,                               !- Outside Boundary Condition
-  ,                                       !- Outside Boundary Condition Object
-  SunExposed,                             !- Sun Exposure
-  WindExposed,                            !- Wind Exposure
-  ,                                       !- View Factor to Ground
-  ,                                       !- Number of Vertices
-  0, 8, 4,                                !- X,Y,Z Vertex 1 {m}
-  6, 8, 4,                                !- X,Y,Z Vertex 2 {m}
-  6, 10, 7,                               !- X,Y,Z Vertex 3 {m}
-  0, 10, 7;                               !- X,Y,Z Vertex 4 {m}
-
-FenestrationSurface:Detailed,
-  Meeting Room_Roof_South_Skylight,       !- Name
-  Window,                                 !- Surface Type
-  Const_CLEAR_3MM_AIR_13MM_CLEAR_3MM,     !- Construction Name
-  Meeting Room_Roof_South,                !- Building Surface Name
-  ,                                       !- Outside Boundary Condition Object
-  ,                                       !- View Factor to Ground
-  ,                                       !- Frame and Divider Name
-  ,                                       !- Multiplier
-  ,                                       !- Number of Vertices
-  2, 8.58397485283108, 4.87596227924662,  !- X,Y,Z Vertex 1 {m}
-  4, 8.58397485283108, 4.87596227924662,  !- X,Y,Z Vertex 2 {m}
-  4, 9.41602514716892, 6.12403772075338,  !- X,Y,Z Vertex 3 {m}
-  2, 9.41602514716892, 6.12403772075338;  !- X,Y,Z Vertex 4 {m}
-
-BuildingSurface:Detailed,
-  Meeting Room_Wall_East,                 !- Name
+  meeting_room_Wall_East,                 !- Name
   Wall,                                   !- Surface Type
-  Const_M01_100mm_brick_I02_50mm_insulation_board_M01_100mm_brick_I02_50mm_insulation_board_F04_Wall_air_space_resistance_G01a_19mm_gypsum_board, !- Construction Name
-  Meeting Room_ThermalZone,               !- Zone Name
-  Meeting Room,                           !- Space Name
+  Const_Composite_2x4_Wood_Stud_R11__3_Composite_2x4_Wood_Stud_R11__2_Composite_2x4_Wood_Stud_R11__1, !- Construction Name
+  meeting_room_ThermalZone,               !- Zone Name
+  meeting_room,                           !- Space Name
   Outdoors,                               !- Outside Boundary Condition
   ,                                       !- Outside Boundary Condition Object
   SunExposed,                             !- Sun Exposure
@@ -1039,11 +882,11 @@ BuildingSurface:Detailed,
   6, 8, 4;                                !- X,Y,Z Vertex 4 {m}
 
 BuildingSurface:Detailed,
-  Meeting Room_Wall_North,                !- Name
+  meeting_room_Wall_North,                !- Name
   Wall,                                   !- Surface Type
-  Const_M01_100mm_brick_I02_50mm_insulation_board_M01_100mm_brick_I02_50mm_insulation_board_F04_Wall_air_space_resistance_G01a_19mm_gypsum_board, !- Construction Name
-  Meeting Room_ThermalZone,               !- Zone Name
-  Meeting Room,                           !- Space Name
+  Const_Composite_2x4_Wood_Stud_R11__3_Composite_2x4_Wood_Stud_R11__2_Composite_2x4_Wood_Stud_R11__1, !- Construction Name
+  meeting_room_ThermalZone,               !- Zone Name
+  meeting_room,                           !- Space Name
   Outdoors,                               !- Outside Boundary Condition
   ,                                       !- Outside Boundary Condition Object
   SunExposed,                             !- Sun Exposure
@@ -1056,10 +899,10 @@ BuildingSurface:Detailed,
   6, 12, 4;                               !- X,Y,Z Vertex 4 {m}
 
 FenestrationSurface:Detailed,
-  Meeting Room_Wall_North_Window,         !- Name
+  meeting_room_Wall_North_Window,         !- Name
   Window,                                 !- Surface Type
   Const_CLEAR_3MM_AIR_13MM_CLEAR_3MM,     !- Construction Name
-  Meeting Room_Wall_North,                !- Building Surface Name
+  meeting_room_Wall_North,                !- Building Surface Name
   ,                                       !- Outside Boundary Condition Object
   ,                                       !- View Factor to Ground
   ,                                       !- Frame and Divider Name
@@ -1071,43 +914,28 @@ FenestrationSurface:Detailed,
   4, 12, 2.5;                             !- X,Y,Z Vertex 4 {m}
 
 BuildingSurface:Detailed,
-  Meeting Room_Wall_South,                !- Name
+  meeting_room_Wall_South,                !- Name
   Wall,                                   !- Surface Type
-  Const_M01_100mm_brick_I02_50mm_insulation_board_M01_100mm_brick_I02_50mm_insulation_board_F04_Wall_air_space_resistance_G01a_19mm_gypsum_board, !- Construction Name
-  Meeting Room_ThermalZone,               !- Zone Name
-  Meeting Room,                           !- Space Name
+  Const_M01_100mm_brick_I02_50mm_insulation_board_F04_Wall_air_space_resistance_G01a_19mm_gypsum_board Reversed, !- Construction Name
+  meeting_room_ThermalZone,               !- Zone Name
+  meeting_room,                           !- Space Name
   Surface,                                !- Outside Boundary Condition
-  Office_Wall_North,                      !- Outside Boundary Condition Object
+  office_Wall_North,                      !- Outside Boundary Condition Object
   NoSun,                                  !- Sun Exposure
   NoWind,                                 !- Wind Exposure
   ,                                       !- View Factor to Ground
   ,                                       !- Number of Vertices
-  0, 8, 0,                                !- X,Y,Z Vertex 1 {m}
-  6, 8, 0,                                !- X,Y,Z Vertex 2 {m}
-  6, 8, 4,                                !- X,Y,Z Vertex 3 {m}
-  0, 8, 4;                                !- X,Y,Z Vertex 4 {m}
-
-FenestrationSurface:Detailed,
-  Meeting Room_Wall_South_Door,           !- Name
-  Door,                                   !- Surface Type
-  Const_M01_100mm_brick_I02_50mm_insulation_board_M01_100mm_brick_I02_50mm_insulation_board_F04_Wall_air_space_resistance_G01a_19mm_gypsum_board, !- Construction Name
-  Meeting Room_Wall_South,                !- Building Surface Name
-  Office_Wall_North_Door_Adj,             !- Outside Boundary Condition Object
-  ,                                       !- View Factor to Ground
-  ,                                       !- Frame and Divider Name
-  ,                                       !- Multiplier
-  ,                                       !- Number of Vertices
-  0.5, 8, 0,                              !- X,Y,Z Vertex 1 {m}
-  1.5, 8, 0,                              !- X,Y,Z Vertex 2 {m}
-  1.5, 8, 2.5,                            !- X,Y,Z Vertex 3 {m}
-  0.5, 8, 2.5;                            !- X,Y,Z Vertex 4 {m}
+  0, 8, 4,                                !- X,Y,Z Vertex 1 {m}
+  0, 8, 0,                                !- X,Y,Z Vertex 2 {m}
+  6, 8, 0,                                !- X,Y,Z Vertex 3 {m}
+  6, 8, 4;                                !- X,Y,Z Vertex 4 {m}
 
 BuildingSurface:Detailed,
-  Meeting Room_Wall_West,                 !- Name
+  meeting_room_Wall_West,                 !- Name
   Wall,                                   !- Surface Type
-  Const_M01_100mm_brick_I02_50mm_insulation_board_M01_100mm_brick_I02_50mm_insulation_board_F04_Wall_air_space_resistance_G01a_19mm_gypsum_board, !- Construction Name
-  Meeting Room_ThermalZone,               !- Zone Name
-  Meeting Room,                           !- Space Name
+  Const_Composite_2x4_Wood_Stud_R11__3_Composite_2x4_Wood_Stud_R11__2_Composite_2x4_Wood_Stud_R11__1, !- Construction Name
+  meeting_room_ThermalZone,               !- Zone Name
+  meeting_room,                           !- Space Name
   Outdoors,                               !- Outside Boundary Condition
   ,                                       !- Outside Boundary Condition Object
   SunExposed,                             !- Sun Exposure
@@ -1120,10 +948,10 @@ BuildingSurface:Detailed,
   0, 12, 4;                               !- X,Y,Z Vertex 4 {m}
 
 FenestrationSurface:Detailed,
-  Meeting Room_Wall_West_Window,          !- Name
+  meeting_room_Wall_West_Window,          !- Name
   Window,                                 !- Surface Type
   Const_CLEAR_3MM_AIR_13MM_CLEAR_3MM,     !- Construction Name
-  Meeting Room_Wall_West,                 !- Building Surface Name
+  meeting_room_Wall_West,                 !- Building Surface Name
   ,                                       !- Outside Boundary Condition Object
   ,                                       !- View Factor to Ground
   ,                                       !- Frame and Divider Name
@@ -1135,12 +963,12 @@ FenestrationSurface:Detailed,
   0, 11, 2.5;                             !- X,Y,Z Vertex 4 {m}
 
 Lights,
-  Meeting Room_Lights,                    !- Name
-  Meeting Room,                           !- Zone or ZoneList or Space or SpaceList Name
+  meeting_room_Lights,                    !- Name
+  meeting_room,                           !- Zone or ZoneList or Space or SpaceList Name
   LIGHTING_SCH,                           !- Schedule Name
   Watts/Area,                             !- Design Level Calculation Method
   ,                                       !- Lighting Level {W}
-  6,                                      !- Watts per Floor Area {W/m2}
+  10,                                     !- Watts per Floor Area {W/m2}
   ,                                       !- Watts per Person {W/person}
   ,                                       !- Return Air Fraction
   ,                                       !- Fraction Radiant
@@ -1149,24 +977,24 @@ Lights,
   General;                                !- End-Use Subcategory
 
 People,
-  Meeting Room_People,                    !- Name
-  Meeting Room,                           !- Zone or ZoneList or Space or SpaceList Name
+  meeting_room_People,                    !- Name
+  meeting_room,                           !- Zone or ZoneList or Space or SpaceList Name
   OCCUPANCY_SCH,                          !- Number of People Schedule Name
   Area/Person,                            !- Number of People Calculation Method
   ,                                       !- Number of People
   ,                                       !- People per Floor Area {person/m2}
-  30,                                     !- Floor Area per Person {m2/person}
+  10,                                     !- Floor Area per Person {m2/person}
   0.3,                                    !- Fraction Radiant
   ,                                       !- Sensible Heat Fraction
   ACTIVITY_LEVEL_SCH;                     !- Activity Level Schedule Name
 
 ElectricEquipment,
-  Meeting Room_Equip,                     !- Name
-  Meeting Room,                           !- Zone or ZoneList or Space or SpaceList Name
+  meeting_room_Equip,                     !- Name
+  meeting_room,                           !- Zone or ZoneList or Space or SpaceList Name
   EQUIPMENT_SCH,                          !- Schedule Name
   Watts/Area,                             !- Design Level Calculation Method
   ,                                       !- Design Level {W}
-  45.8,                                   !- Watts per Floor Area {W/m2}
+  10,                                     !- Watts per Floor Area {W/m2}
   ,                                       !- Watts per Person {W/person}
   ,                                       !- Fraction Latent
   ,                                       !- Fraction Radiant
@@ -1174,8 +1002,8 @@ ElectricEquipment,
   General;                                !- End-Use Subcategory
 
 ZoneInfiltration:DesignFlowRate,
-  Meeting Room_Infiltration,              !- Name
-  Meeting Room,                           !- Zone or ZoneList or Space or SpaceList Name
+  meeting_room_Infiltration,              !- Name
+  meeting_room,                           !- Zone or ZoneList or Space or SpaceList Name
   ,                                       !- Schedule Name
   AirChanges/Hour,                        !- Design Flow Rate Calculation Method
   ,                                       !- Design Flow Rate {m3/s}
@@ -1189,9 +1017,9 @@ ZoneInfiltration:DesignFlowRate,
   Outdoor;                                !- Density Basis
 
 ZoneControl:Thermostat,
-  Meeting Room_ThermalZone Thermostat,    !- Name
-  Meeting Room_ThermalZone,               !- Zone or ZoneList Name
-  Meeting Room_ThermalZone Thermostat Schedule, !- Control Type Schedule Name
+  meeting_room_ThermalZone Thermostat,    !- Name
+  meeting_room_ThermalZone,               !- Zone or ZoneList Name
+  meeting_room_ThermalZone Thermostat Schedule, !- Control Type Schedule Name
   ThermostatSetpoint:DualSetpoint,        !- Control 1 Object Type
   Thermostat Setpoint Dual Setpoint 2,    !- Control 1 Name
   ,                                       !- Control 2 Object Type
@@ -1203,15 +1031,15 @@ ZoneControl:Thermostat,
   0;                                      !- Temperature Difference Between Cutout And Setpoint {deltaC}
 
 Schedule:Compact,
-  Meeting Room_ThermalZone Thermostat Schedule, !- Name
-  Meeting Room_ThermalZone Thermostat Schedule Type Limits, !- Schedule Type Limits Name
+  meeting_room_ThermalZone Thermostat Schedule, !- Name
+  meeting_room_ThermalZone Thermostat Schedule Type Limits, !- Schedule Type Limits Name
   Through: 12/31,                         !- Field 1
   For: AllDays,                           !- Field 2
   Until: 24:00,                           !- Field 3
   4;                                      !- Field 4
 
 ScheduleTypeLimits,
-  Meeting Room_ThermalZone Thermostat Schedule Type Limits, !- Name
+  meeting_room_ThermalZone Thermostat Schedule Type Limits, !- Name
   0,                                      !- Lower Limit Value {BasedOnField A3}
   4,                                      !- Upper Limit Value {BasedOnField A3}
   DISCRETE;                               !- Numeric Type
@@ -1222,22 +1050,22 @@ ThermostatSetpoint:DualSetpoint,
   COOLING_SETPOINT_SCH;                   !- Cooling Setpoint Temperature Schedule Name
 
 ZoneHVAC:EquipmentConnections,
-  Meeting Room_ThermalZone,               !- Zone Name
-  Meeting Room_ThermalZone Equipment List, !- Zone Conditioning Equipment List Name
-  Meeting Room_ThermalZone Inlet Node List, !- Zone Air Inlet Node or NodeList Name
-  Meeting Room_ThermalZone Exhaust Node List, !- Zone Air Exhaust Node or NodeList Name
+  meeting_room_ThermalZone,               !- Zone Name
+  meeting_room_ThermalZone Equipment List, !- Zone Conditioning Equipment List Name
+  meeting_room_ThermalZone Inlet Node List, !- Zone Air Inlet Node or NodeList Name
+  meeting_room_ThermalZone Exhaust Node List, !- Zone Air Exhaust Node or NodeList Name
   Node 2;                                 !- Zone Air Node Name
 
 NodeList,
-  Meeting Room_ThermalZone Inlet Node List, !- Name
+  meeting_room_ThermalZone Inlet Node List, !- Name
   Node 7;                                 !- Node Name 1
 
 NodeList,
-  Meeting Room_ThermalZone Exhaust Node List, !- Name
+  meeting_room_ThermalZone Exhaust Node List, !- Name
   Node 6;                                 !- Node Name 1
 
 ZoneHVAC:IdealLoadsAirSystem,
-  Meeting Room_IdealLoads,                !- Name
+  meeting_room_IdealLoads,                !- Name
   ,                                       !- Availability Schedule Name
   Node 7,                                 !- Zone Supply Air Node Name
   Node 6,                                 !- Zone Exhaust Air Node Name
@@ -1257,7 +1085,7 @@ ZoneHVAC:IdealLoadsAirSystem,
   ,                                       !- Dehumidification Control Type
   ,                                       !- Cooling Sensible Heat Ratio {dimensionless}
   ,                                       !- Humidification Control Type
-  Meeting Room_OutdoorAir,                !- Design Specification Outdoor Air Object Name
+  meeting_room_OutdoorAir,                !- Design Specification Outdoor Air Object Name
   ,                                       !- Outdoor Air Inlet Node Name
   ,                                       !- Demand Controlled Ventilation Type
   ,                                       !- Outdoor Air Economizer Type
@@ -1266,7 +1094,7 @@ ZoneHVAC:IdealLoadsAirSystem,
   ;                                       !- Latent Heat Recovery Effectiveness {dimensionless}
 
 DesignSpecification:OutdoorAir,
-  Meeting Room_OutdoorAir,                !- Name
+  meeting_room_OutdoorAir,                !- Name
   Sum,                                    !- Outdoor Air Method
   0,                                      !- Outdoor Air Flow per Person {m3/s-person}
   0,                                      !- Outdoor Air Flow per Zone Floor Area {m3/s-m2}
@@ -1275,17 +1103,17 @@ DesignSpecification:OutdoorAir,
   OCCUPANCY_SCH;                          !- Outdoor Air Schedule Name
 
 ZoneHVAC:EquipmentList,
-  Meeting Room_ThermalZone Equipment List, !- Name
+  meeting_room_ThermalZone Equipment List, !- Name
   SequentialLoad,                         !- Load Distribution Scheme
   ZoneHVAC:IdealLoadsAirSystem,           !- Zone Equipment Object Type 1
-  Meeting Room_IdealLoads,                !- Zone Equipment Name 1
+  meeting_room_IdealLoads,                !- Zone Equipment Name 1
   1,                                      !- Zone Equipment Cooling Sequence 1
   1,                                      !- Zone Equipment Heating or No-Load Sequence 1
   ,                                       !- Zone Equipment Sequential Cooling Fraction Schedule Name 1
   ;                                       !- Zone Equipment Sequential Heating Fraction Schedule Name 1
 
 Zone,
-  Office_ThermalZone,                     !- Name
+  office_ThermalZone,                     !- Name
   ,                                       !- Direction of Relative North {deg}
   0,                                      !- X Origin {m}
   0,                                      !- Y Origin {m}
@@ -1300,18 +1128,18 @@ Zone,
   Yes;                                    !- Part of Total Floor Area
 
 Space,
-  Office,                                 !- Name
-  Office_ThermalZone,                     !- Zone Name
+  office,                                 !- Name
+  office_ThermalZone,                     !- Zone Name
   ,                                       !- Ceiling Height {m}
   ,                                       !- Volume {m3}
   ;                                       !- Floor Area {m2}
 
 BuildingSurface:Detailed,
-  Office_Floor,                           !- Name
+  office_Floor,                           !- Name
   Floor,                                  !- Surface Type
   Const_Composite_2x4_Wood_Stud_R11__3_Composite_2x4_Wood_Stud_R11__2_Composite_2x4_Wood_Stud_R11__1, !- Construction Name
-  Office_ThermalZone,                     !- Zone Name
-  Office,                                 !- Space Name
+  office_ThermalZone,                     !- Zone Name
+  office,                                 !- Space Name
   Ground,                                 !- Outside Boundary Condition
   ,                                       !- Outside Boundary Condition Object
   NoSun,                                  !- Sun Exposure
@@ -1324,27 +1152,11 @@ BuildingSurface:Detailed,
   0, 0, 0;                                !- X,Y,Z Vertex 4 {m}
 
 BuildingSurface:Detailed,
-  Office_Gable_East,                      !- Name
-  Wall,                                   !- Surface Type
-  Const_M14a_100mm_heavyweight_concrete_F05_Ceiling_air_space_resistance_F16_Acoustic_tile Reversed, !- Construction Name
-  Office_ThermalZone,                     !- Zone Name
-  Office,                                 !- Space Name
-  Surface,                                !- Outside Boundary Condition
-  Lobby_Gable_West,                       !- Outside Boundary Condition Object
-  NoSun,                                  !- Sun Exposure
-  NoWind,                                 !- Wind Exposure
-  ,                                       !- View Factor to Ground
-  ,                                       !- Number of Vertices
-  6, 4, 7,                                !- X,Y,Z Vertex 1 {m}
-  6, 0, 4,                                !- X,Y,Z Vertex 2 {m}
-  6, 8, 4;                                !- X,Y,Z Vertex 3 {m}
-
-BuildingSurface:Detailed,
-  Office_Gable_West,                      !- Name
-  Wall,                                   !- Surface Type
-  Const_M14a_100mm_heavyweight_concrete_F05_Ceiling_air_space_resistance_F16_Acoustic_tile, !- Construction Name
-  Office_ThermalZone,                     !- Zone Name
-  Office,                                 !- Space Name
+  office_Roof,                            !- Name
+  Roof,                                   !- Surface Type
+  Const_Composite_2x4_Wood_Stud_R11__3_Composite_2x4_Wood_Stud_R11__2_Composite_2x4_Wood_Stud_R11__1, !- Construction Name
+  office_ThermalZone,                     !- Zone Name
+  office,                                 !- Space Name
   Outdoors,                               !- Outside Boundary Condition
   ,                                       !- Outside Boundary Condition Object
   SunExposed,                             !- Sun Exposure
@@ -1353,65 +1165,17 @@ BuildingSurface:Detailed,
   ,                                       !- Number of Vertices
   0, 8, 4,                                !- X,Y,Z Vertex 1 {m}
   0, 0, 4,                                !- X,Y,Z Vertex 2 {m}
-  0, 4, 7;                                !- X,Y,Z Vertex 3 {m}
+  6, 0, 4,                                !- X,Y,Z Vertex 3 {m}
+  6, 8, 4;                                !- X,Y,Z Vertex 4 {m}
 
 BuildingSurface:Detailed,
-  Office_Roof_North,                      !- Name
-  Roof,                                   !- Surface Type
-  Const_M14a_100mm_heavyweight_concrete_F05_Ceiling_air_space_resistance_F16_Acoustic_tile, !- Construction Name
-  Office_ThermalZone,                     !- Zone Name
-  Office,                                 !- Space Name
-  Outdoors,                               !- Outside Boundary Condition
-  ,                                       !- Outside Boundary Condition Object
-  SunExposed,                             !- Sun Exposure
-  WindExposed,                            !- Wind Exposure
-  ,                                       !- View Factor to Ground
-  ,                                       !- Number of Vertices
-  6, 8, 4,                                !- X,Y,Z Vertex 1 {m}
-  0, 8, 4,                                !- X,Y,Z Vertex 2 {m}
-  0, 4, 7,                                !- X,Y,Z Vertex 3 {m}
-  6, 4, 7;                                !- X,Y,Z Vertex 4 {m}
-
-BuildingSurface:Detailed,
-  Office_Roof_South,                      !- Name
-  Roof,                                   !- Surface Type
-  Const_M14a_100mm_heavyweight_concrete_F05_Ceiling_air_space_resistance_F16_Acoustic_tile, !- Construction Name
-  Office_ThermalZone,                     !- Zone Name
-  Office,                                 !- Space Name
-  Outdoors,                               !- Outside Boundary Condition
-  ,                                       !- Outside Boundary Condition Object
-  SunExposed,                             !- Sun Exposure
-  WindExposed,                            !- Wind Exposure
-  ,                                       !- View Factor to Ground
-  ,                                       !- Number of Vertices
-  0, 0, 4,                                !- X,Y,Z Vertex 1 {m}
-  6, 0, 4,                                !- X,Y,Z Vertex 2 {m}
-  6, 4, 7,                                !- X,Y,Z Vertex 3 {m}
-  0, 4, 7;                                !- X,Y,Z Vertex 4 {m}
-
-FenestrationSurface:Detailed,
-  Office_Roof_South_Skylight,             !- Name
-  Window,                                 !- Surface Type
-  Const_CLEAR_3MM_AIR_13MM_CLEAR_3MM,     !- Construction Name
-  Office_Roof_South,                      !- Building Surface Name
-  ,                                       !- Outside Boundary Condition Object
-  ,                                       !- View Factor to Ground
-  ,                                       !- Frame and Divider Name
-  ,                                       !- Multiplier
-  ,                                       !- Number of Vertices
-  2, 1.4, 5.05,                           !- X,Y,Z Vertex 1 {m}
-  4, 1.4, 5.05,                           !- X,Y,Z Vertex 2 {m}
-  4, 2.6, 5.95,                           !- X,Y,Z Vertex 3 {m}
-  2, 2.6, 5.95;                           !- X,Y,Z Vertex 4 {m}
-
-BuildingSurface:Detailed,
-  Office_Wall_East,                       !- Name
+  office_Wall_East,                       !- Name
   Wall,                                   !- Surface Type
-  Const_M01_100mm_brick_I02_50mm_insulation_board_M01_100mm_brick_I02_50mm_insulation_board_F04_Wall_air_space_resistance_G01a_19mm_gypsum_board Reversed, !- Construction Name
-  Office_ThermalZone,                     !- Zone Name
-  Office,                                 !- Space Name
+  Const_M01_100mm_brick_I02_50mm_insulation_board_F04_Wall_air_space_resistance_G01a_19mm_gypsum_board, !- Construction Name
+  office_ThermalZone,                     !- Zone Name
+  office,                                 !- Space Name
   Surface,                                !- Outside Boundary Condition
-  Lobby_Wall_West,                        !- Outside Boundary Condition Object
+  lobby_Wall_West,                        !- Outside Boundary Condition Object
   NoSun,                                  !- Sun Exposure
   NoWind,                                 !- Wind Exposure
   ,                                       !- View Factor to Ground
@@ -1422,43 +1186,28 @@ BuildingSurface:Detailed,
   6, 8, 4;                                !- X,Y,Z Vertex 4 {m}
 
 BuildingSurface:Detailed,
-  Office_Wall_North,                      !- Name
+  office_Wall_North,                      !- Name
   Wall,                                   !- Surface Type
-  Const_M01_100mm_brick_I02_50mm_insulation_board_M01_100mm_brick_I02_50mm_insulation_board_F04_Wall_air_space_resistance_G01a_19mm_gypsum_board Reversed, !- Construction Name
-  Office_ThermalZone,                     !- Zone Name
-  Office,                                 !- Space Name
+  Const_M01_100mm_brick_I02_50mm_insulation_board_F04_Wall_air_space_resistance_G01a_19mm_gypsum_board, !- Construction Name
+  office_ThermalZone,                     !- Zone Name
+  office,                                 !- Space Name
   Surface,                                !- Outside Boundary Condition
-  Meeting Room_Wall_South,                !- Outside Boundary Condition Object
+  meeting_room_Wall_South,                !- Outside Boundary Condition Object
   NoSun,                                  !- Sun Exposure
   NoWind,                                 !- Wind Exposure
   ,                                       !- View Factor to Ground
   ,                                       !- Number of Vertices
-  6, 8, 0,                                !- X,Y,Z Vertex 1 {m}
-  0, 8, 0,                                !- X,Y,Z Vertex 2 {m}
-  0, 8, 4,                                !- X,Y,Z Vertex 3 {m}
-  6, 8, 4;                                !- X,Y,Z Vertex 4 {m}
-
-FenestrationSurface:Detailed,
-  Office_Wall_North_Door_Adj,             !- Name
-  Door,                                   !- Surface Type
-  Const_M01_100mm_brick_I02_50mm_insulation_board_M01_100mm_brick_I02_50mm_insulation_board_F04_Wall_air_space_resistance_G01a_19mm_gypsum_board Reversed, !- Construction Name
-  Office_Wall_North,                      !- Building Surface Name
-  Meeting Room_Wall_South_Door,           !- Outside Boundary Condition Object
-  ,                                       !- View Factor to Ground
-  ,                                       !- Frame and Divider Name
-  ,                                       !- Multiplier
-  ,                                       !- Number of Vertices
-  0.5, 8, 2.5,                            !- X,Y,Z Vertex 1 {m}
-  1.5, 8, 2.5,                            !- X,Y,Z Vertex 2 {m}
-  1.5, 8, 0,                              !- X,Y,Z Vertex 3 {m}
-  0.5, 8, 0;                              !- X,Y,Z Vertex 4 {m}
+  6, 8, 4,                                !- X,Y,Z Vertex 1 {m}
+  6, 8, 0,                                !- X,Y,Z Vertex 2 {m}
+  0, 8, 0,                                !- X,Y,Z Vertex 3 {m}
+  0, 8, 4;                                !- X,Y,Z Vertex 4 {m}
 
 BuildingSurface:Detailed,
-  Office_Wall_South,                      !- Name
+  office_Wall_South,                      !- Name
   Wall,                                   !- Surface Type
-  Const_M01_100mm_brick_I02_50mm_insulation_board_M01_100mm_brick_I02_50mm_insulation_board_F04_Wall_air_space_resistance_G01a_19mm_gypsum_board, !- Construction Name
-  Office_ThermalZone,                     !- Zone Name
-  Office,                                 !- Space Name
+  Const_M01_100mm_brick_I02_50mm_insulation_board, !- Construction Name
+  office_ThermalZone,                     !- Zone Name
+  office,                                 !- Space Name
   Outdoors,                               !- Outside Boundary Condition
   ,                                       !- Outside Boundary Condition Object
   SunExposed,                             !- Sun Exposure
@@ -1471,26 +1220,26 @@ BuildingSurface:Detailed,
   0, 0, 4;                                !- X,Y,Z Vertex 4 {m}
 
 FenestrationSurface:Detailed,
-  Office_Wall_South_Door,                 !- Name
-  Door,                                   !- Surface Type
-  Const_M01_100mm_brick_I02_50mm_insulation_board_M01_100mm_brick_I02_50mm_insulation_board_F04_Wall_air_space_resistance_G01a_19mm_gypsum_board, !- Construction Name
-  Office_Wall_South,                      !- Building Surface Name
+  office_Wall_South_Window,               !- Name
+  Window,                                 !- Surface Type
+  Const_CLEAR_3MM_AIR_13MM_CLEAR_3MM,     !- Construction Name
+  office_Wall_South,                      !- Building Surface Name
   ,                                       !- Outside Boundary Condition Object
   ,                                       !- View Factor to Ground
   ,                                       !- Frame and Divider Name
   ,                                       !- Multiplier
   ,                                       !- Number of Vertices
-  5, 0, 0,                                !- X,Y,Z Vertex 1 {m}
-  6, 0, 0,                                !- X,Y,Z Vertex 2 {m}
-  6, 0, 2.5,                              !- X,Y,Z Vertex 3 {m}
-  5, 0, 2.5;                              !- X,Y,Z Vertex 4 {m}
+  2, 0, 1,                                !- X,Y,Z Vertex 1 {m}
+  3.5, 0, 1,                              !- X,Y,Z Vertex 2 {m}
+  3.5, 0, 3,                              !- X,Y,Z Vertex 3 {m}
+  2, 0, 3;                                !- X,Y,Z Vertex 4 {m}
 
 BuildingSurface:Detailed,
-  Office_Wall_West,                       !- Name
+  office_Wall_West,                       !- Name
   Wall,                                   !- Surface Type
-  Const_M01_100mm_brick_I02_50mm_insulation_board_M01_100mm_brick_I02_50mm_insulation_board_F04_Wall_air_space_resistance_G01a_19mm_gypsum_board, !- Construction Name
-  Office_ThermalZone,                     !- Zone Name
-  Office,                                 !- Space Name
+  Const_M01_100mm_brick_I02_50mm_insulation_board_F04_Wall_air_space_resistance_G01a_19mm_gypsum_board, !- Construction Name
+  office_ThermalZone,                     !- Zone Name
+  office,                                 !- Space Name
   Outdoors,                               !- Outside Boundary Condition
   ,                                       !- Outside Boundary Condition Object
   SunExposed,                             !- Sun Exposure
@@ -1503,27 +1252,42 @@ BuildingSurface:Detailed,
   0, 8, 4;                                !- X,Y,Z Vertex 4 {m}
 
 FenestrationSurface:Detailed,
-  Office_Wall_West_Door,                  !- Name
+  office_Wall_West_Door,                  !- Name
   Door,                                   !- Surface Type
-  Const_M01_100mm_brick_I02_50mm_insulation_board_M01_100mm_brick_I02_50mm_insulation_board_F04_Wall_air_space_resistance_G01a_19mm_gypsum_board, !- Construction Name
-  Office_Wall_West,                       !- Building Surface Name
+  Const_Composite_2x4_Wood_Stud_R11__3_Composite_2x4_Wood_Stud_R11__2_Composite_2x4_Wood_Stud_R11__1, !- Construction Name
+  office_Wall_West,                       !- Building Surface Name
   ,                                       !- Outside Boundary Condition Object
   ,                                       !- View Factor to Ground
   ,                                       !- Frame and Divider Name
   ,                                       !- Multiplier
   ,                                       !- Number of Vertices
-  0, 6, 0,                                !- X,Y,Z Vertex 1 {m}
-  0, 5, 0,                                !- X,Y,Z Vertex 2 {m}
-  0, 5, 2.5,                              !- X,Y,Z Vertex 3 {m}
+  0, 3, 0,                                !- X,Y,Z Vertex 1 {m}
+  0, 2, 0,                                !- X,Y,Z Vertex 2 {m}
+  0, 2, 2.5,                              !- X,Y,Z Vertex 3 {m}
+  0, 3, 2.5;                              !- X,Y,Z Vertex 4 {m}
+
+FenestrationSurface:Detailed,
+  office_Wall_West_Window,                !- Name
+  Window,                                 !- Surface Type
+  Const_CLEAR_3MM_AIR_13MM_CLEAR_3MM,     !- Construction Name
+  office_Wall_West,                       !- Building Surface Name
+  ,                                       !- Outside Boundary Condition Object
+  ,                                       !- View Factor to Ground
+  ,                                       !- Frame and Divider Name
+  ,                                       !- Multiplier
+  ,                                       !- Number of Vertices
+  0, 6, 1,                                !- X,Y,Z Vertex 1 {m}
+  0, 5.2, 1,                              !- X,Y,Z Vertex 2 {m}
+  0, 5.2, 2.5,                            !- X,Y,Z Vertex 3 {m}
   0, 6, 2.5;                              !- X,Y,Z Vertex 4 {m}
 
 Lights,
-  Office_Lights,                          !- Name
-  Office,                                 !- Zone or ZoneList or Space or SpaceList Name
+  office_Lights,                          !- Name
+  office,                                 !- Zone or ZoneList or Space or SpaceList Name
   LIGHTING_SCH,                           !- Schedule Name
   Watts/Area,                             !- Design Level Calculation Method
   ,                                       !- Lighting Level {W}
-  6,                                      !- Watts per Floor Area {W/m2}
+  10,                                     !- Watts per Floor Area {W/m2}
   ,                                       !- Watts per Person {W/person}
   ,                                       !- Return Air Fraction
   ,                                       !- Fraction Radiant
@@ -1532,24 +1296,24 @@ Lights,
   General;                                !- End-Use Subcategory
 
 People,
-  Office_People,                          !- Name
-  Office,                                 !- Zone or ZoneList or Space or SpaceList Name
+  office_People,                          !- Name
+  office,                                 !- Zone or ZoneList or Space or SpaceList Name
   OCCUPANCY_SCH,                          !- Number of People Schedule Name
   Area/Person,                            !- Number of People Calculation Method
   ,                                       !- Number of People
   ,                                       !- People per Floor Area {person/m2}
-  30,                                     !- Floor Area per Person {m2/person}
+  10,                                     !- Floor Area per Person {m2/person}
   0.3,                                    !- Fraction Radiant
   ,                                       !- Sensible Heat Fraction
   ACTIVITY_LEVEL_SCH;                     !- Activity Level Schedule Name
 
 ElectricEquipment,
-  Office_Equip,                           !- Name
-  Office,                                 !- Zone or ZoneList or Space or SpaceList Name
+  office_Equip,                           !- Name
+  office,                                 !- Zone or ZoneList or Space or SpaceList Name
   EQUIPMENT_SCH,                          !- Schedule Name
   Watts/Area,                             !- Design Level Calculation Method
   ,                                       !- Design Level {W}
-  45.8,                                   !- Watts per Floor Area {W/m2}
+  10,                                     !- Watts per Floor Area {W/m2}
   ,                                       !- Watts per Person {W/person}
   ,                                       !- Fraction Latent
   ,                                       !- Fraction Radiant
@@ -1557,8 +1321,8 @@ ElectricEquipment,
   General;                                !- End-Use Subcategory
 
 ZoneInfiltration:DesignFlowRate,
-  Office_Infiltration,                    !- Name
-  Office,                                 !- Zone or ZoneList or Space or SpaceList Name
+  office_Infiltration,                    !- Name
+  office,                                 !- Zone or ZoneList or Space or SpaceList Name
   ,                                       !- Schedule Name
   AirChanges/Hour,                        !- Design Flow Rate Calculation Method
   ,                                       !- Design Flow Rate {m3/s}
@@ -1572,9 +1336,9 @@ ZoneInfiltration:DesignFlowRate,
   Outdoor;                                !- Density Basis
 
 ZoneControl:Thermostat,
-  Office_ThermalZone Thermostat,          !- Name
-  Office_ThermalZone,                     !- Zone or ZoneList Name
-  Office_ThermalZone Thermostat Schedule, !- Control Type Schedule Name
+  office_ThermalZone Thermostat,          !- Name
+  office_ThermalZone,                     !- Zone or ZoneList Name
+  office_ThermalZone Thermostat Schedule, !- Control Type Schedule Name
   ThermostatSetpoint:DualSetpoint,        !- Control 1 Object Type
   Thermostat Setpoint Dual Setpoint 1,    !- Control 1 Name
   ,                                       !- Control 2 Object Type
@@ -1586,15 +1350,15 @@ ZoneControl:Thermostat,
   0;                                      !- Temperature Difference Between Cutout And Setpoint {deltaC}
 
 Schedule:Compact,
-  Office_ThermalZone Thermostat Schedule, !- Name
-  Office_ThermalZone Thermostat Schedule Type Limits, !- Schedule Type Limits Name
+  office_ThermalZone Thermostat Schedule, !- Name
+  office_ThermalZone Thermostat Schedule Type Limits, !- Schedule Type Limits Name
   Through: 12/31,                         !- Field 1
   For: AllDays,                           !- Field 2
   Until: 24:00,                           !- Field 3
   4;                                      !- Field 4
 
 ScheduleTypeLimits,
-  Office_ThermalZone Thermostat Schedule Type Limits, !- Name
+  office_ThermalZone Thermostat Schedule Type Limits, !- Name
   0,                                      !- Lower Limit Value {BasedOnField A3}
   4,                                      !- Upper Limit Value {BasedOnField A3}
   DISCRETE;                               !- Numeric Type
@@ -1605,22 +1369,22 @@ ThermostatSetpoint:DualSetpoint,
   COOLING_SETPOINT_SCH;                   !- Cooling Setpoint Temperature Schedule Name
 
 ZoneHVAC:EquipmentConnections,
-  Office_ThermalZone,                     !- Zone Name
-  Office_ThermalZone Equipment List,      !- Zone Conditioning Equipment List Name
-  Office_ThermalZone Inlet Node List,     !- Zone Air Inlet Node or NodeList Name
-  Office_ThermalZone Exhaust Node List,   !- Zone Air Exhaust Node or NodeList Name
+  office_ThermalZone,                     !- Zone Name
+  office_ThermalZone Equipment List,      !- Zone Conditioning Equipment List Name
+  office_ThermalZone Inlet Node List,     !- Zone Air Inlet Node or NodeList Name
+  office_ThermalZone Exhaust Node List,   !- Zone Air Exhaust Node or NodeList Name
   Node 1;                                 !- Zone Air Node Name
 
 NodeList,
-  Office_ThermalZone Inlet Node List,     !- Name
+  office_ThermalZone Inlet Node List,     !- Name
   Node 5;                                 !- Node Name 1
 
 NodeList,
-  Office_ThermalZone Exhaust Node List,   !- Name
+  office_ThermalZone Exhaust Node List,   !- Name
   Node 4;                                 !- Node Name 1
 
 ZoneHVAC:IdealLoadsAirSystem,
-  Office_IdealLoads,                      !- Name
+  office_IdealLoads,                      !- Name
   ,                                       !- Availability Schedule Name
   Node 5,                                 !- Zone Supply Air Node Name
   Node 4,                                 !- Zone Exhaust Air Node Name
@@ -1640,7 +1404,7 @@ ZoneHVAC:IdealLoadsAirSystem,
   ,                                       !- Dehumidification Control Type
   ,                                       !- Cooling Sensible Heat Ratio {dimensionless}
   ,                                       !- Humidification Control Type
-  Office_OutdoorAir,                      !- Design Specification Outdoor Air Object Name
+  office_OutdoorAir,                      !- Design Specification Outdoor Air Object Name
   ,                                       !- Outdoor Air Inlet Node Name
   ,                                       !- Demand Controlled Ventilation Type
   ,                                       !- Outdoor Air Economizer Type
@@ -1649,7 +1413,7 @@ ZoneHVAC:IdealLoadsAirSystem,
   ;                                       !- Latent Heat Recovery Effectiveness {dimensionless}
 
 DesignSpecification:OutdoorAir,
-  Office_OutdoorAir,                      !- Name
+  office_OutdoorAir,                      !- Name
   Sum,                                    !- Outdoor Air Method
   0,                                      !- Outdoor Air Flow per Person {m3/s-person}
   0,                                      !- Outdoor Air Flow per Zone Floor Area {m3/s-m2}
@@ -1658,10 +1422,10 @@ DesignSpecification:OutdoorAir,
   OCCUPANCY_SCH;                          !- Outdoor Air Schedule Name
 
 ZoneHVAC:EquipmentList,
-  Office_ThermalZone Equipment List,      !- Name
+  office_ThermalZone Equipment List,      !- Name
   SequentialLoad,                         !- Load Distribution Scheme
   ZoneHVAC:IdealLoadsAirSystem,           !- Zone Equipment Object Type 1
-  Office_IdealLoads,                      !- Zone Equipment Name 1
+  office_IdealLoads,                      !- Zone Equipment Name 1
   1,                                      !- Zone Equipment Cooling Sequence 1
   1,                                      !- Zone Equipment Heating or No-Load Sequence 1
   ,                                       !- Zone Equipment Sequential Cooling Fraction Schedule Name 1
@@ -1683,7 +1447,14 @@ RunPeriod,
   Yes;                                    !- Use Weather File Snow Indicators
 
 Output:Table:SummaryReports,
-  AllSummary;                             !- Report Name 1                               !- Rectangular Surface Coordinate System
+  AllSummary;                             !- Report Name 1
+
+GlobalGeometryRules,
+  UpperLeftCorner,                        !- Starting Vertex Position
+  Counterclockwise,                       !- Vertex Entry Direction
+  Relative,                               !- Coordinate System
+  Relative,                               !- Daylighting Reference Point Coordinate System
+  Relative;                               !- Rectangular Surface Coordinate System
 
 Material,
   Composite 2x4 Wood Stud R11 #1,         !- Name
@@ -1714,17 +1485,6 @@ Material,
   0.124,                                  !- Conductivity {W/m-K}
   508.45,                                 !- Density {kg/m3}
   1048,                                   !- Specific Heat {J/kg-K}
-  0.9,                                    !- Thermal Absorptance
-  0.7,                                    !- Solar Absorptance
-  0.7;                                    !- Visible Absorptance
-
-Material,
-  F16 Acoustic tile,                      !- Name
-  MediumSmooth,                           !- Roughness
-  0.0191,                                 !- Thickness {m}
-  0.06,                                   !- Conductivity {W/m-K}
-  368,                                    !- Density {kg/m3}
-  590,                                    !- Specific Heat {J/kg-K}
   0.9,                                    !- Thermal Absorptance
   0.7,                                    !- Solar Absorptance
   0.7;                                    !- Visible Absorptance
@@ -1762,24 +1522,9 @@ Material,
   0.7,                                    !- Solar Absorptance
   0.7;                                    !- Visible Absorptance
 
-Material,
-  M14a 100mm heavyweight concrete,        !- Name
-  MediumRough,                            !- Roughness
-  0.1016,                                 !- Thickness {m}
-  1.95,                                   !- Conductivity {W/m-K}
-  2240,                                   !- Density {kg/m3}
-  900,                                    !- Specific Heat {J/kg-K}
-  0.9,                                    !- Thermal Absorptance
-  0.7,                                    !- Solar Absorptance
-  0.7;                                    !- Visible Absorptance
-
 Material:AirGap,
   F04 Wall air space resistance,          !- Name
   0.15;                                   !- Thermal Resistance {m2-K/W}
-
-Material:AirGap,
-  F05 Ceiling air space resistance,       !- Name
-  0.18;                                   !- Thermal Resistance {m2-K/W}
 
 WindowMaterial:Gas,
   AIR 13MM,                               !- Name
@@ -1821,34 +1566,23 @@ Construction,
   Composite 2x4 Wood Stud R11 #1;         !- Layer 3
 
 Construction,
-  Const_M01_100mm_brick_I02_50mm_insulation_board_M01_100mm_brick_I02_50mm_insulation_board_F04_Wall_air_space_resistance_G01a_19mm_gypsum_board, !- Name
+  Const_M01_100mm_brick_I02_50mm_insulation_board, !- Name
   M01 100mm brick,                        !- Layer 1
-  I02 50mm insulation board,              !- Layer 2
-  M01 100mm brick,                        !- Layer 3
-  I02 50mm insulation board,              !- Layer 4
-  F04 Wall air space resistance,          !- Layer 5
-  G01a 19mm gypsum board;                 !- Layer 6
+  I02 50mm insulation board;              !- Layer 2
 
 Construction,
-  Const_M01_100mm_brick_I02_50mm_insulation_board_M01_100mm_brick_I02_50mm_insulation_board_F04_Wall_air_space_resistance_G01a_19mm_gypsum_board Reversed, !- Name
+  Const_M01_100mm_brick_I02_50mm_insulation_board_F04_Wall_air_space_resistance_G01a_19mm_gypsum_board, !- Name
+  M01 100mm brick,                        !- Layer 1
+  I02 50mm insulation board,              !- Layer 2
+  F04 Wall air space resistance,          !- Layer 3
+  G01a 19mm gypsum board;                 !- Layer 4
+
+Construction,
+  Const_M01_100mm_brick_I02_50mm_insulation_board_F04_Wall_air_space_resistance_G01a_19mm_gypsum_board Reversed, !- Name
   G01a 19mm gypsum board,                 !- Layer 1
   F04 Wall air space resistance,          !- Layer 2
   I02 50mm insulation board,              !- Layer 3
-  M01 100mm brick,                        !- Layer 4
-  I02 50mm insulation board,              !- Layer 5
-  M01 100mm brick;                        !- Layer 6
-
-Construction,
-  Const_M14a_100mm_heavyweight_concrete_F05_Ceiling_air_space_resistance_F16_Acoustic_tile, !- Name
-  M14a 100mm heavyweight concrete,        !- Layer 1
-  F05 Ceiling air space resistance,       !- Layer 2
-  F16 Acoustic tile;                      !- Layer 3
-
-Construction,
-  Const_M14a_100mm_heavyweight_concrete_F05_Ceiling_air_space_resistance_F16_Acoustic_tile Reversed, !- Name
-  F16 Acoustic tile,                      !- Layer 1
-  F05 Ceiling air space resistance,       !- Layer 2
-  M14a 100mm heavyweight concrete;        !- Layer 3
+  M01 100mm brick;                        !- Layer 4
 
 Construction,
   Dbl Clr 3mm/13mm Air,                   !- Name
@@ -1862,12 +1596,6 @@ Construction,
   I02 50mm insulation board,              !- Layer 2
   F04 Wall air space resistance,          !- Layer 3
   G01a 19mm gypsum board;                 !- Layer 4
-
-Construction,
-  Medium Roof/Ceiling,                    !- Name
-  M14a 100mm heavyweight concrete,        !- Layer 1
-  F05 Ceiling air space resistance,       !- Layer 2
-  F16 Acoustic tile;                      !- Layer 3
 
 Schedule:Constant,
   Always On Discrete,                     !- Name
@@ -1920,7 +1648,9 @@ OutputControl:Table:Style,
 Output:VariableDictionary,
   IDF,                                    !- Key Field
   Unsorted;                               !- Sort Option
-!- Option Type
+
+Output:SQLite,
+  SimpleAndTabular;                       !- Option Type
 
 LifeCycleCost:NonrecurringCost,
   Default Cost,                           !- Name
@@ -2008,14 +1738,9 @@ SizingPeriod:DesignDay,
 
 Site:GroundTemperature:BuildingSurface,18.3,18.2,18.3,18.4,20.1,22.0,22.3,22.5,22.5,20.7,18.9,18.5;
 
-GlobalGeometryRules,
-    LowerLeftCorner,         !- Starting Vertex Position
-    Counterclockwise,        !- Vertex Entry Direction
-    World;
-
 
   Sizing:Zone,
-    Office_ThermalZone,             !- Zone or ZoneList Name
+    office_ThermalZone,             !- Zone or ZoneList Name
     SupplyAirTemperature,    !- Zone Cooling Design Supply Air Temperature Input Method
     12.,                     !- Zone Cooling Design Supply Air Temperature {C}
     ,                        !- Zone Cooling Design Supply Air Temperature Difference {deltaC}
@@ -2024,14 +1749,14 @@ GlobalGeometryRules,
     ,                        !- Zone Heating Design Supply Air Temperature Difference {deltaC}
     0.008,                   !- Zone Cooling Design Supply Air Humidity Ratio {kgWater/kgDryAir}
     0.008,                   !- Zone Heating Design Supply Air Humidity Ratio {kgWater/kgDryAir}
-    Office_OutdoorAir,          !- Design Specification Outdoor Air Object Name
+    office_OutdoorAir,          !- Design Specification Outdoor Air Object Name
     1.2,                     !- Zone Heating Sizing Factor
     1.2;                     !- Zone Cooling Sizing Factor
 
 
 
   Sizing:Zone,
-    Meeting Room_ThermalZone,             !- Zone or ZoneList Name
+    meeting_room_ThermalZone,             !- Zone or ZoneList Name
     SupplyAirTemperature,    !- Zone Cooling Design Supply Air Temperature Input Method
     12.,                     !- Zone Cooling Design Supply Air Temperature {C}
     ,                        !- Zone Cooling Design Supply Air Temperature Difference {deltaC}
@@ -2040,14 +1765,14 @@ GlobalGeometryRules,
     ,                        !- Zone Heating Design Supply Air Temperature Difference {deltaC}
     0.008,                   !- Zone Cooling Design Supply Air Humidity Ratio {kgWater/kgDryAir}
     0.008,                   !- Zone Heating Design Supply Air Humidity Ratio {kgWater/kgDryAir}
-    Meeting Room_OutdoorAir,          !- Design Specification Outdoor Air Object Name
+    meeting_room_OutdoorAir,          !- Design Specification Outdoor Air Object Name
     1.2,                     !- Zone Heating Sizing Factor
     1.2;                     !- Zone Cooling Sizing Factor
 
 
 
   Sizing:Zone,
-    Lobby_ThermalZone,             !- Zone or ZoneList Name
+    lobby_ThermalZone,             !- Zone or ZoneList Name
     SupplyAirTemperature,    !- Zone Cooling Design Supply Air Temperature Input Method
     12.,                     !- Zone Cooling Design Supply Air Temperature {C}
     ,                        !- Zone Cooling Design Supply Air Temperature Difference {deltaC}
@@ -2056,19 +1781,7 @@ GlobalGeometryRules,
     ,                        !- Zone Heating Design Supply Air Temperature Difference {deltaC}
     0.008,                   !- Zone Cooling Design Supply Air Humidity Ratio {kgWater/kgDryAir}
     0.008,                   !- Zone Heating Design Supply Air Humidity Ratio {kgWater/kgDryAir}
-    Lobby_OutdoorAir,          !- Design Specification Outdoor Air Object Name
+    lobby_OutdoorAir,          !- Design Specification Outdoor Air Object Name
     1.2,                     !- Zone Heating Sizing Factor
     1.2;                     !- Zone Cooling Sizing Factor
 
-  Output:SQLite,
-    SimpleAndTabular;         !- Output Type
-
-  Output:Variable,*,Zone Air Temperature,Hourly;
-  Output:Variable,*,Zone Mean Air Temperature,Hourly;
-  Output:Variable,*,Site Outdoor Air Drybulb Temperature,Hourly;
-  Output:Variable,*,Zone Air System Sensible Cooling Energy,Hourly;
-  Output:Variable,*,Zone Air System Sensible Heating Energy,Hourly;
-  Output:Variable,*,System Node Mass Flow Rate,Hourly;
-  Output:Variable,*,Zone Mechanical Ventilation Mass Flow Rate,Hourly;
-  Output:Meter,Electricity:Facility,Hourly;
-  Output:Meter,NaturalGas:Facility,Hourly;

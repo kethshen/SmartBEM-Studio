@@ -830,7 +830,7 @@ class AIPipelines:
         hvac_idf_block = ""
         hvac_template_dir = os.path.join(os.path.dirname(__file__), "..", "templates", "hvac")
         for z in zones:
-            zone_hvac = z.get("hvac_type", "ideal_loads")
+            zone_hvac = z.get("hvac_type") or params.get("hvac_type") or "ideal_loads"
             allowed_hvac = ["ideal_loads", "ptac", "psz_ac"]
             if zone_hvac not in allowed_hvac:
                 zone_hvac = "ideal_loads"
@@ -853,11 +853,11 @@ class AIPipelines:
         zone_objects_block = ""
         for z in zones:
             zn = z["name"]
-            z_people = z.get("people_density", 10.0)
-            z_lights = z.get("light_density", 10.0)
-            z_equip = z.get("equipment_density", 10.0)
-            z_infil = z.get("infiltration_ach", 0.5)
-            z_vent = z.get("ventilation_ach", 0.5)
+            z_people = z.get("people_density") if z.get("people_density") is not None else params.get("people_density", 10.0)
+            z_lights = z.get("light_density") if z.get("light_density") is not None else params.get("light_density", 10.0)
+            z_equip = z.get("equipment_density") if z.get("equipment_density") is not None else params.get("equipment_density", 10.0)
+            z_infil = z.get("infiltration_ach") if z.get("infiltration_ach") is not None else params.get("infiltration_ach", 0.5)
+            z_vent = z.get("ventilation_ach") if z.get("ventilation_ach") is not None else params.get("ventilation_ach", 0.5)
 
             zone_objects_block += f"""
   People,

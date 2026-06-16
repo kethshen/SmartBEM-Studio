@@ -32,13 +32,6 @@ class TeeStream:
             self.original_stream.flush()
         self.file.flush()
 
-if not hasattr(sys.stdout, "is_tee"):
-    sys.stdout = TeeStream(LOG_FILE_PATH, sys.stdout)
-    sys.stdout.is_tee = True
-if not hasattr(sys.stderr, "is_tee"):
-    sys.stderr = TeeStream(LOG_FILE_PATH, sys.stderr)
-    sys.stderr.is_tee = True
-
 # Import our custom modules
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from backend.ai_generator import AIPipelines
@@ -75,6 +68,11 @@ def run_simulation_pipeline(job_id: str, prompt: str, settings: dict):
     """
     Background worker that runs the full AI -> EnergyPlus pipeline.
     """
+    original_stdout = sys.stdout
+    original_stderr = sys.stderr
+    sys.stdout = TeeStream(LOG_FILE_PATH, sys.stdout)
+    sys.stderr = TeeStream(LOG_FILE_PATH, sys.stderr)
+
     try:
         jobs_db[job_id]["status"] = "processing"
         
@@ -146,6 +144,9 @@ def run_simulation_pipeline(job_id: str, prompt: str, settings: dict):
         print(f"[{job_id}] Pipeline failed:\n{tb_str}")
         jobs_db[job_id]["status"] = "error"
         jobs_db[job_id]["error_message"] = f"Error: {str(e)}\n\nTraceback:\n{tb_str}"
+    finally:
+        sys.stdout = original_stdout
+        sys.stderr = original_stderr
 
 
 @app.post("/api/simulate", response_model=SimulateResponse)

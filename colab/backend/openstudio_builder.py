@@ -1,6 +1,7 @@
 import os
 import sys
 import math
+import re
 import openstudio
 
 # Ensure we can import from the backend directory
@@ -60,23 +61,27 @@ def build_openstudio_model(params: dict) -> openstudio.model.Model:
         zones = params.get("zones", [])
         # Apply global fallback values for multi-zone rooms
         for z in zones:
-            if "people_density" not in z: z["people_density"] = params.get("people_density", 10.0)
-            if "light_density" not in z: z["light_density"] = params.get("light_density", 10.0)
-            if "equipment_density" not in z: z["equipment_density"] = params.get("equipment_density", 10.0)
-            if "ventilation_ach" not in z: z["ventilation_ach"] = params.get("ventilation_ach", 0.5)
-            if "infiltration_ach" not in z: z["infiltration_ach"] = params.get("infiltration_ach", 0.5)
-            if "hvac_type" not in z: z["hvac_type"] = z.get("hvac_type") or params.get("hvac_type", "ideal_loads")
+            z["people_density"] = z.get("people_density") if z.get("people_density") is not None else params.get("people_density", 10.0)
+            z["light_density"] = z.get("light_density") if z.get("light_density") is not None else params.get("light_density", 10.0)
+            z["equipment_density"] = z.get("equipment_density") if z.get("equipment_density") is not None else params.get("equipment_density", 10.0)
+            z["ventilation_ach"] = z.get("ventilation_ach") if z.get("ventilation_ach") is not None else params.get("ventilation_ach", 0.5)
+            z["infiltration_ach"] = z.get("infiltration_ach") if z.get("infiltration_ach") is not None else params.get("infiltration_ach", 0.5)
+            z["hvac_type"] = z.get("hvac_type") or params.get("hvac_type") or "ideal_loads"
 
     # 2. Extract and resolve all required constructions & materials
-    names_to_resolve = set(["Composite 2x4 Wood Stud R11", "Theoretical Glass [167]"])
+    names_to_resolve = set(["Composite 2x4 Wood Stud R11", "Dbl Clr 3mm/13mm Air"])
     for z in zones:
         for key in ["wall_layers", "wall_layers_south", "wall_layers_north", "wall_layers_east", "wall_layers_west", "roof_layers", "window_layers"]:
             val = z.get(key)
             if val:
                 if isinstance(val, str):
+                    if val == "Theoretical Glass [167]":
+                        val = "Dbl Clr 3mm/13mm Air"
                     names_to_resolve.add(val)
                 elif isinstance(val, list):
                     for item in val:
+                        if item == "Theoretical Glass [167]":
+                            item = "Dbl Clr 3mm/13mm Air"
                         names_to_resolve.add(item)
 
     extracted_blocks = {}
@@ -111,19 +116,89 @@ def build_openstudio_model(params: dict) -> openstudio.model.Model:
     model = rt.translateWorkspace(workspace)
 
     # 3. Setup Default Construction Set
-    def get_constr(name, default_name):
-        opt = model.getConstructionByName(name)
-        if opt.is_initialized():
-            return opt.get()
-        opt_def = model.getConstructionByName(default_name)
-        if opt_def.is_initialized():
-            return opt_def.get()
-        return None
+    def get_or_create_construction(layers_input, fallback_name=None):
+        if not layers_input:
+            if fallback_name:
+                return get_or_create_construction(fallback_name)
+            return None
 
-    wall_default = get_constr(params.get("wall_layers", "Composite 2x4 Wood Stud R11"), "Composite 2x4 Wood Stud R11")
-    roof_default = get_constr(params.get("roof_layers", "Composite 2x4 Wood Stud R11"), "Composite 2x4 Wood Stud R11")
-    window_default = get_constr(params.get("window_layers", "Theoretical Glass [167]"), "Theoretical Glass [167]")
-    floor_default = get_constr("Composite 2x4 Wood Stud R11", "Composite 2x4 Wood Stud R11")
+        # Standardise single string to a list of layers
+        if isinstance(layers_input, str):
+            layers_input = [layers_input]
+
+        if not isinstance(layers_input, list):
+            return None
+
+        # Flatten any nested constructions into materials
+        flat_layers = []
+        for layer in layers_input:
+            if not isinstance(layer, str):
+                continue
+            c_layers = idf_extractor.get_construction_layers(layer)
+            if c_layers:
+                flat_layers.extend(c_layers)
+            else:
+                flat_layers.append(layer)
+
+        # Map "Theoretical Glass [167]" to "Dbl Clr 3mm/13mm Air"
+        mapped_layers = []
+        for l in flat_layers:
+            if l == "Theoretical Glass [167]":
+                mapped_layers.append("Dbl Clr 3mm/13mm Air")
+            else:
+                mapped_layers.append(l)
+        flat_layers = mapped_layers
+
+        if not flat_layers:
+            if fallback_name:
+                return get_or_create_construction(fallback_name)
+            return None
+
+        # If it's a single layer and matches an existing Construction name in the model, return it
+        if len(flat_layers) == 1:
+            constr_opt = model.getConstructionByName(flat_layers[0])
+            if constr_opt.is_initialized():
+                return constr_opt.get()
+
+        # Build unique name for custom construction based on layers
+        sanitized_layers = [re.sub(r'[^a-zA-Z0-9]', '_', l) for l in flat_layers]
+        custom_name = "Const_" + "_".join(sanitized_layers)
+
+        existing_opt = model.getConstructionByName(custom_name)
+        if existing_opt.is_initialized():
+            return existing_opt.get()
+
+        # Collect material objects from model
+        materials = []
+        for layer in flat_layers:
+            mat_opt = model.getMaterialByName(layer)
+            if mat_opt.is_initialized():
+                materials.append(mat_opt.get())
+            else:
+                print(f"Warning: Material '{layer}' not found in OpenStudio model.")
+
+        if not materials:
+            if fallback_name:
+                return get_or_create_construction(fallback_name)
+            return None
+
+        # Create new Construction
+        new_constr = openstudio.model.Construction(model)
+        new_constr.setName(custom_name)
+        success = new_constr.setLayers(materials)
+        if success:
+            print(f"[OpenStudio Builder] Created custom construction '{custom_name}' with layers: {flat_layers}")
+            return new_constr
+        else:
+            print(f"Error: Failed to set layers for construction '{custom_name}'.")
+            if fallback_name:
+                return get_or_create_construction(fallback_name)
+            return None
+
+    wall_default = get_or_create_construction(params.get("wall_layers", "Composite 2x4 Wood Stud R11"), "Composite 2x4 Wood Stud R11")
+    roof_default = get_or_create_construction(params.get("roof_layers", "Composite 2x4 Wood Stud R11"), "Composite 2x4 Wood Stud R11")
+    window_default = get_or_create_construction(params.get("window_layers", "Dbl Clr 3mm/13mm Air"), "Dbl Clr 3mm/13mm Air")
+    floor_default = get_or_create_construction("Composite 2x4 Wood Stud R11", "Composite 2x4 Wood Stud R11")
 
     construction_set = openstudio.model.DefaultConstructionSet(model)
     construction_set.setName("Building Default Construction Set")
@@ -146,8 +221,14 @@ def build_openstudio_model(params: dict) -> openstudio.model.Model:
     construction_set.setDefaultGroundContactSurfaceConstructions(ground_consts)
 
     sub_ext_consts = openstudio.model.DefaultSubSurfaceConstructions(model)
-    if window_default: sub_ext_consts.setWindowConstruction(window_default)
+    if window_default: sub_ext_consts.setFixedWindowConstruction(window_default)
+    if wall_default: sub_ext_consts.setDoorConstruction(wall_default)
     construction_set.setDefaultExteriorSubSurfaceConstructions(sub_ext_consts)
+
+    sub_int_consts = openstudio.model.DefaultSubSurfaceConstructions(model)
+    if window_default: sub_int_consts.setFixedWindowConstruction(window_default)
+    if wall_default: sub_int_consts.setDoorConstruction(wall_default)
+    construction_set.setDefaultInteriorSubSurfaceConstructions(sub_int_consts)
 
     model.getBuilding().setDefaultConstructionSet(construction_set)
 
@@ -262,13 +343,36 @@ def build_openstudio_model(params: dict) -> openstudio.model.Model:
             ]
             surf_roof = create_surface(v_roof, f"{name}_Roof")
 
-        # Set specific constructions overrides
+        # Specific constructions/materials overrides for this zone
+        z_wall_layers = z.get("wall_layers")
+        if z_wall_layers:
+            z_wall_constr_obj = get_or_create_construction(z_wall_layers, "Composite 2x4 Wood Stud R11")
+            if z_wall_constr_obj:
+                for surf in [surf_south, surf_north, surf_east, surf_west]:
+                    surf.setConstruction(z_wall_constr_obj)
+
+        # Set specific orientation overrides
         for key, surf in [("wall_layers_south", surf_south), ("wall_layers_north", surf_north),
                           ("wall_layers_east", surf_east), ("wall_layers_west", surf_west)]:
             c_val = z.get(key)
             if c_val:
-                c_obj = get_constr(c_val, "Composite 2x4 Wood Stud R11")
+                c_obj = get_or_create_construction(c_val, "Composite 2x4 Wood Stud R11")
                 if c_obj: surf.setConstruction(c_obj)
+
+        # Specific roof_layers override for this zone
+        z_roof_layers = z.get("roof_layers")
+        if z_roof_layers:
+            z_roof_constr_obj = get_or_create_construction(z_roof_layers, "Composite 2x4 Wood Stud R11")
+            if z_roof_constr_obj:
+                if roof_type == "pitched":
+                    for r_surf in [surf_roof_s, surf_roof_n, surf_gable_e, surf_gable_w]:
+                        r_surf.setConstruction(z_roof_constr_obj)
+                else:
+                    surf_roof.setConstruction(z_roof_constr_obj)
+
+        # Retrieve window/door constructions for this zone to explicitly assign to subsurfaces
+        z_window_constr = get_or_create_construction(z.get("window_layers"), "Dbl Clr 3mm/13mm Air") if z.get("window_layers") else window_default
+        z_wall_constr = get_or_create_construction(z.get("wall_layers"), "Composite 2x4 Wood Stud R11") if z.get("wall_layers") else wall_default
 
         # Apply subsurfaces (WWR or precise Windows/Doors)
         wwr_s = float(z.get("wwr_south", 0.0))
@@ -285,8 +389,16 @@ def build_openstudio_model(params: dict) -> openstudio.model.Model:
             offset_z = float(data.get("offset_z", 0.0))
             ref_z = data.get("ref_z", "center")
 
+            # Clamp dimensions to parent surface size with a small safety margin
+            w = max(0.01, min(w, wall_width))
+            h = max(0.01, min(h, wall_height))
+
             w_off = offset_x if ref_x == "left" else (wall_width - w - offset_x if ref_x == "right" else (wall_width - w) / 2.0)
             h_off = offset_z if ref_z == "bottom" else (wall_height - h - offset_z if ref_z == "top" else (wall_height - h) / 2.0)
+
+            # Clamp offsets to fit inside wall boundaries
+            w_off = max(0.0, min(w_off, wall_width - w))
+            h_off = max(0.0, min(h_off, wall_height - h))
 
             # Interpolate relative geometry coplanar with the wall
             p_bl = parent_surf.vertices()[0]
@@ -314,6 +426,12 @@ def build_openstudio_model(params: dict) -> openstudio.model.Model:
             sub.setName(f"{parent_surf.nameString()}_{name_suffix}")
             sub.setSurface(parent_surf)
             sub.setSubSurfaceType(sub_type)
+
+            # Explicitly set construction to avoid empty construction name translation error
+            if sub_type == "FixedWindow" and z_window_constr:
+                sub.setConstruction(z_window_constr)
+            elif sub_type == "Door" and z_wall_constr:
+                sub.setConstruction(z_wall_constr)
 
         # South Facade
         if z.get("window_south"):
@@ -347,6 +465,70 @@ def build_openstudio_model(params: dict) -> openstudio.model.Model:
         if z.get("door_west"):
             make_custom_subsurface(surf_west, z.get("door_west"), W, H, "Door", "Door")
 
+        # Centered subsurface helper (for roofs, skylights, etc.)
+        def make_centered_subsurface(parent_surf, sub_w, sub_h, sub_type, name_suffix):
+            p_verts = parent_surf.vertices()
+            if len(p_verts) != 4: return None
+            
+            def dist(p1, p2):
+                return math.sqrt((p1.x()-p2.x())**2 + (p1.y()-p2.y())**2 + (p1.z()-p2.z())**2)
+                
+            v0, v1, v2, v3 = p_verts[0], p_verts[1], p_verts[2], p_verts[3]
+            L_u = dist(v0, v1)
+            L_v = dist(v0, v3)
+            
+            if L_u <= 0 or L_v <= 0: return None
+            
+            # Clamp subsurface dimensions to fit parent with a margin
+            w = min(sub_w, L_u * 0.9)
+            h = min(sub_h, L_v * 0.9)
+            
+            frac_u = w / L_u
+            frac_v = h / L_v
+            
+            u_start = (1.0 - frac_u) / 2.0
+            u_end = u_start + frac_u
+            v_start = (1.0 - frac_v) / 2.0
+            v_end = v_start + frac_v
+            
+            def get_point(u, v):
+                px0 = v0.x() + (v1.x() - v0.x()) * u
+                py0 = v0.y() + (v1.y() - v0.y()) * u
+                pz0 = v0.z() + (v1.z() - v0.z()) * u
+                
+                px1 = v3.x() + (v2.x() - v3.x()) * u
+                py1 = v3.y() + (v2.y() - v3.y()) * u
+                pz1 = v3.z() + (v2.z() - v3.z()) * u
+                
+                return openstudio.Point3d(
+                    px0 + (px1 - px0) * v,
+                    py0 + (py1 - py0) * v,
+                    pz0 + (pz1 - pz0) * v
+                )
+                
+            sub_v = openstudio.Point3dVector()
+            sub_v.append(get_point(u_start, v_start))
+            sub_v.append(get_point(u_end, v_start))
+            sub_v.append(get_point(u_end, v_end))
+            sub_v.append(get_point(u_start, v_end))
+            
+            sub = openstudio.model.SubSurface(sub_v, model)
+            sub.setName(f"{parent_surf.nameString()}_{name_suffix}")
+            sub.setSurface(parent_surf)
+            sub.setSubSurfaceType(sub_type)
+            if z_window_constr:
+                sub.setConstruction(z_window_constr)
+            return sub
+
+        # Roof Skylights
+        skylight_data = z.get("skylight")
+        if skylight_data and isinstance(skylight_data, dict):
+            s_w = float(skylight_data.get("width", 2.0))
+            s_h = float(skylight_data.get("height", skylight_data.get("length", 1.5)))
+            roof_surf = surf_roof_s if roof_type == "pitched" else (surf_roof if 'surf_roof' in locals() else None)
+            if roof_surf:
+                make_centered_subsurface(roof_surf, s_w, s_h, "Skylight", "Skylight")
+
     # 5. Resolve Zone Adjacencies (Shared Walls)
     space_vector = openstudio.model.SpaceVector()
     for space in spaces:
@@ -354,6 +536,30 @@ def build_openstudio_model(params: dict) -> openstudio.model.Model:
 
     openstudio.model.intersectSurfaces(space_vector)
     openstudio.model.matchSurfaces(space_vector)
+
+    # 5.5 Match/Mirror Subsurfaces on Shared Walls to avoid invalid blank Outside Boundary Condition Object severe error
+    for surf in model.getSurfaces():
+        if surf.outsideBoundaryCondition() == "Surface":
+            adj_surf_opt = surf.adjacentSurface()
+            if adj_surf_opt.is_initialized():
+                adj_surf = adj_surf_opt.get()
+                for sub_surf in surf.subSurfaces():
+                    if not sub_surf.adjacentSubSurface().is_initialized():
+                        # Create a mirrored copy of the subsurface on the adjacent surface
+                        adj_vertices = openstudio.Point3dVector()
+                        for v in reversed(sub_surf.vertices()):
+                            adj_vertices.append(v)
+                        new_sub = openstudio.model.SubSurface(adj_vertices, model)
+                        new_sub.setName(f"{adj_surf.nameString()}_{sub_surf.nameString().split('_')[-1]}_Adj")
+                        new_sub.setSurface(adj_surf)
+                        new_sub.setSubSurfaceType(sub_surf.subSurfaceType())
+                        if sub_surf.construction().is_initialized():
+                            new_sub.setConstruction(sub_surf.construction().get())
+                        
+                        # Explicitly link them
+                        new_sub.setAdjacentSubSurface(sub_surf)
+                        sub_surf.setAdjacentSubSurface(new_sub)
+                        print(f"[OpenStudio Builder] Mirrored subsurface {sub_surf.nameString()} to adjacent surface {adj_surf.nameString()} as {new_sub.nameString()}")
 
     # 6. Apply Internal Loads & Schedules
     def make_ruleset_schedule(name, val_off, val_on, wd_s, wd_e, we_s, we_e):
@@ -399,6 +605,11 @@ def build_openstudio_model(params: dict) -> openstudio.model.Model:
     thermostat.setHeatingSetpointTemperatureSchedule(sch_heat)
     thermostat.setCoolingSetpointTemperatureSchedule(sch_cool)
 
+    # Create a constant activity level schedule (120 W per person)
+    sch_activity = openstudio.model.ScheduleConstant(model)
+    sch_activity.setName("ACTIVITY_LEVEL_SCH")
+    sch_activity.setValue(120.0)
+
     # Attach setpoints and load objects to spaces
     for z in zones:
         space = space_objs[z["name"]]
@@ -413,6 +624,7 @@ def build_openstudio_model(params: dict) -> openstudio.model.Model:
         people_inst.setName(f"{z['name']}_People")
         people_inst.setSpace(space)
         people_inst.setNumberofPeopleSchedule(sch_occ)
+        people_inst.setActivityLevelSchedule(sch_activity)
 
         # Lights
         light_def = openstudio.model.LightsDefinition(model)
@@ -455,7 +667,9 @@ def build_openstudio_model(params: dict) -> openstudio.model.Model:
         hvac_type = z.get("hvac_type", "ideal_loads").lower()
 
         if hvac_type == "ideal_loads":
-            thermal_zone.setUseIdealAirLoads(True)
+            ideal_loads = openstudio.model.ZoneHVACIdealLoadsAirSystem(model)
+            ideal_loads.setName(f"{z['name']}_IdealLoads")
+            ideal_loads.addToThermalZone(thermal_zone)
             print(f"[OpenStudio Builder] Assigned Ideal Air Loads to {z['name']}")
         elif hvac_type == "ptac":
             fan = openstudio.model.FanConstantVolume(model)
@@ -505,9 +719,81 @@ def build_openstudio_model(params: dict) -> openstudio.model.Model:
 
 def build_idf_from_params(params: dict) -> str:
     """
-    Builds the OpenStudio model and translates it to an EnergyPlus IDF string.
+    Builds the OpenStudio model and translates it to an EnergyPlus IDF string,
+    then post-processes it to inject essential sizing and weather simulation objects.
     """
     model = build_openstudio_model(params)
     translator = openstudio.energyplus.ForwardTranslator()
     workspace = translator.translateModel(model)
-    return str(workspace)
+    idf_str = str(workspace)
+
+    # 1. Clean existing sizing/environment/simulation controls if any exist
+    classes_to_clean = [
+        "SimulationControl",
+        "Sizing:Parameters",
+        "Site:Location",
+        "SizingPeriod:DesignDay",
+        "Site:GroundTemperature:BuildingSurface",
+        "GlobalGeometryRules"
+    ]
+    for cls in classes_to_clean:
+        pattern = r'(?is)(?:\r?\n|^)\s*' + re.escape(cls) + r'\s*,.*?;'
+        idf_str = re.sub(pattern, '', idf_str)
+
+    # 2. Extract sizing/environment objects from templates/Base.idf
+    base_idf_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "templates", "Base.idf")
+    base_blocks = ""
+    if os.path.exists(base_idf_path):
+        try:
+            with open(base_idf_path, "r", encoding="utf-8") as f:
+                base_content = f.read()
+            extracted = []
+            for cls in classes_to_clean:
+                pattern = r'(?im)^\s*(' + re.escape(cls) + r'\s*,[^;]*;)'
+                matches = re.findall(pattern, base_content)
+                for m in matches:
+                    extracted.append(m)
+            base_blocks = "\n\n".join(extracted)
+        except Exception as e:
+            print(f"[OpenStudio Builder] Error reading/extracting from Base.idf: {e}")
+
+    # 3. Create Sizing:Zone objects for each zone in the model
+    is_multizone = params.get("is_multizone", False)
+    if not is_multizone:
+        zones = [{"name": "ZONE ONE", "ventilation_ach": params.get("ventilation_ach", 0.5)}]
+    else:
+        zones = params.get("zones", [])
+
+    sizing_zone_blocks = []
+    for z in zones:
+        zone_name = f"{z['name']}_ThermalZone"
+        vent_ach = float(z.get("ventilation_ach", 0.5))
+        oa_spec_name = f"{z['name']}_OutdoorAir" if vent_ach > 0 else ""
+        
+        sizing_zone_block = f"""
+  Sizing:Zone,
+    {zone_name},             !- Zone or ZoneList Name
+    SupplyAirTemperature,    !- Zone Cooling Design Supply Air Temperature Input Method
+    12.,                     !- Zone Cooling Design Supply Air Temperature {{C}}
+    ,                        !- Zone Cooling Design Supply Air Temperature Difference {{deltaC}}
+    SupplyAirTemperature,    !- Zone Heating Design Supply Air Temperature Input Method
+    50.,                     !- Zone Heating Design Supply Air Temperature {{C}}
+    ,                        !- Zone Heating Design Supply Air Temperature Difference {{deltaC}}
+    0.008,                   !- Zone Cooling Design Supply Air Humidity Ratio {{kgWater/kgDryAir}}
+    0.008,                   !- Zone Heating Design Supply Air Humidity Ratio {{kgWater/kgDryAir}}
+    {oa_spec_name},          !- Design Specification Outdoor Air Object Name
+    1.2,                     !- Zone Heating Sizing Factor
+    1.2;                     !- Zone Cooling Sizing Factor
+"""
+        sizing_zone_blocks.append(sizing_zone_block)
+
+    sizing_zone_blocks_str = "\n\n".join(sizing_zone_blocks)
+
+    # 4. Append injected blocks to translated IDF
+    idf_str = idf_str.rstrip() + "\n\n! === Sizing and Simulation Control Setup (Injected from Base.idf) ===\n\n"
+    if base_blocks:
+        idf_str += base_blocks + "\n\n"
+    if sizing_zone_blocks_str:
+        idf_str += sizing_zone_blocks_str + "\n"
+
+    return idf_str

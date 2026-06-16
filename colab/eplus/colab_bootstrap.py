@@ -74,6 +74,24 @@ def prepare_colab_eplus(silent: bool = True) -> None:
       - set ENERGYPLUSDIR, LD_LIBRARY_PATH, and sys.path in this process
       - install openstudio python bindings
     """
+    if sys.platform == "win32":
+        print("[Bootstrap] Running on Windows. Skipping Colab-specific EnergyPlus setup.")
+        import glob
+        paths = sorted(glob.glob("C:/EnergyPlusV*"), reverse=True)
+        if paths:
+            eplus_dir = os.path.abspath(paths[0])
+            if eplus_dir not in sys.path:
+                sys.path.insert(0, eplus_dir)
+                print(f"[Bootstrap] Added local Windows EnergyPlus path to sys.path: {eplus_dir}")
+            if eplus_dir not in os.environ["PATH"]:
+                os.environ["PATH"] = eplus_dir + os.pathsep + os.environ["PATH"]
+            if hasattr(os, "add_dll_directory"):
+                try:
+                    os.add_dll_directory(eplus_dir)
+                    print(f"[Bootstrap] Registered DLL directory: {eplus_dir}")
+                except Exception as de:
+                    print(f"[Bootstrap] Warning adding DLL directory: {de}")
+        return
     # base libs
     _apt_install(APT_BASE_PKGS)
     # libssl1.1 shim
