@@ -419,3 +419,186 @@ The panel will likely probe you in one of three ways. Here is exactly what to sa
 > modeling pipeline (LLM-to-EnergyPlus-IDF) that provides the initial parameter
 > estimates for EKF initialisation, addressing the cold-start problem that the
 > literature identifies as a key barrier to deployment."
+
+---
+
+## 12. How Q and R Work in EKF (The "PID Tuning" Equivalent)
+
+### The analogy
+
+In PID you tune three gains (P, I, D) to balance how fast and how aggressively
+the controller reacts to an error. In EKF you tune two matrices (Q and R) to
+balance how much you trust your **model** versus how much you trust your **sensors**.
+
+### What Q does — Process Noise Covariance
+
+$Q$ is a diagonal matrix. Each diagonal entry $Q_{ii}$ says:
+*"How fast is state $i$ allowed to change per timestep?"*
+
+- **Large $Q_{ii}$** → EKF thinks the parameter drifts quickly → it reacts fast
+  to new sensor data → estimates are **noisy but responsive**.
+- **Small $Q_{ii}$** → EKF thinks the parameter is almost constant → it reacts
+  slowly → estimates are **smooth but slow to catch occupancy changes**.
+
+For the 7 estimated parameters (indices 0–6), we set $Q_{ii}$ very small
+(e.g., `1e-10`) because physical parameters like $UA$ and $C_s$ change slowly.
+For $\gamma_e$ (which tracks occupancy), we set it slightly larger (`1e-7`)
+because occupancy changes suddenly when someone enters the room.
+
+### What R does — Measurement Noise Covariance
+
+$R$ is a diagonal matrix. Each diagonal entry $R_{jj}$ says:
+*"How noisy is sensor $j$?"*
+
+- **Large $R_{jj}$** → EKF trusts the sensor less → relies more on the
+  physics model → smoother but less reactive.
+- **Small $R_{jj}$** → EKF trusts the sensor a lot → follows measurements
+  closely → can amplify sensor noise into parameter estimates.
+
+For temperature we use $R = 0.25$ (i.e., ±0.5°C noise). For CO₂ we use
+$R = 400$ (i.e., ±20 ppm NDIR sensor noise). These represent real sensor specs.
+
+### The tuning rule of thumb
+
+| Situation | Adjustment |
+| :--- | :--- |
+| EKF tracks measurements too slowly | Increase $Q$ for that state / decrease $R$ for that sensor |
+| EKF is too noisy / jumpy | Decrease $Q$ / increase $R$ |
+| Parameters are not converging | Increase $Q$ for that parameter so EKF is more willing to update it |
+| Parameters are drifting wildly | Decrease $Q$ for that parameter |
+
+---
+
+## 13. Why Occupancy Has Spikes — The N vs γ_e Relationship
+
+### How N appears in the advisor's equations
+
+Looking at the CO₂ equation:
+$$
+\gamma_e = \frac{g^{occ}_{CO_2} \cdot N}{M}
+$$
+
+And at the temperature equation:
+$$
+\alpha_e = \frac{Q_{bg} + f_c \cdot q^{occ}_{sens} \cdot N}{C_s}
+$$
+
+**Critically: $N$ (number of people) is NOT a separate state in the EKF.**
+It is **baked into** $\gamma_e$ and $\alpha_e$ as a product. The EKF does
+not directly estimate $N$ — it estimates $\gamma_e$ as a single lump.
+
+To recover $N$ we have to *un-bake* it:
+$$
+N_{est} = \frac{\gamma_e \cdot M_{est}}{g^{occ}_{CO_2}} = \frac{\gamma_e / \beta_s}{g^{occ}_{CO_2}}
+$$
+
+This is a **derived** calculation done after the EKF loop — it is not part of
+the filter state.
+
+### Why the spikes happen
+
+The recovery formula divides by $\beta_s$ (which equals $1/M$). At the very
+start of the EKF run, $\beta_s$ is initialised with a rough guess and takes
+many timesteps to converge to its true value. During this convergence period,
+$\beta_s$ can pass through very small values. Dividing by a near-zero number
+produces an explosion:
+
+```
+N_est = γ_e / (g_CO2_occ × β_s)
+      ≈ (small γ_e) / (very small β_s)
+      → enormous number
+```
+
+This is the spike. It is not a bug in the EKF equations — it is a **cold-start
+instability** in the derived post-processing calculation.
+
+### How to fix the spikes
+
+Three practical fixes, used together:
+
+1. **Clip $N_{est}$ to a physically plausible range** (e.g., 0–50 persons):
+   ```python
+   N_est_arr[k] = np.clip((ge_est * M_est) / g_CO2_occ, 0.0, 50.0)
+   ```
+
+2. **Increase $Q$ for $\beta_s$** so it converges faster and spends less
+   time near zero during startup:
+   ```python
+   Q[I_bs] = 1e-8   # was 1e-10 — allow β_s to move faster early on
+   ```
+
+3. **Skip the first N timesteps** when computing $N_{est}$ until $\beta_s$
+   has had time to settle (e.g., skip first 500 rows).
+
+---
+
+## 14. How to Validate α, β, γ — The Indirect Validation Strategy
+
+### The core challenge
+
+You are right that $\alpha_o$, $\alpha_s$, $\alpha_e$, $\beta_o$, $\beta_s$,
+$\beta_e$, $\gamma_e$ **cannot be directly measured**. There is no sensor that
+reads "$\alpha_o = 0.00023$ 1/s". So how do we prove the EKF is estimating
+them correctly?
+
+There are three complementary validation approaches:
+
+### Approach 1 — Recover a Measurable Quantity (Primary Method)
+
+The strongest validation is to use the estimated parameters to **recover a
+quantity that IS measured**, and compare:
+
+| Derived quantity | Formula from parameters | What to compare against |
+| :--- | :--- | :--- |
+| **Occupancy $N$** | $N = \gamma_e / (g_{CO_2} \cdot \beta_s)$ | Dataset ground truth count |
+| **Zone air mass $M$** | $M = 1 / \beta_s$ | Expected from room volume × air density |
+| **Thermal capacitance $C_s$** | $C_s = c_{pa} / \alpha_s$ | Expected from room geometry (mass × specific heat) |
+| **UA** | $UA = \alpha_o \cdot C_s - c_{pa} \cdot m_{inf}$ | Can be estimated from wall U-values and area |
+| **Infiltration $m_{inf}$** | $m_{inf} = \beta_o \cdot M$ | Can be estimated from room pressurisation data |
+
+**Occupancy is your gold standard for the ROBOD dataset** — it is directly
+measured and you recover it purely from EKF parameters. When $N_{est}$ tracks
+$N_{true}$ qualitatively (rising when people enter, falling when they leave),
+it proves that $\gamma_e$ and $\beta_s$ are physically meaningful.
+
+### Approach 2 — Physical Plausibility Check
+
+Even without a direct measurement, you can check if the estimated values are
+**physically reasonable**:
+
+| Parameter | Estimated value (expected range) | What it means if wrong |
+| :--- | :--- | :--- |
+| $C_s = c_{pa}/\alpha_s$ | ~50,000–500,000 J/K for a small office | If it converges to 1e9, the filter is diverging |
+| $M = 1/\beta_s$ | ~50–200 kg for a small office at 1.2 kg/m³ | Room volume / air density sanity check |
+| $UA$ | ~10–100 W/K for a well-insulated room | If negative, something is fundamentally wrong |
+| $m_{inf}$ | ~0.001–0.05 kg/s | Should be much smaller than $m_{sa}$ |
+
+If the estimates settle to physically reasonable numbers, the filter is working
+correctly even if we cannot measure the exact truth.
+
+### Approach 3 — Physical Rig Calibration (Your Lab Experiment — Strongest)
+
+This is why the controlled lab experiment in Phase 3 is so important. In the
+lab you CAN know the true values:
+
+| Known quantity | How you know it | Which parameter it validates |
+| :--- | :--- | :--- |
+| Lightbulb wattage ($Q_{known}$) | Measured on the bulb packaging | $\alpha_e$: should satisfy $\hat{\alpha}_e \approx Q_{known}/C_s$ |
+| Number of people entering | You count them manually | $\gamma_e$: should track CO₂ changes when $N$ steps up |
+| Room dimensions (V, wall area) | You measure with a tape measure | $\beta_s$ ($M = \rho \cdot V$) and $UA$ (wall area × U-value) |
+| AHU airflow from your flow sensor | Direct measurement | $\alpha_s$, $\beta_s$: the EKF inputs vs the estimated coupling |
+
+When the EKF is run on the lab data and its estimated $\alpha_e$ matches
+the independently calculated $Q_{known}/C_s$, **that is experimental
+validation** — the highest standard possible for this type of research.
+
+### Summary — What to say to the evaluation panel
+
+> "We validate the estimated parameters through three independent checks:
+> first, the EKF-recovered occupancy $N_{est}$ is compared against ground-truth
+> counts in the ROBOD dataset — we do not input occupancy to the filter.
+> Second, all estimated physical parameters ($C_s$, $UA$, $M$, $m_{inf}$) are
+> checked for physical plausibility against building geometry and material
+> properties. Third, in the controlled lab experiment, we apply known heat
+> loads and count occupants manually, allowing direct comparison between the
+> EKF parameter estimates and independently calculable ground-truth values."
