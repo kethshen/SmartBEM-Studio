@@ -340,23 +340,25 @@ def main():
         500.0,                # c_z [ppm²]
     ])
 
-    # Process noise Q — how much each state/parameter is allowed to drift per step
-    # Fix 2: β_s (I_bs) Q raised from 1e-10 → 1e-8 so it converges faster
-    #         and avoids near-zero division spikes in N_est recovery.
+    # Process noise Q
+    # gamma_e: use 1e-5 (compromise -- fast enough to track occupancy changes
+    # over 5-15 min, but not so fast that individual CO2 fluctuations cause noise)
     Q = np.diag([
-        1e-10, 1e-10, 1e-8,   # α — change slowly
-        1e-10, 1e-8,  1e-14,  # β_o slow | β_s FASTER | β_e very small
-        1e-7,                  # γ_e — changes with occupancy
-        0.01,                  # T_z [°C²/s]
-        1e-7,                  # ω_z [(kg/kg)²/s]
-        1.0,                   # c_z [ppm²/s]
+        1e-10, 1e-10, 1e-8,   # alpha -- change slowly (building physics, hours)
+        1e-10, 1e-8,  1e-14,  # beta_o slow | beta_s medium | beta_e tiny
+        1e-5,                  # gamma_e -- moderate speed for occupancy tracking
+        0.01,                  # T_z
+        1e-7,                  # w_z
+        1.0,                   # c_z
     ])
 
-    # Measurement noise R — sensor noise variance
+    # Measurement noise R
+    # CO2 R = 200 (+-14 ppm): trusts sensor more than default 400 to drive
+    # gamma_e updates, but less aggressive than 100 to avoid amplifying noise.
     R = np.diag([
-        0.25,    # T_z: ±0.5 °C sensor noise
-        1e-6,    # ω_z: ±0.001 kg/kg (SHT31-class sensor)
-        400.0,   # c_z: ±20 ppm (NDIR sensor)
+        0.25,    # T_z: +-0.5 deg C
+        1e-6,    # w_z: +-0.001 kg/kg
+        200.0,   # c_z: +-14 ppm
     ])
 
     # Measurement matrix H (3×10): picks T_z, ω_z, c_z from state vector
@@ -371,10 +373,10 @@ def main():
     est_arr   = np.zeros((steps, N_STATES))
     N_est_arr = np.zeros(steps)
 
-    # Fix 3: Skip first N_WARMUP steps for occupancy recovery.
-    # β_s needs time to converge from its initial guess before dividing by it.
-    # With a better physical init (beta_s=5.56e-3), 200 rows = ~16 h is enough.
-    N_WARMUP = 200
+    # N_WARMUP: skip first N steps for occupancy output.
+    # 24 rows = 2 hours -- enough for c_z state to settle from init.
+    # gamma_e now has high Q so it tracks quickly from the start.
+    N_WARMUP = 24
     N_MAX    = 14.0    # Room 3 actual max = 13; allow 1 margin
 
     # ── EKF loop ──────────────────────────────────────────────────────────────
@@ -423,6 +425,12 @@ def main():
 
     print("    Done.\n")
 
+    # ── Post-process: smooth N_est with a rolling median (window=3 = 15 min) ──
+    # Removes single-step CO2 noise spikes while preserving real step-transitions.
+    from scipy.signal import medfilt
+    N_est_arr = medfilt(N_est_arr, kernel_size=3)
+    N_est_arr = np.clip(N_est_arr, 0.0, N_MAX)   # re-apply clip after filter
+
     # ── Derived physical parameters ───────────────────────────────────────────
     Cs_arr    = c_pa / np.where(np.abs(est_arr[:, I_as]) > 1e-12,
                                 est_arr[:, I_as], np.nan)
@@ -433,6 +441,7 @@ def main():
 
     # ── Time axis ─────────────────────────────────────────────────────────────
     t_hrs = elapsed / 3600.0
+
 
     # ── Limit to first 14 days (336 h) to avoid long-run drift issues ─────────
     T_MAX_HRS = 336

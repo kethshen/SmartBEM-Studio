@@ -126,13 +126,17 @@
 
     <!-- Main Content Area -->
     <main class="main-content">
-      <header class="page-header" style="display: flex; justify-content: space-between; align-items: center;">
+      <header class="page-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
         <div>
           <h1 class="page-title">EKF &mdash; Unknown Parameter Estimation</h1>
-          <p class="page-subtitle">8-State Extended Kalman Filter on real sensor data. Run in Colab, view results here.
-          </p>
+          <p class="page-subtitle" id="ekfSubtitle">10-State Extended Kalman Filter on real sensor data. View estimation results here.</p>
         </div>
         <div class="ekf-controls">
+          <label for="datasetSelect" style="display: inline-block; margin-right: 0.5rem; font-weight: 600; color: var(--text-secondary);">Dataset / Room:</label>
+          <select id="datasetSelect" onchange="onDatasetChange()" style="width: auto; display: inline-block; padding: 0.4rem 2rem 0.4rem 0.8rem; height: 38px; line-height: 1; border-radius: var(--radius-sm); border: 1px solid var(--border-subtle); background-color: var(--bg-card); color: var(--text-primary); cursor: pointer; margin-right: 0.5rem;">
+            <option value="robod3" selected>ROBOD Room 3 (10-State, Office)</option>
+            <option value="kaggle">Kaggle Room (8-State Baseline)</option>
+          </select>
           <a id="btnRunEKF" href="#" target="_blank" class="btn btn-primary" onclick="openColab()">
             &#9654; Run EKF in Colab
           </a>
@@ -148,21 +152,21 @@
         <div class="card-header">
           <h2 class="card-title">How It Works</h2>
         </div>
-        <p style="color: var(--text-secondary); font-size: 0.9rem; line-height: 1.6;">
-          <strong>1.</strong> Click <em>"Run EKF in Colab"</em> to open the standalone EKF notebook.
-          <strong>2.</strong> Run all cells &mdash; results save to Google Drive as 12 PNG plots.
-          <strong>3.</strong> Click <em>"Refresh Plots"</em> to load the latest results below.
-          <br>
-          <strong>States:</strong> [&alpha;<sub>o</sub>, &alpha;<sub>s</sub>, &alpha;<sub>e</sub>,
-          &beta;<sub>o</sub>, &beta;<sub>s</sub>, &gamma;<sub>e</sub>, T<sub>z</sub>, c<sub>z</sub>]
-          &nbsp;&bull;&nbsp;
-          <strong>Data:</strong> Kaggle Room Occupancy + EPW weather
-        </p>
+        <div style="color: var(--text-secondary); font-size: 0.9rem; line-height: 1.6;">
+          <p style="margin-bottom: 0.75rem;">
+            <strong>1.</strong> Click <em>"Run EKF in Colab"</em> to open the standalone EKF notebook.
+            <strong>2.</strong> Run all cells &mdash; results save locally/Google Drive as PNG plots.
+            <strong>3.</strong> Click <em>"Refresh Plots"</em> to load the latest results below.
+          </p>
+          <div id="detailsCard" style="background-color: var(--bg-app); padding: 0.85rem; border-radius: var(--radius-sm); border-left: 4px solid var(--primary);">
+            <!-- Populated dynamically -->
+          </div>
+        </div>
       </section>
 
-      <!-- 6x2 Plot Grid -->
-      <h3 style="font-size: 1.15rem; font-weight: 600; margin-top: 1.5rem; color: var(--text-primary);">
-        EKF Results (6 &times; 2 Grid)
+      <!-- Plot Grid Header -->
+      <h3 id="gridHeader" style="font-size: 1.15rem; font-weight: 600; margin-top: 1.5rem; color: var(--text-primary);">
+        EKF Results
       </h3>
 
       <div class="ekf-grid" id="ekfGrid">
@@ -184,34 +188,88 @@
       }
     }
 
-    // ---- Configuration ----
-    // Relative path to EKF results (works if served via Live Server or file://)
-    const RESULTS_BASE = '/EKF/results';
-
-    // Colab notebook URL — update this after uploading EKF_Runner.ipynb to Colab
+    // ---- Configuration & Configurations ----
     const COLAB_URL = 'https://drive.google.com/file/d/1yYarat7NHYzpYrLB3CsrVgB0tbspnAt-/view?usp=sharing';
 
-    // Plot definitions: filename, display title
-    const PLOTS = [
-      { file: '01_zone_temp.png', title: 'Zone Temperature (Measured vs EKF)' },
-      { file: '02_zone_co2.png', title: 'Zone CO\u2082 (Measured vs EKF)' },
-      { file: '03_occupancy.png', title: 'Occupancy N (Recovered vs Truth)' },
-      { file: '04_outdoor_temp.png', title: 'Outdoor Temperature (Input)' },
-      { file: '05_alpha_o.png', title: '\u03B1\u2092 \u2014 Heat Leak + Infiltration' },
-      { file: '06_alpha_s.png', title: '\u03B1\u209B \u2014 Airflow Effect on Temp' },
-      { file: '07_alpha_e.png', title: '\u03B1\u2091 \u2014 Internal Heat Gains' },
-      { file: '08_beta_o.png', title: '\u03B2\u2092 \u2014 Infiltration CO\u2082' },
-      { file: '09_beta_s.png', title: '\u03B2\u209B \u2014 Air Capacity' },
-      { file: '10_gamma_e.png', title: '\u03B3\u2091 \u2014 CO\u2082 Source Rate' },
-      { file: '11_thermal_cap.png', title: 'C\u209B \u2014 Thermal Capacitance' },
-      { file: '12_UA.png', title: 'UA \u2014 Heat Transfer Coefficient' },
-    ];
+    const KAGGLE_CONFIG = {
+      subtitle: '8-State Extended Kalman Filter on Kaggle occupancy dataset.',
+      resultsBase: '../../EKF/results',
+      detailsHtml: `
+        <strong>Model:</strong> 8-State EKF (joint state and parameter estimation)<br>
+        <strong>States:</strong> [&alpha;<sub>o</sub>, &alpha;<sub>s</sub>, &alpha;<sub>e</sub>, &beta;<sub>o</sub>, &beta;<sub>s</sub>, &gamma;<sub>e</sub>, T<sub>z</sub>, c<sub>z</sub>]<br>
+        <strong>Measurements:</strong> Temperature (T<sub>z</sub>), CO<sub>2</sub> (c<sub>z</sub>)<br>
+        <strong>Dataset:</strong> Kaggle Room Occupancy + EPW weather. Standard baseline with occupancy recovery using the estimated parameters.
+      `,
+      plots: [
+        { file: '01_zone_temp.png', title: 'Zone Temperature (Measured vs EKF)' },
+        { file: '02_zone_co2.png', title: 'Zone CO\u2082 (Measured vs EKF)' },
+        { file: '03_occupancy.png', title: 'Occupancy N (Recovered vs Truth)' },
+        { file: '04_outdoor_temp.png', title: 'Outdoor Temperature (Input)' },
+        { file: '05_alpha_o.png', title: '\u03B1\u2092 \u2014 Heat Leak + Infiltration' },
+        { file: '06_alpha_s.png', title: '\u03B1\u209B \u2014 Airflow Effect on Temp' },
+        { file: '07_alpha_e.png', title: '\u03B1\u2091 \u2014 Internal Heat Gains' },
+        { file: '08_beta_o.png', title: '\u03B2\u2092 \u2014 Infiltration CO\u2082' },
+        { file: '09_beta_s.png', title: '\u03B2\u209B \u2014 Air Capacity' },
+        { file: '10_gamma_e.png', title: '\u03B3\u2091 \u2014 CO\u2082 Source Rate' },
+        { file: '11_thermal_cap.png', title: 'C\u209B \u2014 Thermal Capacitance' },
+        { file: '12_UA.png', title: 'UA \u2014 Heat Transfer Coefficient' },
+      ]
+    };
+
+    const ROBOD_CONFIG = {
+      subtitle: '10-State Extended Kalman Filter on ROBOD Room 3 (Office Space) dataset.',
+      resultsBase: '../../EKF/results_robod_room3',
+      detailsHtml: `
+        <strong>Model:</strong> 10-State EKF (restored full advisor equations, including humidity ratio dynamics)<br>
+        <strong>States:</strong> [&alpha;<sub>o</sub>, &alpha;<sub>s</sub>, &alpha;<sub>e</sub>, &beta;<sub>o</sub>, &beta;<sub>s</sub>, &beta;<sub>e</sub>, &gamma;<sub>e</sub>, T<sub>z</sub>, &omega;<sub>z</sub>, c<sub>z</sub>]<br>
+        <strong>Measurements:</strong> Temperature (T<sub>z</sub>), Humidity Ratio (&omega;<sub>z</sub>), CO<sub>2</sub> (c<sub>z</sub>)<br>
+        <strong>Dataset:</strong> ROBOD Room 3 (Office, SDE4 NUS). Occupancy recovery uses fixed room air mass M<sub>room</sub> = 240.0 kg and calibrated occupant CO<sub>2</sub> rate g<sub>CO2</sub> = 1.725 ppm&middot;kg/(s&middot;person) to avoid divergence.
+      `,
+      plots: [
+        { file: '01_zone_temp.png', title: 'Zone Temperature (Measured vs EKF)' },
+        { file: '02_zone_humidity.png', title: 'Zone Humidity Ratio (Measured vs EKF)' },
+        { file: '03_zone_co2.png', title: 'Zone CO\u2082 (Measured vs EKF)' },
+        { file: '04_occupancy.png', title: 'Occupancy N (Recovered vs Truth)' },
+        { file: '05_outdoor_temp.png', title: 'Outdoor Temperature (Input)' },
+        { file: '06_alpha_o.png', title: '\u03B1\u2092 \u2014 Heat Leak + Infiltration' },
+        { file: '07_alpha_s.png', title: '\u03B1\u209B \u2014 Airflow Effect on Temp' },
+        { file: '08_alpha_e.png', title: '\u03B1\u2091 \u2014 Internal Heat Gains' },
+        { file: '09_beta_o.png', title: '\u03B2\u2092 \u2014 Infiltration Moisture/CO\u2082' },
+        { file: '10_beta_s.png', title: '\u03B2\u209B \u2014 Air Capacity' },
+        { file: '11_beta_e.png', title: '\u03B2\u2091 \u2014 Internal Moisture Gains' },
+        { file: '12_gamma_e.png', title: '\u03B3\u2091 \u2014 CO\u2082 Source Rate' },
+        { file: '13_thermal_cap.png', title: 'C\u209B \u2014 Thermal Capacitance' },
+        { file: '14_UA.png', title: 'UA \u2014 Heat Transfer Coefficient' },
+      ]
+    };
+
+    let currentConfig = ROBOD_CONFIG;
+
+    // ---- Handle dataset selection change ----
+    function onDatasetChange() {
+      const select = document.getElementById('datasetSelect');
+      const val = select.value;
+
+      if (val === 'robod3') {
+        currentConfig = ROBOD_CONFIG;
+      } else {
+        currentConfig = KAGGLE_CONFIG;
+      }
+
+      // Update UI elements
+      document.getElementById('ekfSubtitle').textContent = currentConfig.subtitle;
+      document.getElementById('detailsCard').innerHTML = currentConfig.detailsHtml;
+      document.getElementById('gridHeader').textContent = `EKF Results (${currentConfig.plots.length} Plots)`;
+
+      buildGrid();
+      loadPlots();
+    }
 
     // ---- Build grid on load ----
     function buildGrid() {
       const grid = document.getElementById('ekfGrid');
       grid.innerHTML = '';
-      PLOTS.forEach((p, i) => {
+      currentConfig.plots.forEach((p, i) => {
         const card = document.createElement('div');
         card.className = 'ekf-plot-card';
         card.innerHTML = `
@@ -232,11 +290,12 @@
 
       let loaded = 0;
       let failed = 0;
+      const totalPlots = currentConfig.plots.length;
 
-      PLOTS.forEach((p, i) => {
+      currentConfig.plots.forEach((p, i) => {
         const img = document.getElementById(`img_${i}`);
         const ph = document.getElementById(`ph_${i}`);
-        const url = `${RESULTS_BASE}/${p.file}?t=${Date.now()}`; // cache bust
+        const url = `${currentConfig.resultsBase}/${p.file}?t=${Date.now()}`; // cache bust
 
         // Test if image exists by loading it
         const testImg = new Image();
@@ -258,12 +317,12 @@
       });
 
       function checkDone() {
-        if (loaded + failed === PLOTS.length) {
-          if (loaded === PLOTS.length) {
+        if (loaded + failed === totalPlots) {
+          if (loaded === totalPlots) {
             status.textContent = `Done - ${loaded} plots loaded`;
             status.className = 'ekf-status status-done';
           } else if (loaded > 0) {
-            status.textContent = `Partial - ${loaded}/${PLOTS.length}`;
+            status.textContent = `Partial - ${loaded}/${totalPlots}`;
             status.className = 'ekf-status status-idle';
           } else {
             status.textContent = 'No results found';
@@ -280,8 +339,7 @@
 
     // ---- Init ----
     window.addEventListener('load', () => {
-      buildGrid();
-      loadPlots(); // try loading on page open
+      onDatasetChange(); // automatically sets up UI and triggers load
     });
   </script>
 </body>
