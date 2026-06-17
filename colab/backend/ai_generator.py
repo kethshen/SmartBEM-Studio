@@ -559,22 +559,26 @@ class AIPipelines:
         except Exception as e:
             return f"! Analysis Error: HuggingFace API Exception -> {str(e)}"
 
-    def _call_ollama(self, system, user):
+    def _call_ollama(self, system, user, format=None):
         try:
             import ollama
         except ImportError:
             raise ValueError("Ollama python package is not installed. Please install it in Colab: !pip install ollama")
             
         try:
-            # Using qwen3.5:9b since it has a large context window and strong coding/logic capabilities!
-            response = ollama.chat(
-                model='qwen3.5:9b', 
-                messages=[
+            # Using gemma3:4b since it is lightweight and fast!
+            chat_kwargs = {
+                "model": 'gemma3:4b', 
+                "messages": [
                     {"role": "system", "content": system},
                     {"role": "user", "content": user}
                 ],
-                options={"num_ctx": 8192, "num_predict": 4096}
-            )
+                "options": {"num_ctx": 8192, "num_predict": 4096}
+            }
+            if format:
+                chat_kwargs["format"] = format
+                
+            response = ollama.chat(**chat_kwargs)
             content = response['message']['content']
             return self._sanitize_output(content)
         except Exception as e:

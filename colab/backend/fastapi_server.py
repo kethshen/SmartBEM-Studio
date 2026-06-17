@@ -85,6 +85,8 @@ def run_simulation_pipeline(job_id: str, prompt: str, settings: dict):
         
         if not idf_content:
             raise Exception("AI Pipeline failed to generate an IDF.")
+        if idf_content.strip().startswith("!"):
+            raise Exception(f"AI Generation Error:\n{idf_content}")
 
         # Save generated IDF to a temporary file outside the run directory
         # (Because simulation_runner will wipe the run directory before starting)

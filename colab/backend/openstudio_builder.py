@@ -380,7 +380,7 @@ def build_openstudio_model(params: dict) -> openstudio.model.Model:
         wwr_e = float(z.get("wwr_east", 0.0))
         wwr_w = float(z.get("wwr_west", 0.0))
 
-        def make_custom_subsurface(parent_surf, data, wall_width, wall_height, sub_type, name_suffix):
+        def make_custom_subsurface(parent_surf, v_coords, data, wall_width, wall_height, sub_type, name_suffix):
             if not data or not isinstance(data, dict): return
             w = float(data.get("width", 1.0))
             h = float(data.get("height", 1.0))
@@ -400,20 +400,20 @@ def build_openstudio_model(params: dict) -> openstudio.model.Model:
             w_off = max(0.0, min(w_off, wall_width - w))
             h_off = max(0.0, min(h_off, wall_height - h))
 
-            # Interpolate relative geometry coplanar with the wall
-            p_bl = parent_surf.vertices()[0]
-            p_br = parent_surf.vertices()[1]
+            # Interpolate relative geometry using the original un-reordered corner coordinates
+            p_bl = v_coords[0]
+            p_br = v_coords[1]
 
             def interpolate(pA, pB, frac):
                 return openstudio.Point3d(
-                    pA.x() + (pB.x() - pA.x()) * frac,
-                    pA.y() + (pB.y() - pA.y()) * frac,
-                    pA.z() + (pB.z() - pA.z()) * frac
+                    pA[0] + (pB[0] - pA[0]) * frac,
+                    pA[1] + (pB[1] - pA[1]) * frac,
+                    pA[2] + (pB[2] - pA[2]) * frac
                 )
 
             sub_bl = interpolate(p_bl, p_br, w_off / wall_width)
             sub_br = interpolate(p_bl, p_br, (w_off + w) / wall_width)
-            z_bottom = p_bl.z() + h_off
+            z_bottom = p_bl[2] + h_off
             z_top = z_bottom + h
 
             sub_v = openstudio.Point3dVector()
@@ -435,35 +435,35 @@ def build_openstudio_model(params: dict) -> openstudio.model.Model:
 
         # South Facade
         if z.get("window_south"):
-            make_custom_subsurface(surf_south, z.get("window_south"), L, H, "FixedWindow", "Window")
+            make_custom_subsurface(surf_south, v_south, z.get("window_south"), L, H, "FixedWindow", "Window")
         elif wwr_s > 0:
             surf_south.setWindowToWallRatio(wwr_s)
         if z.get("door_south"):
-            make_custom_subsurface(surf_south, z.get("door_south"), L, H, "Door", "Door")
+            make_custom_subsurface(surf_south, v_south, z.get("door_south"), L, H, "Door", "Door")
 
         # East Facade
         if z.get("window_east"):
-            make_custom_subsurface(surf_east, z.get("window_east"), W, H, "FixedWindow", "Window")
+            make_custom_subsurface(surf_east, v_east, z.get("window_east"), W, H, "FixedWindow", "Window")
         elif wwr_e > 0:
             surf_east.setWindowToWallRatio(wwr_e)
         if z.get("door_east"):
-            make_custom_subsurface(surf_east, z.get("door_east"), W, H, "Door", "Door")
+            make_custom_subsurface(surf_east, v_east, z.get("door_east"), W, H, "Door", "Door")
 
         # North Facade
         if z.get("window_north"):
-            make_custom_subsurface(surf_north, z.get("window_north"), L, H, "FixedWindow", "Window")
+            make_custom_subsurface(surf_north, v_north, z.get("window_north"), L, H, "FixedWindow", "Window")
         elif wwr_n > 0:
             surf_north.setWindowToWallRatio(wwr_n)
         if z.get("door_north"):
-            make_custom_subsurface(surf_north, z.get("door_north"), L, H, "Door", "Door")
+            make_custom_subsurface(surf_north, v_north, z.get("door_north"), L, H, "Door", "Door")
 
         # West Facade
         if z.get("window_west"):
-            make_custom_subsurface(surf_west, z.get("window_west"), W, H, "FixedWindow", "Window")
+            make_custom_subsurface(surf_west, v_west, z.get("window_west"), W, H, "FixedWindow", "Window")
         elif wwr_w > 0:
             surf_west.setWindowToWallRatio(wwr_w)
         if z.get("door_west"):
-            make_custom_subsurface(surf_west, z.get("door_west"), W, H, "Door", "Door")
+            make_custom_subsurface(surf_west, v_west, z.get("door_west"), W, H, "Door", "Door")
 
         # Centered subsurface helper (for roofs, skylights, etc.)
         def make_centered_subsurface(parent_surf, sub_w, sub_h, sub_type, name_suffix):
