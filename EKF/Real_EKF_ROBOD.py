@@ -57,14 +57,20 @@ ROBOD_CSV   = os.path.join(ROBOD_DIR, f"combined_Room{ROOM_NUM}.csv")
 RESULTS_DIR = os.path.join(SCRIPT_DIR, f"results_robod_room{ROOM_NUM}")
 
 # ── Physical constants ─────────────────────────────────────────────────────────
-c_pa       = 1006.0   # specific heat of air              [J/(kg·K)]
+c_pa       = 1006.0   # specific heat of air              [J/(kg*K)]
+
+# Room air mass — estimated from geometry (not from beta_s which diverges)
+# Room 3 SDE4 NUS: office space, typical ~200 m3 -> M = 200*1.2 = 240 kg
+# Diagnostic showed CO2 delta only ~23 ppm with ~4 people mean.
+# This value is used ONLY for N recovery post-processing, not in the EKF ODEs.
+M_ROOM = 240.0         # air mass of room [kg]  (tune from room dimensions)
+
 # CO2 generation rate per person [ppm*kg/(s*person)]
-# Standard metabolic rate: ~0.3 L/min CO2 per person at rest
-# In a well-ventilated AHU room the effective observable rate is lower
-# due to mixing and dilution. Calibrate from: at steady state with N people
-# and known m_sa: gamma_e = g_CO2_occ * N / M
-# ROBOD Room 3: CO2 rises ~100-200 ppm with 3-5 people -> g_CO2_occ ~ 0.3-0.5
-g_CO2_occ  = 0.5      # effective CO2 rate per person [ppm*kg/(s*person)]
+# Calibrated from ROBOD Room 3 steady-state CO2 balance:
+#   At steady state dc/dt=0: gamma_e = (m_sa/M)*(c_z - c_o)
+#   gamma_e = g_CO2_occ * N / M  =>  g_CO2_occ = m_sa * (c_z - c_o) / N
+#   m_sa=0.3 kg/s, delta_CO2=23 ppm, N=4 (median) -> g = 0.3*23/4 = 1.725
+g_CO2_occ  = 1.725     # calibrated [ppm*kg/(s*person)]
 
 # m_sa scaling: fcu_fan_speed [Hz] → mass flow [kg/s]
 # Typical FCU: 50 Hz → ≈ 0.5 kg/s  →  k = 0.01  (tune after calibration)
@@ -369,7 +375,7 @@ def main():
     # β_s needs time to converge from its initial guess before dividing by it.
     # With a better physical init (beta_s=5.56e-3), 200 rows = ~16 h is enough.
     N_WARMUP = 200
-    N_MAX    = 15.0    # Room 3 max occupancy = 13 persons; clip at 15 for margin
+    N_MAX    = 14.0    # Room 3 actual max = 13; allow 1 margin
 
     # ── EKF loop ──────────────────────────────────────────────────────────────
     print("[3] Running EKF ...")
@@ -399,18 +405,17 @@ def main():
         # === STORE ===
         est_arr[k] = X_est
 
-        # Recover occupancy from γ_e and β_s
-        # Fix 1 + 3: skip warm-up period, then clip to [0, N_MAX]
-        bs_est = X_est[I_bs]
+        # Recover occupancy from gamma_e using FIXED room air mass M_ROOM.
+        # We do NOT use beta_s for this recovery because beta_s diverges in
+        # this dataset (CO2 signal too weak to identify 1/M independently).
+        # M_ROOM is set from known room geometry — it is a measurable constant.
+        # N_est = gamma_e * M_ROOM / g_CO2_occ
         ge_est = X_est[I_ge]
         if k < N_WARMUP:
-            N_est_arr[k] = 0.0      # output 0 during warm-up — don't divide yet
-        elif abs(bs_est) > 1e-12:
-            M_est = 1.0 / bs_est
-            raw   = (ge_est * M_est) / g_CO2_occ
-            N_est_arr[k] = np.clip(raw, 0.0, N_MAX)   # Fix 1: hard clip
-        else:
             N_est_arr[k] = 0.0
+        else:
+            raw = (ge_est * M_ROOM) / g_CO2_occ
+            N_est_arr[k] = np.clip(raw, 0.0, N_MAX)
 
         # === CARRY FORWARD ===
         X_prev = X_est
