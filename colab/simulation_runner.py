@@ -401,46 +401,490 @@ def run_simulation_job(job_id, idf_path, epw_path, config=None, output_dir_base=
                     current_name = None
                     current_fields = []
                     
-        grouped = {}
+        # Identify all Zone names present in the IDF
+        zone_names = set()
         for obj in objects:
-            t = obj["type"]
-            n = obj["name"]
-            if t not in grouped:
-                grouped[t] = []
-            if n != "N/A" and n:
-                grouped[t].append(obj)
+            if obj["type"].upper() == "ZONE":
+                zone_names.add(obj["name"].strip())
+
+        # Normalize zone names for case-insensitive matching
+        zone_names_lower = {z.lower(): z for z in zone_names}
+
+        # Build surface mapping (surface_name_lower -> zone_name_original)
+        surface_to_zone = {}
+        for obj in objects:
+            t_upper = obj["type"].upper()
+            if t_upper in ("BUILDINGSURFACE:DETAILED", "SHADING:ZONE:DETAILED"):
+                for f in obj["fields"]:
+                    val_clean = f.split('!')[0].strip().rstrip(',;').strip().lower()
+                    if val_clean in zone_names_lower:
+                        surface_to_zone[obj["name"].strip().lower()] = zone_names_lower[val_clean]
+                        break
+
+        # Group objects by zone, and within each zone, by category
+        zone_grouped = {z: {} for z in zone_names}
+        zone_grouped["Global / Shared"] = {}
+
+        # Category mappings for zone-specific objects
+        ZONE_CATEGORIES = {
+            "ZONE": "Zone Info / Metadata",
+            "BUILDINGSURFACE:DETAILED": "Geometry & Surfaces",
+            "FENESTRATIONSURFACE:DETAILED": "Geometry & Surfaces",
+            "INTERNALMASS": "Geometry & Surfaces",
+            "SHADING:ZONE:DETAILED": "Geometry & Surfaces",
+            
+            "PEOPLE": "Internal Gains",
+            "LIGHTS": "Internal Gains",
+            "ELECTRICEQUIPMENT": "Internal Gains",
+            "GASEQUIPMENT": "Internal Gains",
+            
+            "ZONECONTROL:THERMOSTAT": "HVAC & Controls",
+            "THERMOSTATSETPOINT:DUALSETPOINT": "HVAC & Controls",
+            "ZONEHVAC:IDEALLOADSAIRSYSTEM": "HVAC & Controls",
+            "ZONEHVAC:EQUIPMENTCONNECTIONS": "HVAC & Controls",
+            "ZONEHVAC:EQUIPMENTLIST": "HVAC & Controls",
+            "SIZING:ZONE": "HVAC & Controls",
+            "ZONEINFILTRATION:DESIGNFLOWRATE": "HVAC & Controls",
+            "DESIGNSPECIFICATION:OUTDOORAIR": "HVAC & Controls",
+        }
+
+        # Category mappings for global/shared objects
+        GLOBAL_CATEGORIES = {
+            "VERSION": "Simulation Settings",
+            "SIMULATIONCONTROL": "Simulation Settings",
+            "BUILDING": "Simulation Settings",
+            "SHADOWCALCULATION": "Simulation Settings",
+            "RUNPERIOD": "Simulation Settings",
+            "SITE:LOCATION": "Simulation Settings",
+            "OUTPUT:SQLITE": "Simulation Settings",
+            "OUTPUT:VARIABLE": "Simulation Settings",
+            "OUTPUT:METER": "Simulation Settings",
+            "SIZING:PARAMETERS": "Simulation Settings",
+            "GLOBALGEOMETRYRULES": "Simulation Settings",
+            "LIFECYCLECOST:PARAMETERS": "Simulation Settings",
+            "LIFECYCLECOST:USEPRICEESCALATION": "Simulation Settings",
+            
+            "CONSTRUCTION": "Constructions & Materials",
+            "MATERIAL": "Constructions & Materials",
+            "MATERIAL:NOMASS": "Constructions & Materials",
+            "WINDOWMATERIAL:GLAZING": "Constructions & Materials",
+            "WINDOWMATERIAL:SIMPLEGLAZINGSYSTEM": "Constructions & Materials",
+            
+            "SCHEDULE:COMPACT": "Schedules & Controls",
+            "SCHEDULE:CONSTANT": "Schedules & Controls",
+            "SCHEDULETYPELIMITS": "Schedules & Controls",
+        }
+
+        for obj in objects:
+            t_upper = obj["type"].upper()
+            n_clean = obj["name"].strip() if obj["name"] else ""
+            
+            # Skip objects that don't have a valid type
+            if not obj["type"] or (obj["name"] == "N/A" and not obj["fields"]):
+                continue
                 
-        html = f'''<html><head><title>IDF Object Summary</title><style>
-        body{{font-family: -apple-system, sans-serif; padding: 40px; background: #f8f9fa;}}
-        .card{{background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 20px; break-inside: avoid;}}
-        h1{{color: #1a73e8;}} h2{{color: #333; font-size: 1.1em; border-bottom: 1px solid #eee; padding-bottom: 5px;}}
-        ul{{list-style-type: none; padding-left: 0;}} li{{padding: 8px 0; border-bottom: 1px solid #f0f0f0;}}
-        details{{margin-top: 5px;}} summary{{cursor: pointer; color: #1a73e8; font-weight: 500; outline: none; list-style: none; display: flex; align-items: center;}}
-        summary::-webkit-details-marker {{display: none;}}
-        summary::before {{content: "▶ "; font-size: 0.8em; margin-right: 5px; color: #888; transition: transform 0.2s;}}
-        details[open] summary::before {{transform: rotate(90deg);}}
-        .fields-list{{background: #fafafa; padding: 10px 15px; border-radius: 4px; margin-top: 5px; font-family: monospace; font-size: 0.9em; color: #555;}}
-        .fields-list div{{padding: 2px 0;}}
-        </style></head><body><h1>IDF Component Summary</h1><p style="color:gray">Job ID: {job_id}</p><div style="column-count: 2; column-gap: 40px;">'''
+            assigned_zone = None
+            if t_upper == "ZONE":
+                assigned_zone = zone_names_lower.get(n_clean.lower(), n_clean)
+            else:
+                # 1. Check direct zone reference in fields
+                for f in obj["fields"]:
+                    val = f.split('!')[0].strip().rstrip(',;').strip().lower()
+                    if val in zone_names_lower:
+                        assigned_zone = zone_names_lower[val]
+                        break
+                
+                # 2. Check parent surface reference
+                if not assigned_zone:
+                    for f in obj["fields"]:
+                        val = f.split('!')[0].strip().rstrip(',;').strip().lower()
+                        if val in surface_to_zone:
+                            assigned_zone = surface_to_zone[val]
+                            break
+
+            # Add to grouped list
+            if assigned_zone and assigned_zone in zone_grouped:
+                cat = ZONE_CATEGORIES.get(t_upper, "Other Zone Objects")
+                if cat not in zone_grouped[assigned_zone]:
+                    zone_grouped[assigned_zone][cat] = []
+                zone_grouped[assigned_zone][cat].append(obj)
+            else:
+                cat = GLOBAL_CATEGORIES.get(t_upper, "General / Other")
+                if cat not in zone_grouped["Global / Shared"]:
+                    zone_grouped["Global / Shared"][cat] = []
+                zone_grouped["Global / Shared"][cat].append(obj)
+
+        # Build list of sorted zones with Global/Shared at the end
+        sorted_zones = sorted([z for z in zone_grouped.keys() if z != "Global / Shared"])
+        sorted_zones.append("Global / Shared")
+
+        # Define color palette for dynamic cards
+        colors = ["#2563eb", "#0d9488", "#7c3aed", "#d97706", "#db2777", "#4f46e5"]
+        zone_colors = {}
+        for idx, z in enumerate(sorted_zones):
+            if z == "Global / Shared":
+                zone_colors[z] = "#4b5563"
+            else:
+                zone_colors[z] = colors[idx % len(colors)]
+
+        html = f'''<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IDF Object Summary - SmartHVAC Studio</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
         
-        for t in sorted(grouped.keys()):
-            objs = grouped[t]
-            if objs:
-                html += f'<div class="card"><h2>{t} <span style="color:gray; font-weight:normal; font-size:0.8em;">({len(objs)})</span></h2><ul>'
+        :root {{
+            --bg-app: #f4f6fc;
+            --bg-card: #ffffff;
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
+            --text-muted: #94a3b8;
+            --border-subtle: rgba(226, 232, 240, 0.8);
+            --radius-lg: 16px;
+            --radius-md: 12px;
+            --radius-sm: 8px;
+            --font-main: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            --font-mono: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+        }}
+
+        body {{
+            font-family: var(--font-main);
+            background-color: var(--bg-app);
+            color: var(--text-primary);
+            margin: 0;
+            padding: 40px 20px;
+        }}
+
+        .container {{
+            max-width: 1400px;
+            margin: 0 auto;
+        }}
+
+        header {{
+            background: linear-gradient(135deg, #1e293b, #0f172a);
+            color: #ffffff;
+            padding: 32px 40px;
+            border-radius: var(--radius-lg);
+            box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+            margin-bottom: 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }}
+
+        header h1 {{
+            margin: 0;
+            font-size: 1.8rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            background: linear-gradient(to right, #38bdf8, #818cf8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }}
+
+        header p {{
+            margin: 8px 0 0 0;
+            color: #94a3b8;
+            font-size: 0.95rem;
+        }}
+
+        .job-id {{
+            background: rgba(255, 255, 255, 0.06);
+            padding: 8px 16px;
+            border-radius: var(--radius-sm);
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            color: #e2e8f0;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }}
+
+        .dashboard-grid {{
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 24px;
+            align-items: start;
+        }}
+
+        .zone-card {{
+            background: var(--bg-card);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border-subtle);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
+            padding: 24px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }}
+
+        .zone-card:hover {{
+            transform: translateY(-4px);
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.06);
+        }}
+
+        .zone-header {{
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid #f1f5f9;
+        }}
+
+        .zone-title {{
+            margin: 0;
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }}
+
+        .zone-badge {{
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            padding: 4px 8px;
+            border-radius: 20px;
+            background: #f1f5f9;
+            color: var(--text-secondary);
+        }}
+
+        .category-sec {{
+            margin-bottom: 20px;
+        }}
+
+        .category-title {{
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            margin: 16px 0 10px 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }}
+
+        .category-title::after {{
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: #e2e8f0;
+            margin-left: 12px;
+        }}
+
+        .objects-list {{
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }}
+
+        details {{
+            border: 1px solid #e2e8f0;
+            border-radius: var(--radius-sm);
+            background: #fafafa;
+            overflow: hidden;
+            transition: border-color 0.2s, background-color 0.2s;
+        }}
+
+        details[open] {{
+            border-color: var(--accent-color);
+            background: #ffffff;
+        }}
+
+        summary {{
+            cursor: pointer;
+            padding: 10px 14px;
+            font-weight: 500;
+            font-size: 0.9rem;
+            color: var(--text-primary);
+            list-style: none;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            user-select: none;
+            transition: background-color 0.2s;
+        }}
+
+        summary:hover {{
+            background-color: #f1f5f9;
+        }}
+
+        summary::-webkit-details-marker {{
+            display: none;
+        }}
+
+        .summary-chevron {{
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: var(--text-muted);
+            transition: transform 0.2s ease;
+        }}
+
+        details[open] summary .summary-chevron {{
+            transform: rotate(90deg);
+            color: var(--accent-color);
+        }}
+
+        .fields-container {{
+            border-top: 1px solid #f1f5f9;
+            background: #ffffff;
+        }}
+
+        .fields-table {{
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+        }}
+
+        .fields-table td {{
+            padding: 8px 12px;
+            border-bottom: 1px solid #f1f5f9;
+            vertical-align: top;
+        }}
+
+        .fields-table tr:last-child td {{
+            border-bottom: none;
+        }}
+
+        .field-desc {{
+            color: var(--text-secondary);
+            font-weight: 500;
+            width: 40%;
+            border-right: 1px solid #f1f5f9;
+        }}
+
+        .field-val {{
+            color: var(--text-primary);
+            font-family: var(--font-mono);
+            word-break: break-all;
+            padding-left: 12px;
+        }}
+
+        .field-raw {{
+            color: var(--text-secondary);
+            font-family: var(--font-mono);
+            background: #f8fafc;
+            padding: 6px 12px;
+            font-size: 0.8rem;
+        }}
+
+        /* Responsive adaptations */
+        @media (max-width: 768px) {{
+            .dashboard-grid {{
+                grid-template-columns: 1fr;
+            }}
+        }}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div>
+                <h1>SmartHVAC Studio</h1>
+                <p>Interactive Zone-wise Model Summary</p>
+            </div>
+            <div class="job-id">Job ID: {job_id}</div>
+        </header>
+        <div class="dashboard-grid">'''
+
+        for z in sorted_zones:
+            color = zone_colors[z]
+            categories = zone_grouped[z]
+            
+            # Skip zones that have no objects at all
+            if not categories or all(len(objs) == 0 for objs in categories.values()):
+                continue
+                
+            # Count total objects in this zone
+            total_objs = sum(len(objs) for objs in categories.values())
+            
+            icon = "⚙️" if z == "Global / Shared" else "🚪"
+            html += f'''
+            <div class="zone-card" style="--accent-color: {color}; border-top: 4px solid {color};">
+                <div class="zone-header">
+                    <h2 class="zone-title">
+                        <span>{icon} {z}</span>
+                    </h2>
+                    <span class="zone-badge">{total_objs} Objects</span>
+                </div>
+            '''
+            
+            # Sort categories so they appear in a consistent order
+            for cat in sorted(categories.keys()):
+                objs = categories[cat]
+                if not objs:
+                    continue
+                    
+                html += f'''
+                <div class="category-sec">
+                    <h3 class="category-title">{cat} <span style="font-weight: normal; font-size: 0.85em; color: var(--text-muted);">({len(objs)})</span></h3>
+                    <div class="objects-list">
+                '''
+                
                 for obj in objs:
                     n = obj["name"]
                     fields = obj["fields"]
+                    
+                    t_short = obj["type"]
+                    display_name = n if (n and n != "N/A") else t_short
+                    
                     if not fields:
-                        html += f'<li>{n}</li>'
+                        html += f'''
+                        <div style="padding: 10px 14px; border: 1px solid #e2e8f0; border-radius: var(--radius-sm); background: #fafafa; font-size: 0.9rem; font-weight: 500; display: flex; justify-content: space-between; align-items: center;">
+                            <span>{display_name}</span>
+                            <span style="font-size: 0.75rem; color: var(--text-muted); font-family: var(--font-mono); font-weight: normal;">{t_short}</span>
+                        </div>
+                        '''
                     else:
-                        html += f'<li><details><summary>{n}</summary><div class="fields-list">'
+                        html += f'''
+                        <details>
+                            <summary>
+                                <span style="display: flex; flex-direction: column; align-items: flex-start; gap: 2px;">
+                                    <span>{display_name}</span>
+                                    <span style="font-size: 0.7rem; color: var(--text-muted); font-family: var(--font-mono); font-weight: normal;">{t_short}</span>
+                                </span>
+                                <span class="summary-chevron">›</span>
+                            </summary>
+                            <div class="fields-container">
+                                <table class="fields-table">
+                        '''
                         for f in fields:
                             # Safely escape HTML characters like < and >
                             f_clean = f.replace("<", "&lt;").replace(">", "&gt;")
-                            html += f'<div>{f_clean}</div>'
-                        html += '</div></details></li>'
-                html += '</ul></div>'
-        html += '</div></body></html>'
+                            if '!-' in f_clean:
+                                parts = f_clean.split('!-')
+                                val = parts[0].strip().rstrip(',;')
+                                desc = parts[1].strip()
+                                html += f'''
+                                <tr>
+                                    <td class="field-desc">{desc}</td>
+                                    <td class="field-val">{val}</td>
+                                </tr>
+                                '''
+                            else:
+                                html += f'''
+                                <tr>
+                                    <td colspan="2" class="field-raw">{f_clean}</td>
+                                </tr>
+                                '''
+                        html += '''
+                                </table>
+                            </div>
+                        </details>
+                        '''
+                html += '''
+                    </div>
+                </div>
+                '''
+            html += '</div>'
+        html += '</div></div></body></html>'
         
         summary_path = os.path.join(run_dir, "summary.html")
         with open(summary_path, 'w', encoding='utf-8') as f:
