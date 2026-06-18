@@ -27,7 +27,7 @@ The project also includes an **Extended Kalman Filter (EKF)** module for estimat
 ```
 [Web Dashboard]  ──HTTP──►  [Ngrok Tunnel]  ──►  [FastAPI Server]  (Google Colab)
   (Browser)      ◄──JSON──                  ◄──       │
-                                                       ├─► Ollama gemma3:4b  (AI)
+                                                       ├─► Ollama gemma3:12b (AI)
                                                        ├─► Geometry Engine   (Python)
                                                        └─► EnergyPlus 25.1   (Simulation)
 ```

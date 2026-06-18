@@ -1,8 +1,21 @@
 import os
 import json
-import openai
-from google import genai 
-from huggingface_hub import InferenceClient
+
+try:
+    import openai
+except ImportError:
+    openai = None
+
+try:
+    from google import genai
+except ImportError:
+    genai = None
+
+try:
+    from huggingface_hub import InferenceClient
+except ImportError:
+    InferenceClient = None
+
 
 class AIPipelines:
     def __init__(self, secrets_path="secrets.json", template_path="templates/Base.idf"):
@@ -60,6 +73,18 @@ class AIPipelines:
         """
         print(f"[AI] Generating Modular IDF using model: {model_type}")
 
+        # Check if the prompt needs structuring
+        if "[GLOBAL SETTINGS]" not in nlp_text and "<Zone:" not in nlp_text:
+            print("[AI] Raw prompt detected. Running Prompt Structurer pre-processing pass...")
+            try:
+                from backend.prompt_structurer import PromptStructurer
+                structurer = PromptStructurer(ai_pipelines_instance=self)
+                structured_prompt = structurer.restructure_prompt(nlp_text, model_type=model_type)
+                print(f"[AI] Restructured Prompt generated:\n{structured_prompt}\n")
+                nlp_text = structured_prompt
+            except Exception as e:
+                print(f"[AI] Prompt structurer failed, falling back to raw prompt: {e}")
+
         # 1. Load the Menu
         import sys
         # ensure we can import from backend dir
@@ -105,135 +130,117 @@ class AIPipelines:
             raw_materials = ["M01 100mm brick", "I02 50mm insulation board"]
             window_materials = ["Clear 3mm"]
 
-        # 2. Construct Prompt for JSON
-        weather_file = config.get('weather_file', 'Unknown')
-        system_prompt = (
-            "You are an expert EnergyPlus consultant integrating modular components. "
-            "Your task is to analyze the user's natural language request and output a JSON dictionary containing the building parameters.\n"
-            "CRITICAL RULES:\n"
-            "1. OUTPUT FORMAT: Return ONLY valid JSON. No markdown wrappers, no explanations.\n"
-            "2. ZONE DETECTION: If the user describes a SINGLE room/zone (e.g., 'a 10x8m office'), set 'is_multizone': false and return the SINGLE-ZONE schema. "
-            "If the user describes MULTIPLE rooms/zones (e.g., 'a living room with a bedroom to the north'), set 'is_multizone': true and return the MULTI-ZONE schema.\n\n"
-            "=== SINGLE-ZONE SCHEMA (is_multizone: false) ===\n"
-            "Required JSON keys:\n"
-            "   - 'is_multizone' (boolean, false)\n"
-            "   - 'length' (float), 'width' (float), 'height' (float)\n"
-            "   - 'wall_layers' (string or array of strings, default global wall). 'wall_layers_south', 'wall_layers_north', 'wall_layers_east', 'wall_layers_west' (string or array of strings). If using a pre-built construction, provide a single string from the CONSTRUCTION MENU. If building a custom wall, provide an ordered array of strings (outside to inside) from the RAW MATERIAL MENU. If not specified, leave empty or same as global.\n"
-            "   - 'roof_layers' (string or array of strings)\n"
-            "   - 'window_layers' (string or array of strings). If using pre-built, pick from CONSTRUCTION MENU. If custom, pick from WINDOW MATERIAL MENU.\n"
-            "   - 'roof_type' (string, 'flat' or 'pitched'. Default 'flat')\n"
-            "   - 'roof_pitch_height' (float, height of pitched roof apex above wall. Default 2.0)\n"
-            "   - 'skylight' (object for custom skylight on roof. Schema: {\"width\": float, \"length\": float} or null. Default null)\n"
-            "   - 'wwr_south', 'wwr_north', 'wwr_east', 'wwr_west' (floats between 0 and 1, Window-to-Wall Ratios for each face. Default 0.0. If user gives a single global WWR, set all 4 to that value. If they specify certain walls, apply only to those and set others to 0.0.)\n"
-            "   - 'window_south', 'window_north', 'window_east', 'window_west' (objects for custom windows overriding WWR. Schema: {\"width\": float, \"height\": float, \"offset_x\": float, \"ref_x\": \"left\"|\"right\"|\"center\", \"offset_z\": float, \"ref_z\": \"bottom\"|\"top\"|\"center\"} or null. Default null)\n"
-            "   - 'door_south', 'door_north', 'door_east', 'door_west' (objects for custom doors. Schema: {\"width\": float, \"height\": float, \"offset_x\": float, \"ref_x\": \"left\"|\"right\"|\"center\", \"offset_z\": float, \"ref_z\": \"bottom\"|\"top\"|\"center\"} or null. Default null)\n"
-            "   - 'people_density' (float, m2/person. Default 10.0)\n"
-            "   - 'light_density' (float, W/m2. Default 10.0)\n"
-            "   - 'equipment_density' (float, W/m2. Default 10.0)\n"
-            "   - 'ventilation_ach' (float. Default 0.5)\n"
-            "   - 'infiltration_ach' (float. Default 0.5)\n"
-            "   - 'heat_set_occ' (float, Celsius. Default 21.0), 'heat_set_unocc' (float, Celsius. Default 15.0)\n"
-            "   - 'cool_set_occ' (float, Celsius. Default 24.0), 'cool_set_unocc' (float, Celsius. Default 28.0)\n"
-            "   - 'window_u_factor' (float. Default 3.0), 'window_shgc' (float. Default 0.5)\n"
-            "   - 'occ_weekday_start', 'occ_weekday_end', 'occ_weekend_start', 'occ_weekend_end' (integers 0-24 for occupancy. Default 0, 24, 0, 24. If closed on weekends, set weekend start and end to 0)\n"
-            "   - 'light_weekday_start', 'light_weekday_end', 'light_weekend_start', 'light_weekend_end' (integers 0-24 for lights. Default 0, 24, 0, 24)\n"
-            "   - 'equip_weekday_start', 'equip_weekday_end', 'equip_weekend_start', 'equip_weekend_end' (integers 0-24 for equipment. Default 0, 24, 0, 24)\n"
-            "   - 'hvac_weekday_start', 'hvac_weekday_end', 'hvac_weekend_start', 'hvac_weekend_end' (integers 0-24 for HVAC. Default 7, 18, 7, 18)\n"
-            "   - 'hvac_type' (string): The HVAC system type. Pick from: 'ideal_loads', 'ptac', 'psz_ac'.\n"
-            "     - 'ideal_loads': Simplified perfect system, best for envelope studies (DEFAULT if user doesn't mention HVAC).\n"
-            "     - 'ptac': Packaged Terminal Air Conditioner with DX cooling and electric heating. Best for hotels, small rooms, apartments.\n"
-            "     - 'psz_ac': Packaged Single Zone AC with gas furnace heating and DX cooling. Best for retail, small commercial, warehouses.\n\n"
-            "=== MULTI-ZONE SCHEMA (is_multizone: true) ===\n"
-            "Required JSON keys:\n"
-            "   - 'is_multizone' (boolean, true)\n"
-            "   - 'zones' (array of zone objects). Each zone object has:\n"
-            "     - 'name' (string, short snake_case name e.g. 'LivingRoom', 'Bedroom')\n"
-            "     - 'length' (float, X-axis extent in meters)\n"
-            "     - 'width' (float, Y-axis extent in meters)\n"
-            "     - 'height' (float, Z-axis extent in meters)\n"
-            "     - 'relative_to' (string or null): CRITICAL! You MUST provide the name of the adjacent zone this one is attached to. ONLY the FIRST zone can be null. All others MUST reference a previously defined zone.\n"
-            "     - 'direction' (string or null): CRITICAL! Which wall of 'relative_to' this zone attaches to. Pick from: 'North', 'South', 'East', 'West'. ONLY null for the first zone.\n"
-            "     - 'wall_layers' (string or array of strings)\n"
-            "     - 'roof_layers' (string or array of strings)\n"
-            "     - 'window_layers' (string or array of strings)\n"
-            "     - 'roof_type' (string, 'flat' or 'pitched'. Default 'flat')\n"
-            "     - 'roof_pitch_height' (float, height of pitched roof apex above wall. Default 2.0)\n"
-            "     - 'skylight' (object for custom skylight. Schema: {\"width\": float, \"length\": float} or null. Default null)\n"
-            "     - 'wwr_south', 'wwr_north', 'wwr_east', 'wwr_west' (floats 0-1. Default 0.0)\n"
-            "     - 'window_south', 'window_north', 'window_east', 'window_west' (custom window objects or null)\n"
-            "     - 'door_south', 'door_north', 'door_east', 'door_west' (custom door objects or null)\n"
-            "     - 'people_density' (float, m2/person. Default 10.0)\n"
-            "     - 'light_density' (float, W/m2. Default 10.0)\n"
-            "     - 'equipment_density' (float, W/m2. Default 10.0)\n"
-            "     - 'ventilation_ach' (float. Default 0.5)\n"
-            "     - 'infiltration_ach' (float. Default 0.5)\n"
-            "     - 'hvac_type' (string): 'ideal_loads', 'ptac', or 'psz_ac'. Default 'ideal_loads'.\n"
-            "     - CRITICAL: DO NOT include any schedules, setpoints, window_u_factor, or window_shgc inside individual zone objects! Those are global root-level keys only. Repeating them inside zones will cause output truncation.\n"
-            "   - 'heat_set_occ', 'heat_set_unocc', 'cool_set_occ', 'cool_set_unocc' (floats, global setpoints shared across all zones)\n"
-            "   - 'window_u_factor', 'window_shgc' (floats, global)\n"
-            "   - 'occ_weekday_start', 'occ_weekday_end', 'occ_weekend_start', 'occ_weekend_end' (integers, global occupancy schedule)\n"
-            "   - 'light_weekday_start', 'light_weekday_end', 'light_weekend_start', 'light_weekend_end' (integers, global light schedule)\n"
-            "   - 'equip_weekday_start', 'equip_weekday_end', 'equip_weekend_start', 'equip_weekend_end' (integers, global equipment schedule)\n"
-            "   - 'hvac_weekday_start', 'hvac_weekday_end', 'hvac_weekend_start', 'hvac_weekend_end' (integers, global hvac schedule)\n\n"
-            "IMPORTANT MULTI-ZONE RULES:\n"
-            "   - The FIRST zone in the array is the ANCHOR zone (relative_to=null, direction=null).\n"
-            "   - All subsequent zones MUST reference an existing zone by name in 'relative_to'.\n"
-            "   - Adjacent zones share a wall. The shared dimension MUST match (e.g., if Bedroom is North of LivingRoom, both must have the same 'length').\n"
-            "   - DO NOT compute coordinates. Python will compute all coordinates from relative_to and direction.\n"
-            "   - CRITICAL: DO NOT duplicate/repeat schedule or setpoint fields (like occ_weekday_start, heat_set_occ, window_u_factor, etc.) inside the zone objects. Keep them strictly at the global root level only.\n\n"
-            "=== CRITICAL WINDOW/DOOR PARAMETER EXTRACTION RULES ===\n"
-            "For any custom windows ('window_south', 'window_north', 'window_east', 'window_west') or doors ('door_south', 'door_north', 'door_east', 'door_west'):\n"
-            "1. NEVER do geometric vertex calculations. Instead, map the natural language description directly into the reference point and offset values.\n"
-            "2. Mapping rules:\n"
-            "   - \"fix to ground\" or \"on the ground\" -> set 'ref_z' to \"bottom\", and 'offset_z' to 0.0\n"
-            "   - \"X meters from left edge\" -> set 'ref_x' to \"left\", and 'offset_x' to X (float)\n"
-            "   - \"X meters from right edge\" -> set 'ref_x' to \"right\", and 'offset_x' to X (float)\n"
-            "   - \"X meters from top edge\" -> set 'ref_z' to \"top\", and 'offset_z' to X (float)\n"
-            "   - \"X meters from bottom edge\" -> set 'ref_z' to \"bottom\", and 'offset_z' to X (float)\n"
-            "   - If not specified, default to: 'ref_x': \"center\", 'offset_x': 0.0, 'ref_z': \"bottom\", 'offset_z': 1.0 (for windows) or 0.0 (for doors).\n"
-            "3. ZERO-HALLUCINATION CONSTRAINT: Do NOT include any custom windows or doors on any walls/zones unless they are explicitly requested by the user prompt. For example, if the user only specifies a window on the South wall of the office, do NOT generate default windows on other walls of the office or on any walls of other zones (set them to null).\n"
-            "4. NO-OVERLAP VALIDATION: If a wall has both a door and a window, ensure their X-axis offset spans do not overlap. The width of each opening extends from its reference point. Ensure they are placed at distinct parts of the wall.\n\n"
-            "3. For wall/roof layers, pick from:\n"
-            f"CONSTRUCTION MENU: {construction_menu}\n"
-            f"RAW MATERIAL MENU: {raw_materials}\n\n"
-            "4. For window layers, pick from:\n"
-            f"CONSTRUCTION MENU: {construction_menu}\n"
-            f"WINDOW MATERIAL MENU: {window_materials}\n"
-        )
-
-        user_prompt = (
-            f"USER TASK: {nlp_text}\n"
-            f"CONFIG: {json.dumps(config)}\n\n"
-            "OUTPUT ONLY VALID JSON:"
-        )
-
-        # 3. Call AI
+        # 2. Decomposed Pipeline: Step 1 - Extract Topology and Global Parameters
         try:
-            if model_type == "openai":
-                json_output = self._call_openai(system_prompt, user_prompt)
-            elif model_type == "gemini":
-                json_output = self._call_gemini(system_prompt, user_prompt)
-            elif model_type == "huggingface":
-                json_output = self._call_huggingface(system_prompt, user_prompt)
-            elif model_type == "ollama":
-                json_output = self._call_ollama(system_prompt, user_prompt)
-            else:
-                return f"! Error: Unknown model type '{model_type}'"
+            # Step 1: Extract Topology and Global Parameters
+            print("[AI] Step 1: Extracting building topology & global parameters...")
+            topology_json = self._extract_topology(nlp_text, config, model_type)
+            if topology_json.startswith("!"):
+                return topology_json
             
-            # Clean possible markdown block
-            json_output = json_output.replace("```json", "").replace("```", "").strip()
-            
-            # 4. Parse AI Parameters
             try:
-                params = json.loads(json_output)
+                params = json.loads(topology_json)
             except json.JSONDecodeError as je:
-                print(f"[AI] Initial JSON parse failed: {je}. Attempting repair...")
+                print(f"[AI] Topology JSON parse failed: {je}. Attempting repair...")
                 try:
-                    params = self._repair_truncated_json(json_output)
-                    print("[AI] JSON successfully repaired and parsed!")
+                    params = self._repair_truncated_json(topology_json)
+                    print("[AI] Topology JSON successfully repaired and parsed!")
                 except Exception as re:
-                    print(f"[AI] Repair failed: {re}")
-                    raise je
+                    print(f"[AI] Topology repair failed: {re}")
+                    return f"! Error: AI failed to output valid JSON for topology. Result was: {topology_json}"
+
+            is_multizone = params.get("is_multizone", False)
+            zones = params.get("zones", [])
+
+            # Step 2: Extract details for each zone in a loop
+            completed_zones = []
+            for z in zones:
+                z_name = z["name"]
+                print(f"[AI] Step 2: Extracting details for zone '{z_name}'...")
+                zone_details_json = self._extract_zone_details(nlp_text, z_name, construction_menu, raw_materials, window_materials, model_type)
+                if zone_details_json.startswith("!"):
+                    return zone_details_json
+                
+                try:
+                    z_details = json.loads(zone_details_json)
+                except json.JSONDecodeError as je:
+                    print(f"[AI] Zone details JSON parse failed for '{z_name}': {je}. Attempting repair...")
+                    try:
+                        z_details = self._repair_truncated_json(zone_details_json)
+                        print(f"[AI] Zone details JSON for '{z_name}' successfully repaired and parsed!")
+                    except Exception as re:
+                        print(f"[AI] Zone details repair failed for '{z_name}': {re}")
+                        return f"! Error: AI failed to output valid JSON for zone '{z_name}'. Result was: {zone_details_json}"
+                
+                # 1. Copy all non-subsurface keys from z_details to z
+                for key, val in z_details.items():
+                    if key != "subsurfaces":
+                        z[key] = val
+
+                # 2. Extract subsurfaces list
+                subsurfaces = z_details.get("subsurfaces", [])
+
+                # 3. Initialize all directional window/door fields
+                for direction in ["south", "north", "east", "west"]:
+                    z[f"window_{direction}"] = None
+                    z[f"door_{direction}"] = None
+                    try:
+                        z[f"wwr_{direction}"] = float(z.get(f"wwr_{direction}") or 0.0)
+                    except (ValueError, TypeError):
+                        z[f"wwr_{direction}"] = 0.0
+
+                # 4. Map the subsurfaces list to specific directional keys
+                if isinstance(subsurfaces, list):
+                    for sub in subsurfaces:
+                        if not isinstance(sub, dict):
+                            continue
+                        sub_type = sub.get("type")
+                        wall_dir = sub.get("wall")
+                        if not sub_type or not wall_dir:
+                            continue
+                        
+                        wall_dir = wall_dir.strip().capitalize()
+                        if wall_dir not in ["South", "North", "East", "West"]:
+                            continue
+                            
+                        # Extract and parse dimensions
+                        w = sub.get("width")
+                        h = sub.get("height")
+                        
+                        try:
+                            w = float(w) if w is not None else 1.0
+                            h = float(h) if h is not None else 1.0
+                        except (ValueError, TypeError):
+                            w = 1.0
+                            h = 1.0
+                            
+                        # Door Aspect Ratio Guard: doors are always vertical (height >= width)
+                        if sub_type == "door" and w > h:
+                            print(f"[AI Guard] Automatically swapped flipped door dimensions on zone '{z_name}' {wall_dir} wall: width={h}, height={w}")
+                            w, h = h, w
+                            
+                        sub["width"] = w
+                        sub["height"] = h
+                        
+                        direction = wall_dir.lower()
+                        if sub_type == "window":
+                            z[f"window_{direction}"] = sub
+                            z[f"wwr_{direction}"] = 0.0  # Override WWR to avoid overlapping subsurfaces
+                        elif sub_type == "door":
+                            z[f"door_{direction}"] = sub
+
+                completed_zones.append(z)
+
+            params["zones"] = completed_zones
+
+            # If single-zone mode, map zone-specific details to the root level of params
+            if not is_multizone and len(completed_zones) > 0:
+                first_zone = completed_zones[0]
+                for key, val in first_zone.items():
+                    params[key] = val
+                params["length"] = first_zone.get("length", params.get("length", 10.0))
+                params["width"] = first_zone.get("width", params.get("width", 10.0))
+                params["height"] = first_zone.get("height", params.get("height", 3.0))
             
             # ========== ROUTER: Custom Template vs OpenStudio SDK ==========
             generator_type = config.get("generator_type", "custom")
@@ -513,6 +520,106 @@ class AIPipelines:
             print(f"[AI] Error generating IDF: {e}")
             return f"! Analysis Error: {str(e)}"
 
+    def _extract_topology(self, nlp_text, config, model_type):
+        system_prompt = (
+            "You are an expert EnergyPlus consultant. Your task is to analyze the user's natural language request and output a JSON dictionary extracting the building's zones, layout dimensions, and global variables.\n"
+            "CRITICAL RULES:\n"
+            "1. OUTPUT FORMAT: Return ONLY valid JSON. No markdown wrappers, no explanations.\n"
+            "2. ZONE DETECTION: If the user describes a SINGLE room/zone (e.g., 'a 10x8m office'), set 'is_multizone': false. "
+            "If the user describes MULTIPLE rooms/zones, set 'is_multizone': true.\n\n"
+            "=== OUTPUT SCHEMA ===\n"
+            "Required JSON keys:\n"
+            "   - 'is_multizone' (boolean)\n"
+            "   - 'zones' (array of zone objects). If is_multizone is false, include exactly one zone. Each zone object has:\n"
+            "     - 'name' (string, e.g. 'Office', 'MeetingRoom', 'Lobby')\n"
+            "     - 'length' (float, X-axis dimension)\n"
+            "     - 'width' (float, Y-axis dimension)\n"
+            "     - 'height' (float, Z-axis dimension)\n"
+            "     - 'relative_to' (string or null): Name of adjacent zone this one is attached to. Set null for first zone.\n"
+            "     - 'direction' (string or null): Side of attachment. Pick: 'North', 'South', 'East', 'West'. Set null for first zone.\n"
+            "     - 'roof_type' (string: 'flat' or 'pitched'. Default 'flat')\n"
+            "     - 'roof_pitch_height' (float, default 2.0)\n"
+            "   - 'people_density' (float, global default: 10.0)\n"
+            "   - 'light_density' (float, global default: 10.0)\n"
+            "   - 'equipment_density' (float, global default: 10.0)\n"
+            "   - 'ventilation_ach' (float, global default: 0.5)\n"
+            "   - 'infiltration_ach' (float, global default: 0.5)\n"
+            "   - 'hvac_type' (string: 'ideal_loads', 'ptac', 'psz_ac')\n"
+            "   - 'heat_set_occ', 'heat_set_unocc', 'cool_set_occ', 'cool_set_unocc' (floats, global setpoints)\n"
+            "   - 'window_u_factor', 'window_shgc' (floats, global)\n"
+            "   - 'occ_weekday_start', 'occ_weekday_end', 'occ_weekend_start', 'occ_weekend_end' (integers, occupancy schedule)\n"
+            "   - 'light_weekday_start', 'light_weekday_end', 'light_weekend_start', 'light_weekend_end' (integers, lighting schedule)\n"
+            "   - 'equip_weekday_start', 'equip_weekday_end', 'equip_weekend_start', 'equip_weekend_end' (integers, equipment schedule)\n"
+            "   - 'hvac_weekday_start', 'hvac_weekday_end', 'hvac_weekend_start', 'hvac_weekend_end' (integers, HVAC schedule)\n"
+        )
+        user_prompt = (
+            f"USER TASK: {nlp_text}\n"
+            f"CONFIG: {json.dumps(config)}\n\n"
+            "OUTPUT ONLY VALID JSON:"
+        )
+        
+        if model_type == "openai":
+            output = self._call_openai(system_prompt, user_prompt)
+        elif model_type == "gemini":
+            output = self._call_gemini(system_prompt, user_prompt)
+        elif model_type == "huggingface":
+            output = self._call_huggingface(system_prompt, user_prompt)
+        elif model_type == "ollama":
+            output = self._call_ollama(system_prompt, user_prompt)
+        else:
+            raise ValueError(f"Unknown model type '{model_type}'")
+            
+        return output.replace("```json", "").replace("```", "").strip()
+
+    def _extract_zone_details(self, nlp_text, zone_name, construction_menu, raw_materials, window_materials, model_type):
+        system_prompt = (
+            f"You are an expert EnergyPlus consultant. Analyze the user's prompt and extract the windows, doors, skylights, and construction layers for the zone '{zone_name}' ONLY.\n"
+            "CRITICAL RULES:\n"
+            "1. OUTPUT FORMAT: Return ONLY valid JSON. No markdown wrappers, no explanations.\n"
+            "2. ZERO-HALLUCINATION CONSTRAINT: Do NOT include any custom windows or doors on any walls unless they are explicitly requested for '{zone_name}' in the text. If none are specified, return an empty array for subsurfaces. Do not copy windows/doors from other zones.\n"
+            "3. NO-OVERLAP VALIDATION: If a wall has both a door and a window, ensure their offsets do not overlap.\n\n"
+            "=== OUTPUT SCHEMA ===\n"
+            "Required JSON keys:\n"
+            "   - 'wall_layers' (string or array of strings: pick from CONSTRUCTION MENU or ordered list from RAW MATERIAL MENU)\n"
+            "   - 'wall_layers_south', 'wall_layers_north', 'wall_layers_east', 'wall_layers_west' (string or array of strings. If not specified, leave null)\n"
+            "   - 'roof_layers' (string or array of strings)\n"
+            "   - 'window_layers' (string or array of strings)\n"
+            "   - 'skylight' (object: {\"width\": float, \"length\": float} or null)\n"
+            "   - 'wwr_south', 'wwr_north', 'wwr_east', 'wwr_west' (floats 0-1, default 0.0. Use window-to-wall ratios if custom windows are not specified)\n"
+            "   - 'subsurfaces' (array of objects): List of windows and doors explicitly requested for this zone. Empty array [] if none. Each subsurface object has:\n"
+            "     - 'type' (string: 'window' or 'door')\n"
+            "     - 'wall' (string: 'South', 'North', 'East', or 'West')\n"
+            "     - 'width' (float: dimension in meters)\n"
+            "     - 'height' (float: dimension in meters)\n"
+            "     - 'offset_x' (float: offset distance from reference edge)\n"
+            "     - 'ref_x' (string: 'left', 'right', or 'center')\n"
+            "     - 'offset_z' (float: offset distance from reference edge)\n"
+            "     - 'ref_z' (string: 'bottom', 'top', or 'center')\n"
+            "     Note: if \"fix to ground\" -> 'ref_z': \"bottom\", 'offset_z': 0.0. If \"X meters from left edge\" -> 'ref_x': \"left\", 'offset_x': X. If \"X meters from top edge\" -> 'ref_z': \"top\", 'offset_z': X. Otherwise use default offset values.\n"
+            "=== CRITICAL DIMENSION RULES ===\n"
+            "1. DIMENSION ORDER RULE: All dimensions specified in 'AxB' format (e.g. '1x2.5m door' or '0.8x1.5m window') MUST be parsed as width = A and height = B. NEVER swap them. For example, a 1x2.5m door MUST have width = 1.0 and height = 2.5.\n"
+            f"CONSTRUCTION MENU: {construction_menu}\n"
+            f"RAW MATERIAL MENU: {raw_materials}\n"
+            f"WINDOW MATERIAL MENU: {window_materials}\n"
+        )
+        user_prompt = (
+            f"USER TASK: {nlp_text}\n"
+            "OUTPUT ONLY VALID JSON:"
+        )
+        
+        if model_type == "openai":
+            output = self._call_openai(system_prompt, user_prompt)
+        elif model_type == "gemini":
+            output = self._call_gemini(system_prompt, user_prompt)
+        elif model_type == "huggingface":
+            output = self._call_huggingface(system_prompt, user_prompt)
+        elif model_type == "ollama":
+            output = self._call_ollama(system_prompt, user_prompt)
+        else:
+            raise ValueError(f"Unknown model type '{model_type}'")
+            
+        return output.replace("```json", "").replace("```", "").strip()
+
     def _call_openai(self, system, user):
         if not self.openai_client:
             raise ValueError("OpenAI API Key missing or client failed to init.")
@@ -566,9 +673,9 @@ class AIPipelines:
             raise ValueError("Ollama python package is not installed. Please install it in Colab: !pip install ollama")
             
         try:
-            # Using gemma3:4b since it is lightweight and fast!
+            # Using gemma3:12b since it is more capable!
             chat_kwargs = {
-                "model": 'gemma3:4b', 
+                "model": 'gemma3:12b', 
                 "messages": [
                     {"role": "system", "content": system},
                     {"role": "user", "content": user}
