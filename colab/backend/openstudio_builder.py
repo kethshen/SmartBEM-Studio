@@ -537,6 +537,37 @@ def build_openstudio_model(params: dict) -> openstudio.model.Model:
     openstudio.model.intersectSurfaces(space_vector)
     openstudio.model.matchSurfaces(space_vector)
 
+    # Reconcile constructions for adjacent surfaces to prevent EnergyPlus layer count mismatch errors
+    for surf in model.getSurfaces():
+        if surf.outsideBoundaryCondition() == "Surface":
+            adj_surf_opt = surf.adjacentSurface()
+            if adj_surf_opt.is_initialized():
+                adj_surf = adj_surf_opt.get()
+                c_opt = surf.construction()
+                adj_c_opt = adj_surf.construction()
+                if c_opt.is_initialized() and adj_c_opt.is_initialized():
+                    c = c_opt.get()
+                    adj_c = adj_c_opt.get()
+                    if c.nameString() != adj_c.nameString():
+                        c_layers_count = 0
+                        adj_c_layers_count = 0
+                        if hasattr(c, "layers"):
+                            try:
+                                c_layers_count = len(c.layers())
+                            except Exception:
+                                pass
+                        if hasattr(adj_c, "layers"):
+                            try:
+                                adj_c_layers_count = len(adj_c.layers())
+                            except Exception:
+                                pass
+                        if c_layers_count >= adj_c_layers_count:
+                            adj_surf.setConstruction(c)
+                            print(f"[OpenStudio Builder] Reconciled interzone constructions: Set '{adj_surf.nameString()}' construction to '{c.nameString()}' (matching '{surf.nameString()}')")
+                        else:
+                            surf.setConstruction(adj_c)
+                            print(f"[OpenStudio Builder] Reconciled interzone constructions: Set '{surf.nameString()}' construction to '{adj_c.nameString()}' (matching '{adj_surf.nameString()}')")
+
     # 5.5 Match/Mirror Subsurfaces on Shared Walls to avoid invalid blank Outside Boundary Condition Object severe error
     for surf in model.getSurfaces():
         if surf.outsideBoundaryCondition() == "Surface":
