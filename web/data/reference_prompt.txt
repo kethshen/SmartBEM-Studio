@@ -1,0 +1,57 @@
+[GLOBAL SETTINGS]
+- occupancy_rate: 30.00 m2/people
+- lighting_level: 6.00 W/m2
+- equipment_power: 45.80 W/m2
+- ventilation_ach: 0.5
+- infiltration_ach: 0.5
+- hvac_system: psz_ac
+- occupancy_schedule: occ_weekday_start=9, occ_weekday_end=17, occ_weekend_start=0, occ_weekend_end=0
+- lighting_schedule: light_weekday_start=8, light_weekday_end=18, light_weekend_start=0, light_weekend_end=0
+- equipment_schedule: equip_weekday_start=0, equip_weekday_end=24, equip_weekend_start=0, equip_weekend_end=24
+- thermostat_setpoints: heat_set_occ=21.0, heat_set_unocc=15.0, cool_set_occ=24.0, cool_set_unocc=28.0
+- window_properties: window_u_factor=3.0, window_shgc=0.5
+
+<Zone: Office>
+- geometry: length=6.00, width=8.00, height=4.00
+- relative_position: anchor (origin at 0,0,0)
+- roof: pitched, gable_height=3.00, skylight=2.0x1.5
+- wall_constructions:
+  - North: 'Medium Exterior Wall'
+  - South: 'M01 100mm brick', 'I02 50mm insulation board'
+  - East: 'Medium Exterior Wall'
+  - West: 'Medium Exterior Wall'
+- subsurfaces:
+  - type: window, wall: South, size: 1.5m wide x 2.0m high, offset_x: 2.0m from left edge, offset_z: 1.0m from top edge
+  - type: window, wall: West, size: 0.8m wide x 1.5m high, offset_x: 2.0m from left edge, offset_z: 1.5m from top edge
+  - type: door, wall: West, size: 1.0m wide x 2.5m high, offset_x: 5.0m from left edge, offset_z: 0.0m from bottom edge
+</Zone: Office>
+
+<Zone: MeetingRoom>
+- geometry: length=6.00, width=4.00, height=4.00
+- relative_position: attached to North wall of Office
+- roof: pitched, gable_height=3.00, skylight=2.0x1.5
+- wall_constructions:
+  - North: 'M01 100mm brick', 'I02 50mm insulation board'
+  - South: 'Medium Exterior Wall'
+  - East: 'Medium Exterior Wall'
+  - West: 'Medium Exterior Wall'
+- subsurfaces:
+  - type: window, wall: North, size: 1.0m wide x 1.0m high, offset_x: 2.0m from left edge, offset_z: 1.5m from top edge
+  - type: window, wall: West, size: 0.8m wide x 1.5m high, offset_x: 1.0m from left edge, offset_z: 1.5m from top edge
+  - type: door, wall: South, size: 1.0m wide x 2.5m high, offset_x: 0.5m from left edge, offset_z: 0.0m from bottom edge
+</Zone: MeetingRoom>
+
+<Zone: Lobby>
+- geometry: length=5.00, width=8.00, height=4.00
+- relative_position: attached to East wall of Office
+- roof: pitched, gable_height=3.00, skylight=2.0x1.5
+- wall_constructions:
+  - North: 'Medium Exterior Wall'
+  - South: 'M01 100mm brick', 'I02 50mm insulation board'
+  - East: 'Medium Exterior Wall'
+  - West: 'Medium Exterior Wall'
+- subsurfaces:
+  - type: door, wall: East, size: 2.0m wide x 2.5m high, offset_x: 3.0m from left edge, offset_z: 0.0m from bottom edge
+  - type: door, wall: South, size: 1.0m wide x 2.5m high, offset_x: 2.0m from left edge, offset_z: 0.0m from bottom edge
+  - type: window, wall: South, size: 1.0m wide x 1.5m high, offset_x: 4.5m from left edge, offset_z: 1.5m from top edge
+</Zone: Lobby>
