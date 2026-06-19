@@ -53,7 +53,7 @@ The project also includes an **Extended Kalman Filter (EKF)** module for estimat
 
 ### Step 1 — Create your `secrets.json`
 
-Create a file at `colab/secrets.json` with your Ngrok Authtoken:
+Create a file at `backend_server/secrets.json` with your Ngrok Authtoken:
 
 ```json
 {
@@ -67,7 +67,7 @@ Create a file at `colab/secrets.json` with your Ngrok Authtoken:
 
 ### Step 2 — Start the Backend (Google Colab)
 
-1. Open `colab/main_backend.ipynb` in Google Colab.
+1. Open `backend_server/main_backend.ipynb` in Google Colab.
 2. Click **Runtime → Run All**.
 3. The notebook will automatically:
    - Install all dependencies
@@ -113,7 +113,7 @@ Download or clone the repository, then open `web/index.html` in any browser. No 
 ```
 SmartHVAC-Studio/
 ├── web/          # Web Dashboard (HTML / CSS / JS)
-├── colab/        # Backend — FastAPI server, AI pipeline, EnergyPlus runner
+├── backend_server/ # Backend — FastAPI server, AI pipeline, EnergyPlus runner
 ├── EKF/          # Extended Kalman Filter module
 ├── Datasets/     # EnergyPlus object library (used for RAG)
 └── scripts/      # Developer utilities

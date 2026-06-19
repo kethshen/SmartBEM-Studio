@@ -3,8 +3,8 @@
 # ==============================================================
 .env
 *.env
-colab/secrets.json
-colab/serviceAccountKey.json
+backend_server/secrets.json
+backend_server/serviceAccountKey.json
 
 # ==============================================================
 # 2. PERSONAL NOTES, ACADEMIC & STUDY MATERIAL
@@ -20,24 +20,24 @@ EKF/Exp setup/
 EKF/results_robod_room3
 
 # ==============================================================
-# 3. DEVELOPMENT & TESTING ARTIFACTS (colab/)
+# 3. DEVELOPMENT & TESTING ARTIFACTS (backend_server/)
 # ==============================================================
 
 # Test scripts
-colab/test_*.py
-colab/test_*.html
-colab/test_*.idf
-colab/test_mz_os.idf
-colab/test_sz_os.idf
-colab/verify_phase2.py
-colab/rewrite_geom.py
-colab/ollama_colab_youtube.py
-colab/simulation_runner.py
-colab/colab_notebook_cleanup.md
+backend_server/test_*.py
+backend_server/test_*.html
+backend_server/test_*.idf
+backend_server/test_mz_os.idf
+backend_server/test_sz_os.idf
+backend_server/verify_phase2.py
+backend_server/rewrite_geom.py
+backend_server/ollama_colab_youtube.py
+backend_server/simulation_runner.py
+backend_server/colab_notebook_cleanup.md
 
 # Legacy notebooks (not the main one)
-colab/EMS_Cookbook.ipynb
-colab/Energyplus_test.ipynb
+backend_server/EMS_Cookbook.ipynb
+backend_server/Energyplus_test.ipynb
 
 # ==============================================================
 # 4. ROOT-LEVEL JUNK & REDUNDANT FILES
@@ -47,7 +47,7 @@ colab/Energyplus_test.ipynb
 in.idf
 generated_idf.idf
 
-# Root-level duplicate of colab/eplus/ (the real one)
+# Root-level duplicate of backend_server/eplus/ (the real one)
 EnergyPlus utility/
 
 # Unused reference folders
@@ -61,16 +61,16 @@ weather_files/
 # ==============================================================
 # 5. AUTO-GENERATED RUNTIME FILES (Colab)
 # ==============================================================
-colab/sim_runs/
-colab/RunFiles/
-colab/RunFiles (1)/
-colab/sim_runs (1)/
-colab/ollama_models/
-colab/ollama.log
-colab/weather/
-colab/weather.epw
-colab/jobs_job_*.csv
-colab/EP Launch results/
+backend_server/sim_runs/
+backend_server/RunFiles/
+backend_server/RunFiles (1)/
+backend_server/sim_runs (1)/
+backend_server/ollama_models/
+backend_server/ollama.log
+backend_server/weather_cache/
+backend_server/weather.epw
+backend_server/jobs_job_*.csv
+backend_server/EP Launch results/
 
 # ==============================================================
 # 6. PYTHON CACHE

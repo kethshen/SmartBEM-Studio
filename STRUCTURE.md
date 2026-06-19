@@ -19,12 +19,12 @@ SmartHVAC-Studio/
 │       ├── architecture.html     # System architecture diagram
 │       └── about.html            # Project info & credits
 │
-├── colab/                        # Backend (runs on Google Colab)
+├── backend_server/                 # Backend (runs on Google Colab / server)
 │   ├── main_backend.ipynb        # Start here (main server bootstrapper)
 │   ├── EKF_Runner.ipynb          # Extended Kalman Filter notebook
 │   ├── requirements.txt          # Python dependencies
 │   │
-│   ├── backend/                  # Core Python pipeline modules
+│   ├── core/                     # Core Python pipeline modules
 │   │   ├── fastapi_server.py     # FastAPI app (HTTP endpoints)
 │   │   ├── model_generator.py    # Ollama prompt orchestration (2-pass RAG)
 │   │   ├── coordinates_calculator.py # Multi-zone coordinate & adjacency engine
@@ -35,7 +35,7 @@ SmartHVAC-Studio/
 │   │   ├── prompt_preprocessor.py # Prompt structuring preprocessor
 │   │   └── index.json            # Pre-built dataset index for RAG
 │   │
-│   ├── templates/                # EnergyPlus base files
+│   ├── idf_templates/            # EnergyPlus base files
 │   │   ├── Base.idf              # Base EnergyPlus template
 │   │   ├── catalog.json          # HVAC system catalog
 │   │   └── hvac/                 # Modular HVAC IDF snippets (psz_ac, vav, etc.)
@@ -65,8 +65,8 @@ SmartHVAC-Studio/
 
 | Path | Created by | Contents |
 |---|---|---|
-| `colab/weather/` | `weather_file_finder.py` | Downloaded EPW files (cached) |
-| `colab/RunFiles/` | Simulation pipeline | Generated `.idf` files per job |
-| `colab/sim_runs/` | EnergyPlus runner | Raw simulation output files |
-| `colab/ollama_models/` | Ollama on Colab | Downloaded model weights |
-| `colab/secrets.json` | You | Ngrok authtoken (never commit) |
+| `backend_server/weather_cache/` | `weather_file_finder.py` | Downloaded EPW files (cached) |
+| `backend_server/RunFiles/` | Simulation pipeline | Generated `.idf` files per job |
+| `backend_server/sim_runs/` | EnergyPlus runner | Raw simulation output files |
+| `backend_server/ollama_models/` | Ollama on Colab | Downloaded model weights |
+| `backend_server/secrets.json` | You | Ngrok authtoken (never commit) |
