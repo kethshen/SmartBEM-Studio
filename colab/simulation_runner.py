@@ -28,7 +28,7 @@ def run_simulation_job(job_id, idf_path, epw_path, config=None, output_dir_base=
     # Lazy import to avoid loading pyenergyplus before bootstrap
     from eplus.eplus_util import EPlusUtil
     from eplus.sql_explorer import EPlusSqlExplorer
-    from backend import visualizer
+    from backend import chart_generator
     
     # 2. Setup Run Directory
     run_dir = os.path.join(output_dir_base, job_id)
@@ -898,7 +898,7 @@ def run_simulation_job(job_id, idf_path, epw_path, config=None, output_dir_base=
     # 10. Generate 3D HTML
     try:
         geometry_path = os.path.join(run_dir, "geometry.html")
-        if visualizer.generate_3d_html(idf_path, geometry_path):
+        if chart_generator.generate_3d_html(idf_path, geometry_path):
             results["geometry"] = geometry_path
             print(f"[{job_id}] Successfully generated geometry.html")
     except Exception as e:

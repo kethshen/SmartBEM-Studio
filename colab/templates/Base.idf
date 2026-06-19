@@ -113,7 +113,7 @@
 
 ! ==========================================================================
 ! GEOMETRY IS NOT INCLUDED IN THIS TEMPLATE.
-! geometry_util.py generates Zone, Walls, Roof, Floor, and Windows
+! coordinates_calculator.py generates Zone, Walls, Roof, Floor, and Windows
 ! dynamically and appends them to this template during IDF assembly.
 ! ==========================================================================
 
@@ -195,7 +195,7 @@
 
 ! ==========================================================================
 ! HVAC SYSTEM IS NOT INCLUDED IN THIS TEMPLATE.
-! ai_generator.py loads the selected HVAC template from templates/hvac/
+! model_generator.py loads the selected HVAC template from templates/hvac/
 ! and injects it here during IDF assembly.
 ! ==========================================================================
 {HVAC_SYSTEM_BLOCK}

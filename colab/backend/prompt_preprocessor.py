@@ -1,6 +1,6 @@
 import os
 
-class PromptStructurer:
+class PromptPreprocessor:
     def __init__(self, ai_pipelines_instance=None):
         self.ai_pipelines = ai_pipelines_instance
 

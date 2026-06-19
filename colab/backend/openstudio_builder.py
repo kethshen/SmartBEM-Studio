@@ -6,8 +6,8 @@ import openstudio
 
 # Ensure we can import from the backend directory
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-from backend.geometry_util import resolve_zone_origins
-from backend import idf_extractor
+from backend.coordinates_calculator import resolve_zone_origins
+from backend import idf_assembler
 
 def build_openstudio_model(params: dict) -> openstudio.model.Model:
     """
@@ -86,7 +86,7 @@ def build_openstudio_model(params: dict) -> openstudio.model.Model:
 
     extracted_blocks = {}
     for name in names_to_resolve:
-        idf_extractor.resolve_dependencies("Construction", name, extracted_blocks)
+        idf_assembler.resolve_dependencies("Construction", name, extracted_blocks)
 
     # Compile blocks to an IDF string and reverse-translate into OpenStudio Model
     idf_string = ""
@@ -134,7 +134,7 @@ def build_openstudio_model(params: dict) -> openstudio.model.Model:
         for layer in layers_input:
             if not isinstance(layer, str):
                 continue
-            c_layers = idf_extractor.get_construction_layers(layer)
+            c_layers = idf_assembler.get_construction_layers(layer)
             if c_layers:
                 flat_layers.extend(c_layers)
             else:

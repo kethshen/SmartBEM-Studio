@@ -136,10 +136,10 @@ def generate_3d_html(idf_path, output_path):
                 "vertices": verts,
             })
         except Exception as e:
-            print(f"[Visualizer] Error parsing vertices for '{name}': {e}")
+            print(f"[Chart Generator] Error parsing vertices for '{name}': {e}")
 
     if not surfaces:
-        print("[Visualizer] No geometry surfaces found in IDF.")
+        print("[Chart Generator] No geometry surfaces found in IDF.")
         return False
 
     # ------------------------------------------------------------------ #
@@ -333,7 +333,7 @@ def generate_3d_html(idf_path, output_path):
     )
 
     fig.write_html(output_path)
-    print(f"[Visualizer] 3D HTML saved to: {output_path}")
+    print(f"[Chart Generator] 3D HTML saved to: {output_path}")
     return True
 
 
@@ -342,5 +342,5 @@ if __name__ == "__main__":
     if len(sys.argv) > 2:
         generate_3d_html(sys.argv[1], sys.argv[2])
     else:
-        print("Usage: python visualizer.py <idf_path> <output_html_path>")
+        print("Usage: python chart_generator.py <idf_path> <output_html_path>")
 

@@ -34,7 +34,7 @@ class TeeStream:
 
 # Import our custom modules
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from backend.ai_generator import AIPipelines
+from backend.model_generator import AIPipelines
 import simulation_runner
 
 # Initialize FastAPI app
@@ -101,7 +101,7 @@ def run_simulation_pipeline(job_id: str, prompt: str, settings: dict):
         epw_url = settings.get("epw_url")
         
         # We need to resolve the EPW to a local path (Download it if necessary)
-        from backend.weather_resolver import resolve_epw
+        from backend.weather_file_finder import resolve_epw
         epw_local_path = resolve_epw(settings, cache_dir="../weather_files")
         if not epw_local_path:
              raise Exception(f"Failed to resolve EPW file from {epw_url}")

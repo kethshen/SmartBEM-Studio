@@ -26,12 +26,13 @@ SmartHVAC-Studio/
 │   │
 │   ├── backend/                  # Core Python pipeline modules
 │   │   ├── fastapi_server.py     # FastAPI app (HTTP endpoints)
-│   │   ├── ai_generator.py       # Ollama prompt orchestration (2-pass RAG)
-│   │   ├── geometry_util.py      # Multi-zone coordinate & adjacency engine
-│   │   ├── idf_extractor.py      # IDF file assembly from AI output
-│   │   ├── visualizer.py         # Plotly chart generation from simulation results
-│   │   ├── weather_resolver.py   # EPW file download & caching from NREL S3
-│   │   ├── dataset_indexer.py    # EnergyPlus dataset RAG indexer
+│   │   ├── model_generator.py    # Ollama prompt orchestration (2-pass RAG)
+│   │   ├── coordinates_calculator.py # Multi-zone coordinate & adjacency engine
+│   │   ├── idf_assembler.py      # IDF file assembly from AI output
+│   │   ├── chart_generator.py    # Plotly chart generation from simulation results
+│   │   ├── weather_file_finder.py # EPW file download & caching from NREL S3
+│   │   ├── material_dict_compiler.py # EnergyPlus dataset RAG indexer
+│   │   ├── prompt_preprocessor.py # Prompt structuring preprocessor
 │   │   └── index.json            # Pre-built dataset index for RAG
 │   │
 │   ├── templates/                # EnergyPlus base files
@@ -64,7 +65,7 @@ SmartHVAC-Studio/
 
 | Path | Created by | Contents |
 |---|---|---|
-| `colab/weather/` | `weather_resolver.py` | Downloaded EPW files (cached) |
+| `colab/weather/` | `weather_file_finder.py` | Downloaded EPW files (cached) |
 | `colab/RunFiles/` | Simulation pipeline | Generated `.idf` files per job |
 | `colab/sim_runs/` | EnergyPlus runner | Raw simulation output files |
 | `colab/ollama_models/` | Ollama on Colab | Downloaded model weights |
