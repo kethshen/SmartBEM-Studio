@@ -20,7 +20,7 @@ SmartHVAC-Studio/
 │       └── about.html            # Project info & credits
 │
 ├── colab/                        # Backend (runs on Google Colab)
-│   ├── Run_Connected_Experiment.ipynb  ← Start here
+│   ├── main_backend.ipynb        # Start here (main server bootstrapper)
 │   ├── EKF_Runner.ipynb          # Extended Kalman Filter notebook
 │   ├── requirements.txt          # Python dependencies
 │   │

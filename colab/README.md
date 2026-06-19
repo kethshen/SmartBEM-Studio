@@ -4,7 +4,7 @@ This directory contains the simulation and AI processing backend for **SmartHVAC
 
 ## Core Files & Entry Points
 
-- **`Run_Connected_Experiment.ipynb`:** The primary Jupyter notebook. It mounts Google Drive, boots Ollama, downloads the local LLM (`qwen3.5:9b`), pulls the FastAPI codebase from GitHub, and opens a public Ngrok tunnel to receive requests from the web dashboard.
+- **`main_backend.ipynb`:** The primary Jupyter notebook. It mounts Google Drive, boots Ollama, downloads the local LLM (`qwen3.5:9b`), pulls the FastAPI codebase from GitHub, and opens a public Ngrok tunnel to receive requests from the web dashboard.
 - **`EMS_Cookbook.ipynb`:** Reference guide containing scripts and patterns for Energy Management System (EMS) control in EnergyPlus.
 - **`requirements.txt`:** List of Python dependencies required to run the server.
 

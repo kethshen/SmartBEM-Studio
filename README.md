@@ -67,7 +67,7 @@ Create a file at `colab/secrets.json` with your Ngrok Authtoken:
 
 ### Step 2 — Start the Backend (Google Colab)
 
-1. Open `colab/Run_Connected_Experiment.ipynb` in Google Colab.
+1. Open `colab/main_backend.ipynb` in Google Colab.
 2. Click **Runtime → Run All**.
 3. The notebook will automatically:
    - Install all dependencies

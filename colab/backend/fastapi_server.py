@@ -35,7 +35,7 @@ class TeeStream:
 # Import our custom modules
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from backend.model_generator import AIPipelines
-import simulation_runner
+import energyplus_simulator
 
 # Initialize FastAPI app
 app = FastAPI(title="SmartHVAC Studio Backend API")
@@ -89,7 +89,7 @@ def run_simulation_pipeline(job_id: str, prompt: str, settings: dict):
             raise Exception(f"AI Generation Error:\n{idf_content}")
 
         # Save generated IDF to a temporary file outside the run directory
-        # (Because simulation_runner will wipe the run directory before starting)
+        # (Because energyplus_simulator will wipe the run directory before starting)
         raw_idf_path = os.path.join(OUTPUT_DIR, f"{job_id}_raw.idf")
         with open(raw_idf_path, "w", encoding="utf-8") as f:
             f.write(idf_content)
@@ -107,7 +107,7 @@ def run_simulation_pipeline(job_id: str, prompt: str, settings: dict):
              raise Exception(f"Failed to resolve EPW file from {epw_url}")
 
         # Run the actual simulation
-        run_results = simulation_runner.run_simulation_job(
+        run_results = energyplus_simulator.run_simulation_job(
             job_id=job_id, 
             idf_path=raw_idf_path, 
             epw_path=epw_local_path, 
