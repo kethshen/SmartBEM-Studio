@@ -394,7 +394,7 @@
             ];
 
             // Fetch the JSON data
-            fetch('../assets/data/index.json')
+            fetch('../data/index.json')
                 .then(response => {
                     if (!response.ok) throw new Error("Could not load index.json");
                     return response.json();

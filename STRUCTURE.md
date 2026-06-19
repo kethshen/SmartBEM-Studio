@@ -10,7 +10,8 @@ SmartHVAC-Studio/
 │   ├── script.js                 # Global JS (sidebar, backend connection)
 │   ├── assets/                   # Icons, images
 │   ├── data/
-│   │   └── weather_index.json    # Global EPW weather station database (~7000 stations)
+│   │   ├── weather_index.json    # Global EPW weather station database (~7000 stations)
+│   │   └── index.json            # Material & construction dictionary index for UI search
 │   └── pages/
 │       ├── nlp.html              # Simulation Setup (main AI input page)
 │       ├── results.html          # Results viewer (charts & plots)
