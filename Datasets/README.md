@@ -3,7 +3,7 @@
 This directory contains reference object libraries (in `.idf` and `.dat` formats) extracted from the official **EnergyPlus v25.2.0** installation.
 
 > [!NOTE]
-> These datasets are used by the SmartHVAC Studio backend (primarily in the two-pass RAG and construction resolving pipelines) to retrieve standardized properties for building materials, construction assemblies, HVAC configurations, and schedules.
+> These datasets are used by the SmartBEM Studio backend (primarily in the two-pass RAG and construction resolving pipelines) to retrieve standardized properties for building materials, construction assemblies, HVAC configurations, and schedules.
 
 ## Directory Structure & Contents
 
@@ -24,7 +24,7 @@ This directory contains reference object libraries (in `.idf` and `.dat` formats
 - **`Window and Glazing Systems/`**
   - Glazing materials, gas fills, window blinds, screens, and standard window assemblies.
 
-## Usage in SmartHVAC Studio
+## Usage in SmartBEM Studio
 
 During the AI generation phase:
 1. The **two-pass prompt preprocessor** parses the user's natural language input.

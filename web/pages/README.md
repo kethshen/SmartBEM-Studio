@@ -1,6 +1,6 @@
 # Web Pages Directory
 
-This directory contains the individual subpages composing the **SmartHVAC Studio** dashboard.
+This directory contains the individual subpages composing the **SmartBEM Studio** dashboard.
 
 ## Pages Overview
 

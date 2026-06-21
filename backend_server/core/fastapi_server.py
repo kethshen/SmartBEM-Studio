@@ -13,7 +13,7 @@ import nest_asyncio
 from pyngrok import ngrok
 
 # Setup scratch directories and redirect standard output/error to backend.log
-OUTPUT_DIR = os.path.join(tempfile.gettempdir(), "smarthvac_sim_runs")
+OUTPUT_DIR = os.path.join(tempfile.gettempdir(), "smartbem_sim_runs")
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 LOG_FILE_PATH = os.path.join(OUTPUT_DIR, "backend.log")
 
@@ -38,7 +38,7 @@ from core.model_generator import AIPipelines
 import energyplus_simulator
 
 # Initialize FastAPI app
-app = FastAPI(title="SmartHVAC Studio Backend API")
+app = FastAPI(title="SmartBEM Studio Backend API")
 
 # Allow CORS so the frontend can communicate directly
 app.add_middleware(
@@ -189,7 +189,7 @@ async def ping():
     """
     Simple health check for the frontend to verify the Ngrok URL is correct and online.
     """
-    return {"status": "online", "message": "SmartHVAC Backend is running."}
+    return {"status": "online", "message": "SmartBEM Backend is running."}
 
 def start_server(port=8000):
     """

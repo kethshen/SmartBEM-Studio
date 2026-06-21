@@ -12,7 +12,7 @@ class PromptPreprocessor:
             return raw_prompt # Already structured
 
         system_prompt = (
-            "You are a helpful assistant specialized in energy modeling prompts for SmartHVAC-Studio.\n"
+            "You are a helpful assistant specialized in energy modeling prompts for SmartBEM-Studio.\n"
             "Your task is to rewrite the user's messy, natural language building description into a clean, "
             "structured, optimized format that local LLMs can read without attention-bleed or dimension errors.\n\n"
             "=== STRUCTURE RULES ===\n"

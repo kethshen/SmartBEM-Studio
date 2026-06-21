@@ -1,11 +1,11 @@
-// SmartHVAC Studio — Direct Tunnel Architecture
+// SmartBEM Studio — Direct Tunnel Architecture
 // Connects directly to Google Colab via Ngrok/FastAPI
 
 // ----------------------------
 // Backend URL Management
 // ----------------------------
 function getBackendUrl() {
-  let url = localStorage.getItem("smarthvac_backend_url");
+  let url = localStorage.getItem("smartbem_backend_url");
   if (!url) {
     url = "http://127.0.0.1:8000"; // Default fallback
   }
@@ -14,7 +14,7 @@ function getBackendUrl() {
 }
 
 function setBackendUrl(url) {
-  localStorage.setItem("smarthvac_backend_url", url);
+  localStorage.setItem("smartbem_backend_url", url);
   console.log("[Backend] URL updated to:", url);
 }
 
@@ -128,7 +128,7 @@ function toggleSidebar() {
 // Local Job Management
 // ----------------------------
 function getLocalJobs() {
-  const jobs = localStorage.getItem("smarthvac_jobs");
+  const jobs = localStorage.getItem("smartbem_jobs");
   return jobs ? JSON.parse(jobs) : [];
 }
 
@@ -141,7 +141,7 @@ function saveLocalJob(jobData) {
   } else {
     jobs.unshift(jobData); // newest first
   }
-  localStorage.setItem("smarthvac_jobs", JSON.stringify(jobs));
+  localStorage.setItem("smartbem_jobs", JSON.stringify(jobs));
 }
 
 // ----------------------------
@@ -165,7 +165,7 @@ function submitDescription() {
   const payload = {
     prompt: input.value,
     settings: {
-      ...JSON.parse(localStorage.getItem("smartHVAC_config") || "{}"),
+      ...JSON.parse(localStorage.getItem("smartBEM_config") || "{}"),
       run_type: document.getElementById("simType") ? document.getElementById("simType").value : "design_day",
       weather_file: "USA_IL_Chicago-OHare.Intl.AP.725300_TMY3.epw", 
       epw_url: document.getElementById("weatherEpwUrl") ? document.getElementById("weatherEpwUrl").value : "",

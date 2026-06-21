@@ -1,7 +1,7 @@
 # Repository Structure
 
 ```
-SmartHVAC-Studio/
+SmartBEM-Studio/
 │
 ├── web/                          # Web Dashboard (Vanilla JS/HTML/CSS)
 │   ├── index.html                # Home page (entry point)

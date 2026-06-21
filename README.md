@@ -1,4 +1,4 @@
-# SmartHVAC Studio
+# SmartBEM Studio
 
 **Intelligent Building Modeling, Simulation & Estimation**  
 *ME420 Final Year Project — Faculty of Engineering, University of Peradeniya*
@@ -12,7 +12,7 @@
 
 ## What is this?
 
-SmartHVAC Studio lets you simulate a building's thermal energy performance by simply **describing it in plain English**. There is no complex software to learn - just type something like:
+SmartBEM Studio lets you simulate a building's thermal energy performance by simply **describing it in plain English**. There is no complex software to learn - just type something like:
 
 > *"Create a 3-zone office. Zone A is a 6x8m open office. Zone B is a 4x4m meeting room attached to the North wall of Zone A. Use concrete walls and double-glazed windows on the south."*
 
@@ -76,7 +76,7 @@ Create a file at `backend_server/secrets.json` with your Ngrok Authtoken:
    - Start the FastAPI server and Ngrok tunnel
 4. At the end of the last cell, you'll see:
    ```
-   ✅ SmartHVAC Backend is LIVE at: https://xxxx-xx-xx.ngrok-free.app
+   ✅ SmartBEM Backend is LIVE at: https://xxxx-xx-xx.ngrok-free.app
    ```
 5. **Copy that URL.**
 
@@ -111,7 +111,7 @@ Download or clone the repository, then open `web/index.html` in any browser. No 
 ## Repository Structure
 
 ```
-SmartHVAC-Studio/
+SmartBEM-Studio/
 ├── web/          # Web Dashboard (HTML / CSS / JS)
 ├── backend_server/ # Backend — FastAPI server, AI pipeline, EnergyPlus runner
 ├── EKF/          # Extended Kalman Filter module

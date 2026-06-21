@@ -96,7 +96,7 @@ The dataset has **no humidity sensor**. We have three options:
 
 ### File Structure
 
-#### [MODIFY] [Real_EKF.py](file:///d:/UNI/Sem%207/ME420%20Mech%20Eng%20Research%20Project/SmartHVAC-Studio/EKF/Real_EKF.py)
+#### [MODIFY] [Real_EKF.py](file:///d:/UNI/Sem%207/ME420%20Mech%20Eng%20Research%20Project/SmartBEM-Studio/EKF/Real_EKF.py)
 
 Keep this as the **10-state simulation-only** version. Apply the 3 bug fixes only.
 

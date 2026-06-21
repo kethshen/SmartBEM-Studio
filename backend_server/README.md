@@ -1,6 +1,6 @@
-# SmartHVAC Studio — Backend Server
+# SmartBEM Studio — Backend Server
 
-This directory contains the simulation and AI processing backend for **SmartHVAC Studio**. The backend is designed to run in a **Google Colab** environment to leverage GPU acceleration for the local LLM (Ollama) and run the Linux-native EnergyPlus simulation engine.
+This directory contains the simulation and AI processing backend for **SmartBEM Studio**. The backend is designed to run in a **Google Colab** environment to leverage GPU acceleration for the local LLM (Ollama) and run the Linux-native EnergyPlus simulation engine.
 
 ## Core Files & Entry Points
 
@@ -22,4 +22,4 @@ These folders are generated automatically at runtime:
 - `sim_runs/`: Output folders containing EnergyPlus raw results (SQLite databases, logs, errors, CSVs).
 
 ---
-*For a detailed walkthrough of how this backend interacts with the frontend dashboard, see [smarthvac_delivery_guide.md](../docs/smarthvac_delivery_guide.md).*
+*For a detailed walkthrough of how this backend interacts with the frontend dashboard, see [smartbem_delivery_guide.md](../docs/smartbem_delivery_guide.md).*

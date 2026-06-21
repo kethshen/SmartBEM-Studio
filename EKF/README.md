@@ -29,4 +29,4 @@ The goal is to estimate key thermal characteristics of a building envelope:
 - **`Practise demos/` & `Exp setup/`:** Sandbox scripts, toy models, and setup configurations used for practice and testing.
 
 ---
-*For instructions on how to execute these EKF scripts in a Google Colab GPU environment, refer to the [smarthvac_delivery_guide.md](../docs/smarthvac_delivery_guide.md).*
+*For instructions on how to execute these EKF scripts in a Google Colab GPU environment, refer to the [smartbem_delivery_guide.md](../docs/smartbem_delivery_guide.md).*

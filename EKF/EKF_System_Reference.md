@@ -1,6 +1,6 @@
-# EKF System Reference — SmartHVAC FYP
+# EKF System Reference — SmartBEM FYP
 
-> This document is the **single source of truth** for the Extended Kalman Filter (EKF) portion of the SmartHVAC FYP.
+> This document is the **single source of truth** for the Extended Kalman Filter (EKF) portion of the SmartBEM FYP.
 > It follows the notation style used in the practice demos (`_prev`, `_est`, `_pred` suffixes on $X$, $P$, etc.).
 
 ---

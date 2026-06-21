@@ -532,7 +532,7 @@ def run_simulation_job(job_id, idf_path, epw_path, config=None, output_dir_base=
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IDF Object Summary - SmartHVAC Studio</title>
+    <title>IDF Object Summary - SmartBEM Studio</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
         
@@ -787,7 +787,7 @@ def run_simulation_job(job_id, idf_path, epw_path, config=None, output_dir_base=
     <div class="container">
         <header>
             <div>
-                <h1>SmartHVAC Studio</h1>
+                <h1>SmartBEM Studio</h1>
                 <p>Interactive Zone-wise Model Summary</p>
             </div>
             <div class="job-id">Job ID: {job_id}</div>

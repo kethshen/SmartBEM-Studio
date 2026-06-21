@@ -1,5 +1,5 @@
 """
-Weather file resolver for SmartHVAC Studio.
+Weather file resolver for SmartBEM Studio.
 Downloads EPW files from NREL S3 or Firebase Storage based on the epw_url field.
 """
 import os
@@ -37,7 +37,7 @@ def resolve_epw(sim_settings, firebase_bucket=None, cache_dir="weather"):
         
         print(f"[Weather] Downloading from S3: {filename}...")
         try:
-            req = urllib.request.Request(epw_url, headers={"User-Agent": "SmartHVAC-Studio/1.0"})
+            req = urllib.request.Request(epw_url, headers={"User-Agent": "SmartBEM-Studio/1.0"})
             with urllib.request.urlopen(req, timeout=120) as resp:
                 data = resp.read()
             with open(local_path, "wb") as f:

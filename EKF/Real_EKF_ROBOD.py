@@ -1,5 +1,5 @@
 """
-SmartHVAC FYP — 10-State EKF with ROBOD Dataset  (Phase 1)
+SmartBEM FYP — 10-State EKF with ROBOD Dataset  (Phase 1)
 ===========================================================
 Full advisor design restored:
 
@@ -287,7 +287,7 @@ def jacobian_F(X_prev, inputs, dt):
 
 def main():
     print("=" * 60)
-    print(f"  SmartHVAC — 10-State EKF  (ROBOD Room {ROOM_NUM})")
+    print(f"  SmartBEM — 10-State EKF  (ROBOD Room {ROOM_NUM})")
     print("=" * 60)
 
     # ── Load data ─────────────────────────────────────────────────────────────

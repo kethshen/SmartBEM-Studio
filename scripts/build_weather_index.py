@@ -23,7 +23,7 @@ def extract_url_from_html(html_string):
 
 def main():
     print("Downloading master.geojson from NREL GitHub...")
-    req = urllib.request.Request(GEOJSON_URL, headers={"User-Agent": "SmartHVAC-Studio/1.0"})
+    req = urllib.request.Request(GEOJSON_URL, headers={"User-Agent": "SmartBEM-Studio/1.0"})
     with urllib.request.urlopen(req, timeout=60) as resp:
         raw = resp.read().decode("utf-8")
     

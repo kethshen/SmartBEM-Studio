@@ -1,4 +1,4 @@
-# LLM Prompt Optimization Guide for SmartHVAC-Studio
+# LLM Prompt Optimization Guide for SmartBEM-Studio
 
 This guide explains how to format your building descriptions using structural cues and key-value formats to achieve **zero-error parameter extraction** on local LLMs (like `gemma3:12b`).
 

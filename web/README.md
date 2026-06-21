@@ -1,6 +1,6 @@
-# SmartHVAC Studio — Web Dashboard
+# SmartBEM Studio — Web Dashboard
 
-This directory contains the entire user interface for **SmartHVAC Studio** — a client-side dashboard for building modeling, thermal simulation control, and parameter estimation visualization.
+This directory contains the entire user interface for **SmartBEM Studio** — a client-side dashboard for building modeling, thermal simulation control, and parameter estimation visualization.
 
 ## Technologies Used
 - **Structure:** Semantic HTML5
@@ -19,7 +19,7 @@ This directory contains the entire user interface for **SmartHVAC Studio** — a
 The dashboard is designed as a standalone static web application. It does not require compilation or database hosting on the user's end:
 
 ### Method A: Direct File Execution (Zero Setup)
-Simply double-click [web/index.html](file:///d:/UNI/Sem%207/ME420%20Mech%20Eng%20Research%20Project/SmartHVAC-Studio/web/index.html) to open the application directly in any modern web browser.
+Simply double-click [web/index.html](file:///d:/UNI/Sem%207/ME420%20Mech%20Eng%20Research%20Project/SmartBEM-Studio/web/index.html) to open the application directly in any modern web browser.
 
 ### Method B: Local HTTP Server (Recommended)
 To prevent CORS issues with certain advanced browser features, you can run a lightweight local server:
