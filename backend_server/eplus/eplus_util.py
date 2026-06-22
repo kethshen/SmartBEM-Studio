@@ -1913,9 +1913,11 @@ class EPlusUtil:
             {runperiod_name},         !- Name
             {sm},                     !- Begin Month
             {sd},                     !- Begin Day of Month
+            ,                         !- Begin Year
             {em},                     !- End Month
             {ed},                     !- End Day of Month
-            {sdow_line}                 !- Start Day of Week (blank = Use Weather File)
+            ,                         !- End Year
+            {sdow_line}                 !- Day of Week for Start Day (blank = Use Weather File)
             {'Yes' if use_weather_holidays else 'No'},  !- Use Weather File Holidays and Special Days
             {'Yes' if use_weather_dst else 'No'},       !- Use Weather File Daylight Saving Period
             {'Yes' if weekend_holiday_rule else 'No'},  !- Apply Weekend Holiday Rule

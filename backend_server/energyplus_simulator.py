@@ -79,9 +79,11 @@ def run_simulation_job(job_id, idf_path, epw_path, config=None, output_dir_base=
     Annual Run,              !- Name
     1,                       !- Begin Month
     1,                       !- Begin Day of Month
+    ,                        !- Begin Year
     12,                      !- End Month
     31,                      !- End Day of Month
-    ,                        !- Start Day of Week (blank = Use Weather File)
+    ,                        !- End Year
+    ,                        !- Day of Week for Start Day (blank = Use Weather File)
     Yes,                     !- Use Weather File Holidays and Special Days
     Yes,                     !- Use Weather File Daylight Saving Period
     No,                      !- Apply Weekend Holiday Rule
