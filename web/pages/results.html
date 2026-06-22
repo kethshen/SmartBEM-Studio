@@ -89,10 +89,10 @@
       min-width: 0;
     }
 
-    /* Grid for Zone cards (2 columns as requested) */
+    /* Grid for Zone cards (1 column / full width as requested) */
     .zones-grid {
       display: grid;
-      grid-template-columns: repeat(2, 1fr);
+      grid-template-columns: 1fr;
       gap: 1.5rem;
       width: 100%;
     }
@@ -117,12 +117,18 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 1rem 1.25rem;
+      padding: 1.1rem 1.5rem;
       font-weight: 600;
       cursor: pointer;
       user-select: none;
-      background: var(--bg-card);
+      background: #eff6ff; /* Premium light blue highlight for card header */
+      border-bottom: 1px solid #bfdbfe; /* Coordinating light blue border */
       list-style: none;
+      transition: background-color 0.2s;
+    }
+
+    details.dropdown-card summary:hover {
+      background: #dbeafe; /* Richer light blue on hover */
     }
 
     details.dropdown-card summary::-webkit-details-marker {
@@ -206,11 +212,11 @@
 
     .plotly-container {
       width: 100%;
-      height: 350px;
+      height: 480px; /* Increased height to give plots more vertical space */
       border-radius: var(--radius-sm);
       border: 1px solid var(--border-subtle);
       background: var(--bg-app);
-      min-height: 350px;
+      min-height: 480px;
     }
   </style>
 </head>

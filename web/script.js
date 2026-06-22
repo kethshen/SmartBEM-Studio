@@ -600,14 +600,7 @@ function renderPlotlyCharts(csvText) {
     }
     return;
   }
-  const timeLabels = dataRows.map(row => {
-    const raw = row[timeCol].trim();
-    // Fallback for old jobs with pure numeric time index: label as "Hr X"
-    if (!isNaN(raw) && !isNaN(parseFloat(raw))) {
-      return `Hr ${raw}`;
-    }
-    return raw;
-  });
+  const timeLabels = dataRows.map((row, idx) => idx + 1);
 
   const resultsContainer = document.getElementById("resultsContainer");
   const resultsNavLinks = document.getElementById("resultsNavLinks");
@@ -979,6 +972,39 @@ function renderPlotlyCharts(csvText) {
   });
  
   // ----------------------------------------------------
+  // Dynamic tick configuration & Day boundary shapes
+  // ----------------------------------------------------
+  let tickmodeVal = 'auto';
+  let dtickVal = undefined;
+  if (timeLabels.length <= 168) {
+    tickmodeVal = 'linear';
+    dtickVal = 4;
+  } else if (timeLabels.length <= 744) {
+    tickmodeVal = 'linear';
+    dtickVal = 24;
+  }
+
+  const shapes = [];
+  if (timeLabels.length <= 240) {
+    for (let h = 24; h < timeLabels.length; h += 24) {
+      shapes.push({
+        type: 'line',
+        xref: 'x',
+        yref: 'paper',
+        x0: h,
+        y0: 0,
+        x1: h,
+        y1: 1,
+        line: {
+          color: '#cbd5e1', // slate-300
+          width: 1,
+          dash: 'dot'
+        }
+      });
+    }
+  }
+
+  // ----------------------------------------------------
   // Render Plotly Charts (after DOM nodes are attached)
   // ----------------------------------------------------
   const layoutBase = {
@@ -988,15 +1014,18 @@ function renderPlotlyCharts(csvText) {
     plot_bgcolor: 'rgba(0,0,0,0)',
     hovermode: 'x unified',
     font: { family: 'Inter, sans-serif', size: 15, color: '#1e293b' }, // larger base font size 15
+    shapes: shapes,
     xaxis: {
       title: {
-        text: 'Simulation Time (Date/Time)',
+        text: 'Time (hours)',
         font: { size: 15, weight: 'bold', color: '#1e293b' },
         standoff: 15
       },
       gridcolor: '#e2e8f0',
       zeroline: false,
-      tickfont: { size: 13 }
+      tickfont: { size: 13 },
+      tickmode: tickmodeVal,
+      dtick: dtickVal
     },
     yaxis: {
       gridcolor: '#e2e8f0',
@@ -1024,7 +1053,7 @@ function renderPlotlyCharts(csvText) {
         ...layoutBase.yaxis, 
         title: { text: 'Temperature (°C)', font: { size: 15, weight: 'bold', color: '#1e293b' } } 
       } 
-    }, { responsive: true, displayModeBar: false });
+    }, { responsive: true, displayModeBar: true });
   }
  
   const globalUtilityTraces = [];
@@ -1055,7 +1084,7 @@ function renderPlotlyCharts(csvText) {
         ...layoutBase.yaxis, 
         title: { text: 'Energy (kWh)', font: { size: 15, weight: 'bold', color: '#1e293b' } } 
       } 
-    }, { responsive: true, displayModeBar: false });
+    }, { responsive: true, displayModeBar: true });
   }
  
   // Render all Zone plots
@@ -1065,7 +1094,7 @@ function renderPlotlyCharts(csvText) {
       Plotly.newPlot(config.id, config.traces, { 
         ...layoutBase, 
         yaxis: { ...layoutBase.yaxis, title: config.ytitle } 
-      }, { responsive: true, displayModeBar: false });
+      }, { responsive: true, displayModeBar: true });
     }
   });
 
