@@ -514,9 +514,8 @@ def run_simulation_job(job_id, idf_path, epw_path, config=None, output_dir_base=
                     zone_grouped["Global / Shared"][cat] = []
                 zone_grouped["Global / Shared"][cat].append(obj)
 
-        # Build list of sorted zones with Global/Shared at the end
-        sorted_zones = sorted([z for z in zone_grouped.keys() if z != "Global / Shared"])
-        sorted_zones.append("Global / Shared")
+        # Build list of sorted zones with Global/Shared at the front
+        sorted_zones = ["Global / Shared"] + sorted([z for z in zone_grouped.keys() if z != "Global / Shared"])
 
         # Define color palette for dynamic cards
         colors = ["#2563eb", "#0d9488", "#7c3aed", "#d97706", "#db2777", "#4f46e5"]
@@ -605,9 +604,13 @@ def run_simulation_job(job_id, idf_path, epw_path, config=None, output_dir_base=
 
         .dashboard-grid {{
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            grid-template-columns: repeat(2, 1fr);
             gap: 24px;
             align-items: start;
+        }}
+
+        .global-card {{
+            grid-column: span 2;
         }}
 
         .zone-card {{
@@ -776,9 +779,12 @@ def run_simulation_job(job_id, idf_path, epw_path, config=None, output_dir_base=
         }}
 
         /* Responsive adaptations */
-        @media (max-width: 768px) {{
+        @media (max-width: 900px) {{
             .dashboard-grid {{
                 grid-template-columns: 1fr;
+            }}
+            .global-card {{
+                grid-column: span 1;
             }}
         }}
     </style>
@@ -806,8 +812,9 @@ def run_simulation_job(job_id, idf_path, epw_path, config=None, output_dir_base=
             total_objs = sum(len(objs) for objs in categories.values())
             
             icon = "⚙️" if z == "Global / Shared" else "🚪"
+            card_class = "zone-card global-card" if z == "Global / Shared" else "zone-card"
             html += f'''
-            <div class="zone-card" style="--accent-color: {color}; border-top: 4px solid {color};">
+            <div class="{card_class}" style="--accent-color: {color}; border-top: 4px solid {color};">
                 <div class="zone-header">
                     <h2 class="zone-title">
                         <span>{icon} {z}</span>
