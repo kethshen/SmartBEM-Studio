@@ -35,6 +35,16 @@ button {
   border: none;
   cursor: pointer;
   background: none;
+  transition: all var(--transition-fast) ease;
+}
+
+button:hover:not(.btn) {
+  background-color: rgba(0, 0, 0, 0.04);
+}
+
+button:active {
+  background-color: rgba(226, 232, 240, 0.8) !important;
+  transform: scale(0.96);
 }
 
 /* --- Layout: Dashboard Grid --- */
@@ -202,13 +212,26 @@ button {
   align-items: center;
   margin-bottom: 1rem;
   padding-bottom: 1rem;
-  border-bottom: 1px solid var(--bg-app);
+  border-bottom: 1px solid var(--border-subtle);
 }
 
 .card-title {
   font-size: 1.1rem;
   font-weight: 600;
   color: var(--text-primary);
+}
+
+.card-title-pill {
+  font-size: 1.05rem; /* Bigger a bit */
+  font-weight: 600;
+  color: #475569; /* Nice dark gray */
+  background-color: #f1f5f9; /* Nice light gray */
+  padding: 0.35rem 1rem;
+  border-radius: var(--radius-full);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border: 1px solid #e2e8f0;
 }
 
 /* --- Components: Inputs & Forms --- */
@@ -257,8 +280,14 @@ select:focus {
   border-radius: var(--radius-sm);
   font-weight: 600;
   font-size: 0.95rem;
-  transition: var(--transition-fast);
+  transition: all var(--transition-fast) ease;
   gap: 0.5rem;
+  cursor: pointer;
+}
+
+.btn:active {
+  background-color: #e2e8f0 !important;
+  transform: scale(0.98);
 }
 
 .btn-primary {
@@ -271,6 +300,13 @@ select:focus {
   background-color: var(--primary-hover);
   transform: translateY(-1px);
   box-shadow: 0 4px 6px rgba(37, 99, 235, 0.4);
+}
+
+.btn-primary:active {
+  background-color: #93c5fd !important;
+  color: white !important;
+  transform: translateY(1px) scale(0.98) !important;
+  box-shadow: 0 1px 2px rgba(37, 99, 235, 0.2) !important;
 }
 
 .btn-block {

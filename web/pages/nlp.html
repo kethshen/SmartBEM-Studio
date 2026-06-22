@@ -33,14 +33,14 @@
         <!-- Main Content Area -->
         <main class="main-content">
             <header class="page-header">
-                <h1 class="page-title">New Simulation</h1>
-                <p class="page-subtitle">Describe your building and run EnergyPlus simulations powered by AI.</p>
+                <h1 class="page-title">Setup Your Simulation</h1>
+                <p class="page-subtitle">Define project settings and describe your building in plain English to generate EnergyPlus models on Colab.</p>
             </header>
 
             <!-- Top Connectivity Check Section -->
             <section class="card" style="margin-bottom: 2rem;">
                 <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
-                    <h2 class="card-title">System Status</h2>
+                    <h2 class="card-title card-title-pill">Step 1: Connect to ngrok Colab Server Connection</h2>
                 </div>
 
                 <div id="backendUrlRow" style="display: flex; gap: 1rem; align-items: center; padding: 1rem; border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); transition: background-color 0.3s;">
@@ -66,6 +66,28 @@
                             testBackendConnection(true); // Test silently on load
                         }
                     });
+
+                    function copyExampleText() {
+                        const textarea = document.getElementById('exampleTextarea');
+                        textarea.select();
+                        textarea.setSelectionRange(0, 99999);
+                        navigator.clipboard.writeText(textarea.value)
+                            .then(() => {
+                                const btn = document.querySelector('[onclick="copyExampleText()"]');
+                                const originalText = btn.innerText;
+                                btn.innerText = "✅ Copied!";
+                                btn.style.color = "var(--success)";
+                                btn.style.borderColor = "var(--success)";
+                                setTimeout(() => {
+                                    btn.innerText = originalText;
+                                    btn.style.color = "";
+                                    btn.style.borderColor = "";
+                                }, 2000);
+                            })
+                            .catch(err => {
+                                console.error("Failed to copy text: ", err);
+                            });
+                    }
                 </script>
             </section>
 
@@ -73,10 +95,10 @@
                 <!-- Left Column: Input -->
                 <section class="card" style="display: flex; flex-direction: column;">
                     <div class="card-header">
-                        <h2 class="card-title">1. Building Description</h2>
+                        <h2 class="card-title card-title-pill">Step 2: Add Building Description</h2>
                     </div>
                     <div class="form-group" style="flex: 1; display: flex; flex-direction: column; margin-bottom: 0;">
-                        <label for="description">Natural Language Input</label>
+                        <label for="description">Explain your building config (refer the example given below):</label>
                         <textarea id="description" style="flex: 1; resize: none; min-height: 300px;"
                             placeholder="Example: A 3-zone office building in Chicago with a VAV HVAC system..."></textarea>
                     </div>
@@ -85,7 +107,7 @@
                 <!-- Right Column: Configuration -->
                 <section class="card">
                     <div class="card-header">
-                        <h2 class="card-title">2. Simulation Settings</h2>
+                        <h2 class="card-title card-title-pill">Step 3: Simulation Settings</h2>
                     </div>
 
                     <div class="form-group">
@@ -160,7 +182,7 @@
                 <!-- Left Column: Guide -->
                 <section class="card">
                     <div class="card-header">
-                        <h2 class="card-title">3. What can you simulate?</h2>
+                        <h2 class="card-title card-title-pill">4. What can you simulate?</h2>
                     </div>
                     <div style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5;">
                         <strong style="color: var(--text-primary);">Mix and match any of the following!</strong>
@@ -191,13 +213,39 @@
                     </div>
                 </section>
 
-                <!-- Right Column: Placeholder -->
-                <section class="card">
-                    <div class="card-header">
-                        <h2 class="card-title">4. Placeholder</h2>
+                <!-- Right Column: Example Description -->
+                <section class="card" style="display: flex; flex-direction: column;">
+                    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border-subtle);">
+                        <h2 class="card-title card-title-pill">5. Example Description</h2>
+                        <button onclick="copyExampleText()" class="btn" style="padding: 0.25rem 0.75rem; font-size: 0.8rem; background: var(--bg-app); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); font-weight: 500;">
+                            📋 Copy Text
+                        </button>
                     </div>
-                    <div style="color: var(--text-muted); text-align: center; margin-top: 2rem;">
-                        Content coming soon...
+                    <div style="flex: 1; margin-top: 0.5rem; position: relative;">
+                        <textarea id="exampleTextarea" readonly style="width: 100%; height: 260px; resize: none; font-family: inherit; font-size: 0.82rem; line-height: 1.5; background: var(--bg-app); color: var(--text-secondary); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 0.75rem;"
+>Simulate a building with three zones: an office, a meeting room, a lobby
+
+The office is 6.00 meters long, 8.00 meters wide, and 4.00 meters high. The meeting room is attached to the North wall of the office.
+
+The meeting room is 6.00 meters long, 4.00 meters wide, and 4.00 meters high. The lobby is attached to the East wall of the office.
+
+The lobby is 5.00 meters long, 8.00 meters wide, and 4.00 meters high.
+
+For the office: place a 1.5x2m window on the South wall 2m from left edge, 1m from top edge. place a 0.8x1.5m window on the West wall 2m from left edge, 1.5m from top edge. place a 1x2.5m door on the West wall 5m from left edge, fix to ground. Make the South wall out of 'M01 100mm brick' and 'I02 50mm insulation board' and the other walls out of 'Medium Exterior Wall'.
+
+For the meeting room: place a 1x1m window on the North wall 2m from left edge, 1.5m from top edge. place a 0.8x1.5m window on the West wall 1m from left edge, 1.5m from top edge. place a 1x2.5m door on the South wall 0.5m from left edge, fix to ground. Make the North wall out of 'M01 100mm brick' and 'I02 50mm insulation board' and the other walls out of 'Medium Exterior Wall'.
+
+For the lobby: place a 2x2.5m door on the East wall 3m from left edge, fix to ground. place a 1x2.5m door on the South wall 2m from left edge, fix to ground. place a 1x1.5m window on the South wall 4.5m from left edge, 1.5m from top edge. Make the South wall out of 'M01 100mm brick' and 'I02 50mm insulation board' and the other walls out of 'Medium Exterior Wall'.
+
+Global paramters, all three zone has pitched roofs with a gable height of 3 meters. Place a 2.0x1.5m skylight on the roof.
+
+The occupancy rate is 30.00 m2/people, the lighting level is 6.00 W/m2, and the equipment power consumption is 45.80 W/m2.
+
+All zones use a packaged AC unit (psz_ac).
+
+People are in the building from 9am to 5pm on weekdays and completely closed on weekends.
+
+The lights are on from 8am to 6pm, and the equipment runs 24/7.</textarea>
                     </div>
                 </section>
             </div>
@@ -207,7 +255,7 @@
                 <!-- Left Column: Material Dictionary -->
                 <section class="card">
                     <div class="card-header" style="display: flex; flex-direction: column; align-items: flex-start; gap: 1rem;">
-                        <h2 class="card-title">5. Material Dictionary</h2>
+                        <h2 class="card-title card-title-pill">6. Material Dictionary</h2>
                         <div style="display: flex; flex-direction: column; gap: 0.75rem; width: 100%;">
                             <input type="text" id="dictSearch" placeholder="Search materials (e.g. glass, wood)..." 
                                 style="width: 100%; padding: 0.8rem; border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); background: var(--bg-app); color: var(--text-primary); font-size: 1rem;">
@@ -225,7 +273,7 @@
                 <!-- Right Column: Placeholder -->
                 <section class="card">
                     <div class="card-header">
-                        <h2 class="card-title">6. Placeholder</h2>
+                        <h2 class="card-title card-title-pill">7. Placeholder</h2>
                     </div>
                     <div style="color: var(--text-muted); text-align: center; margin-top: 2rem;">
                         Content coming soon...

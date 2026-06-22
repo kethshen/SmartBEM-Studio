@@ -37,17 +37,54 @@
         <h1 class="page-title">Welcome to SmartBEM Studio</h1>
       </header>
 
-      <div class="grid-2" style="display: grid; grid-template-columns: 3fr 2fr; gap: 2rem; align-items: start;">
+      <div class="grid-2" style="display: grid; grid-template-columns: 7fr 3fr; gap: 2rem; align-items: start;">
         <!-- Left Column: Cards -->
         <div style="display: flex; flex-direction: column; gap: 1.5rem;">
           <!-- Intro Card -->
-          <section class="card" style="margin: 0; background-color: var(--bg-subtle);">
-            <p style="color: var(--text-primary); margin-bottom: 0; line-height: 1.6; font-size: 1.05rem;">
+          <section class="card" style="margin: 0; display: flex; flex-direction: column; gap: 1rem;">
+            <div class="card-header" style="margin-bottom: 0; padding-bottom: 0.75rem;">
+              <h2 class="card-title">💡 What is SmartBEM?</h2>
+            </div>
+
+            <p style="color: var(--text-primary); line-height: 1.6; font-size: 1.05rem; font-weight: 500; margin: 0;">
               Ever wanted to simulate a building's energy use without learning complicated software? SmartBEM Studio
               makes it easy!
-              Just type out what your building looks like in plain English, and our AI will automatically build the 3D
-              model and run the energy simulation for you.
             </p>
+
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-top: 0.5rem;">
+              <!-- Feature 1 -->
+              <div
+                style="background: var(--bg-app); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 1.25rem 1rem; display: flex; flex-direction: column; gap: 0.5rem;">
+                <div style="font-size: 1.5rem;">💻</div>
+                <div style="font-weight: 600; color: var(--text-primary); font-size: 1rem;">Lightweight & Free</div>
+                <div style="font-size: 0.875rem; color: var(--text-secondary); line-height: 1.5;">
+                  Completely open source. Runs locally on any standard laptop using a web browser and a simple code
+                  editor.
+                </div>
+              </div>
+
+              <!-- Feature 2 -->
+              <div
+                style="background: var(--bg-app); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 1.25rem 1rem; display: flex; flex-direction: column; gap: 0.5rem;">
+                <div style="font-size: 1.5rem;">📝</div>
+                <div style="font-weight: 600; color: var(--text-primary); font-size: 1rem;">NLP Translation</div>
+                <div style="font-size: 0.875rem; color: var(--text-secondary); line-height: 1.5;">
+                  Describe your building layout in plain English, and our workflow will automatically generate the 3D
+                  model and simulation files.
+                </div>
+              </div>
+
+              <!-- Feature 3 -->
+              <div
+                style="background: var(--bg-app); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 1.25rem 1rem; display: flex; flex-direction: column; gap: 0.5rem;">
+                <div style="font-size: 1.5rem;">☁️</div>
+                <div style="font-weight: 600; color: var(--text-primary); font-size: 1rem;">Colab-Powered</div>
+                <div style="font-size: 0.875rem; color: var(--text-secondary); line-height: 1.5;">
+                  All heavy processing (Ollama LLM and EnergyPlus engine) runs entirely on Google Colab, not on your
+                  laptop.
+                </div>
+              </div>
+            </div>
           </section>
 
           <!-- Card 1: AI Modeling -->
@@ -56,8 +93,10 @@
               <h2 class="card-title">✨ AI Building Simulator</h2>
             </div>
             <p style="color: var(--text-secondary); margin-bottom: 1.5rem; line-height: 1.6;">
-              Tell our AI about your building - like how big it is, where the windows are, and what it's made of.
-              The AI will instantly draw a 3D model and calculate its energy use for you! No coding required.
+              Describe your building's architecture and thermal configurations in plain English. Our natural language
+              processing workflow translates your text description into a structured EnergyPlus model using local Ollama
+              LLMs. It then runs the industry-standard EnergyPlus simulation engine to generate detailed thermal
+              performance profiles, load calculations, and an interactive 3D geometry model.
             </p>
             <a href="pages/nlp.html" class="btn btn-primary">
               Launch AI Simulator &rarr;
@@ -81,9 +120,17 @@
         </div>
 
         <!-- Right Column: Image -->
-        <section class="card" style="padding: 0; overflow: hidden; display: flex; height: 100%;">
+        <section class="card"
+          style="padding: 0; overflow: hidden; display: flex; flex-direction: column; height: 100%;">
           <img src="assets/images/simone-hutsch-l8fyK9RS-OU-unsplash.jpg" alt="Building Architecture"
-            style="width: 100%; height: 100%; object-fit: cover; min-height: 350px;">
+            style="width: 100%; height: 100%; object-fit: cover; min-height: 350px; flex: 1;">
+          <div
+            style="padding: 0.5rem 1rem; text-align: right; font-size: 0.75rem; color: var(--text-secondary); background: var(--bg-card); border-top: 1px solid var(--border-subtle);">
+            Photo by <a href="https://unsplash.com/@heysupersimi" target="_blank"
+              style="color: var(--primary); text-decoration: none; font-weight: 500;">Simone Hutsch</a> on <a
+              href="https://unsplash.com" target="_blank"
+              style="color: var(--primary); text-decoration: none; font-weight: 500;">Unsplash</a>
+          </div>
         </section>
       </div>
 

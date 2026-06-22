@@ -12,7 +12,7 @@ For the meeting room: place a 1x1m window on the North wall 2m from left edge, 1
 
 For the lobby: place a 2x2.5m door on the East wall 3m from left edge, fix to ground. place a 1x2.5m door on the South wall 2m from left edge, fix to ground. place a 1x1.5m window on the South wall 4.5m from left edge, 1.5m from top edge. Make the South wall out of 'M01 100mm brick' and 'I02 50mm insulation board' and the other walls out of 'Medium Exterior Wall'.
 
-All three zone has pitched roofs with a gable height of 3 meters. Place a 2.0x1.5m skylight on the roof.
+Global paramters, all three zone has pitched roofs with a gable height of 3 meters. Place a 2.0x1.5m skylight on the roof.
 
 The occupancy rate is 30.00 m2/people, the lighting level is 6.00 W/m2, and the equipment power consumption is 45.80 W/m2.
 
