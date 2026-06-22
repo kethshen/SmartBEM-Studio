@@ -409,25 +409,52 @@ function showJobDetails(jobId, data) {
   }
 
   // Handle Results Visualization (Frontend Plotly)
-  const plotlyZoneTemp = document.getElementById("plotlyZoneTemp");
-  const plotlyZoneEnergy = document.getElementById("plotlyZoneEnergy");
-  const plotlyAirflow = document.getElementById("plotlyAirflow");
-  const plotlyUtility = document.getElementById("plotlyUtility");
+  const resultsContainer = document.getElementById("resultsContainer");
+  const resultsSidebar = document.getElementById("resultsSidebar");
 
   if (data.status === "done" && data.result && data.result.csv_data) {
+    if (resultsSidebar) resultsSidebar.style.display = "block";
     renderPlotlyCharts(data.result.csv_data);
-  } else if (data.status === "error") {
-    if (plotlyZoneTemp) plotlyZoneTemp.innerHTML = `<p style="color:var(--error); padding:2rem;">Simulation failed.</p>`;
-    if (plotlyZoneEnergy) plotlyZoneEnergy.innerHTML = "";
-    if (plotlyAirflow) plotlyAirflow.innerHTML = "";
-    if (plotlyUtility) plotlyUtility.innerHTML = "";
   } else {
-    if (plotlyZoneTemp) plotlyZoneTemp.innerHTML = `<p style="color:var(--text-secondary); padding:2rem;">Simulation in progress...</p>`;
-    if (plotlyZoneEnergy) plotlyZoneEnergy.innerHTML = "";
-    if (plotlyAirflow) plotlyAirflow.innerHTML = "";
-    if (plotlyUtility) plotlyUtility.innerHTML = "";
+    if (resultsSidebar) resultsSidebar.style.display = "none";
+    if (resultsContainer) {
+      if (data.status === "error") {
+        resultsContainer.innerHTML = `<p style="color:var(--error); padding:2rem; text-align:center; font-weight:600;">Simulation failed. Check error details above.</p>`;
+      } else if (data.status === "running") {
+        resultsContainer.innerHTML = `<p style="color:var(--warning); padding:2rem; text-align:center; font-weight:600;">Simulation in progress... Please wait.</p>`;
+      } else {
+        resultsContainer.innerHTML = `<p style="color:var(--text-secondary); padding:2rem; text-align:center;">Select a job from the history to view results.</p>`;
+      }
+    }
   }
 }
+
+// ----------------------------
+// Navigation scroll and expand handler
+// ----------------------------
+function scrollToCard(cardId) {
+  const card = document.getElementById(cardId);
+  if (card) {
+    card.open = true; // Ensure details is open
+    card.scrollIntoView({ behavior: 'smooth' });
+    
+    // Trigger Plotly resizing to ensure proper width snap
+    setTimeout(() => {
+      const plots = card.querySelectorAll(".js-plotly-plot");
+      plots.forEach(p => Plotly.Plots.resize(p));
+    }, 150);
+    
+    // Highlight sidebar nav item
+    document.querySelectorAll(".results-nav-item").forEach(item => {
+      item.classList.remove("active");
+    });
+    const navItem = document.getElementById(`nav_${cardId}`);
+    if (navItem) {
+      navItem.classList.add("active");
+    }
+  }
+}
+window.scrollToCard = scrollToCard;
 
 // ----------------------------
 // Frontend Plotly Render Logic
@@ -453,65 +480,539 @@ function renderPlotlyCharts(csvText) {
   const timeCol = headers.find(h => h.toLowerCase().includes("date/time"));
   if (!timeCol) {
     console.error("[Plotly] Could not find Date/Time column! Headers:", headers);
-    if (document.getElementById('plotlyZoneTemp')) {
-      document.getElementById('plotlyZoneTemp').innerHTML = `<p style="color:var(--error); padding:2rem;">Data error: Date/Time column missing from CSV.</p>`;
+    const container = document.getElementById("resultsContainer");
+    if (container) {
+      container.innerHTML = `<p style="color:var(--error); padding:2rem;">Data error: Date/Time column missing from CSV.</p>`;
     }
     return;
   }
-  const timeLabels = dataRows.map(row => row[timeCol].trim());
+  const timeLabels = dataRows.map(row => {
+    const raw = row[timeCol].trim();
+    // Fallback for old jobs with pure numeric time index: label as "Hr X"
+    if (!isNaN(raw) && !isNaN(parseFloat(raw))) {
+      return `Hr ${raw}`;
+    }
+    return raw;
+  });
 
-  // Helper to extract trace data based on keyword
-  const createTraces = (keywords, title, yaxisLabel) => {
-    const traces = [];
-    headers.forEach(h => {
-      const lowerH = h.toLowerCase();
-      if (keywords.some(kw => lowerH.includes(kw))) {
-        // Format name to be readable (remove [C](Hourly) etc)
-        let name = h.replace(/\[.*?\]/g, '').replace(/\(Hourly\)/g, '').trim();
-        traces.push({
-          x: timeLabels,
-          y: dataRows.map(row => parseFloat(row[h]) || null),
-          type: 'scatter',
-          mode: 'lines',
-          name: name,
-          line: { width: 2 }
-        });
+  const resultsContainer = document.getElementById("resultsContainer");
+  const resultsNavLinks = document.getElementById("resultsNavLinks");
+  if (!resultsContainer) return;
+  
+  resultsContainer.innerHTML = "";
+  if (resultsNavLinks) resultsNavLinks.innerHTML = "";
+
+  // Helper to extract min, max from data
+  const getMinMax = (colName) => {
+    let min = Infinity;
+    let max = -Infinity;
+    dataRows.forEach(row => {
+      const val = parseFloat(row[colName]);
+      if (!isNaN(val)) {
+        if (val < min) min = val;
+        if (val > max) max = val;
       }
     });
-    return traces;
+    return { min: min === Infinity ? null : min, max: max === -Infinity ? null : max };
   };
 
+  // Helper to sum up utility meters / loads
+  const getSum = (colName) => {
+    let sum = 0;
+    dataRows.forEach(row => {
+      const val = parseFloat(row[colName]);
+      if (!isNaN(val)) {
+        sum += val;
+      }
+    });
+    return sum;
+  };
+
+  // ----------------------------------------------------
+  // Discover Zones
+  // ----------------------------------------------------
+  const zones = new Set();
+  headers.forEach(h => {
+    if (h.startsWith("Zone ") && h.includes(":")) {
+      const parts = h.split(":");
+      const zoneName = parts[parts.length - 1].trim();
+      zones.add(zoneName);
+    }
+  });
+  const zoneList = Array.from(zones);
+  console.log("[Plotly] Discovered Zones:", zoneList);
+
+  // ----------------------------------------------------
+  // 1. Global / Shared Card (Full Width)
+  // ----------------------------------------------------
+  const outdoorTempCol = headers.find(h => h.toLowerCase().includes("site outdoor air drybulb temperature"));
+  const electricityCol = headers.find(h => h.toLowerCase().includes("electricity:facility"));
+  const gasCol = headers.find(h => h.toLowerCase().includes("naturalgas:facility"));
+
+  const outdoorStats = outdoorTempCol ? getMinMax(outdoorTempCol) : { min: null, max: null };
+  const totalElec = electricityCol ? getSum(electricityCol) / 3.6e6 : null;
+  const totalGas = gasCol ? getSum(gasCol) / 3.6e6 : null;
+
+  const globalCardId = "card_global_shared";
+  const globalDetails = document.createElement("details");
+  globalDetails.className = "dropdown-card";
+  globalDetails.id = globalCardId;
+  globalDetails.open = true; // Starts open
+
+  const globalSummary = document.createElement("summary");
+  globalSummary.innerHTML = `
+    <div class="summary-title-wrapper">
+      <span>⚙️ Global / Shared</span>
+    </div>
+    <span class="summary-chevron">›</span>
+  `;
+  globalDetails.appendChild(globalSummary);
+
+  const globalContent = document.createElement("div");
+  globalContent.className = "dropdown-content";
+
+  // Global KPIs Row
+  let globalKpiHtml = `<div class="kpi-row">`;
+  if (outdoorStats.max !== null) {
+    globalKpiHtml += `
+      <div class="kpi-box">
+        <span class="kpi-label">Max Outdoor Temp</span>
+        <span class="kpi-value">${outdoorStats.max.toFixed(1)} °C</span>
+      </div>
+      <div class="kpi-box">
+        <span class="kpi-label">Min Outdoor Temp</span>
+        <span class="kpi-value">${outdoorStats.min.toFixed(1)} °C</span>
+      </div>
+    `;
+  }
+  if (totalElec !== null) {
+    globalKpiHtml += `
+      <div class="kpi-box">
+        <span class="kpi-label">Total Electricity</span>
+        <span class="kpi-value">${totalElec.toFixed(2)} kWh</span>
+      </div>
+    `;
+  }
+  if (totalGas !== null) {
+    globalKpiHtml += `
+      <div class="kpi-box">
+        <span class="kpi-label">Total Natural Gas</span>
+        <span class="kpi-value">${totalGas.toFixed(2)} kWh</span>
+      </div>
+    `;
+  }
+  globalKpiHtml += `</div>`;
+  globalContent.innerHTML = globalKpiHtml;
+
+  const globalPlot1Id = "plot_global_weather";
+  const globalPlot2Id = "plot_global_utility";
+
+  globalContent.innerHTML += `
+    <div class="inner-plot-card">
+      <h5>Outdoor Weather Drybulb Temperature Profile</h5>
+      <div id="${globalPlot1Id}" class="plotly-container"></div>
+    </div>
+    <div class="inner-plot-card">
+      <h5>Building Facility Utility Meters (Cumulative kWh)</h5>
+      <div id="${globalPlot2Id}" class="plotly-container"></div>
+    </div>
+  `;
+  globalDetails.appendChild(globalContent);
+  resultsContainer.appendChild(globalDetails);
+
+  // Add global to sidebar
+  if (resultsNavLinks) {
+    const navItem = document.createElement("li");
+    navItem.className = "results-nav-item active";
+    navItem.id = `nav_${globalCardId}`;
+    navItem.innerHTML = `<button onclick="scrollToCard('${globalCardId}')">⚙️ Global / Shared</button>`;
+    resultsNavLinks.appendChild(navItem);
+  }
+
+  // ----------------------------------------------------
+  // 2. Zone Cards Container (Grid, 2 per row)
+  // ----------------------------------------------------
+  const zonesGrid = document.createElement("div");
+  zonesGrid.className = "zones-grid";
+  resultsContainer.appendChild(zonesGrid);
+
+  const helperFindZoneCol = (pattern, zone) => {
+    return headers.find(h => {
+      const parts = h.split(":");
+      if (parts.length < 2) return false;
+      const colVar = parts[0].trim().toLowerCase();
+      const colZone = parts[parts.length - 1].trim().toLowerCase();
+      return colVar.includes(pattern.toLowerCase()) && colZone === zone.toLowerCase();
+    });
+  };
+
+  // Keep a map of plot configs to render with Plotly after DOM injection
+  const plotlyPlotsToRender = [];
+
+  zoneList.forEach(zoneName => {
+    const zoneMeanTempCol = helperFindZoneCol("zone mean air temperature", zoneName);
+    const zoneAirTempCol = helperFindZoneCol("zone air temperature", zoneName);
+    const coolingEnergyCol = helperFindZoneCol("sensible cooling energy", zoneName);
+    const heatingEnergyCol = helperFindZoneCol("sensible heating energy", zoneName);
+    const mechVentCol = helperFindZoneCol("mechanical ventilation mass flow rate", zoneName);
+
+    // Node flows associated with this zone
+    const nodeFlowCols = headers.filter(h => {
+      if (!h.toLowerCase().includes("system node mass flow rate")) return false;
+      const parts = h.split(":");
+      if (parts.length < 2) return false;
+      const nodeName = parts[parts.length - 1].toLowerCase();
+      return nodeName.includes(zoneName.toLowerCase());
+    });
+
+    // Calculate Zone KPIs
+    let zoneTempStats = { min: null, max: null };
+    if (zoneMeanTempCol) {
+      zoneTempStats = getMinMax(zoneMeanTempCol);
+    } else if (zoneAirTempCol) {
+      zoneTempStats = getMinMax(zoneAirTempCol);
+    }
+
+    const zoneCoolingkWh = coolingEnergyCol ? getSum(coolingEnergyCol) / 3.6e6 : null;
+    const zoneHeatingkWh = heatingEnergyCol ? getSum(heatingEnergyCol) / 3.6e6 : null;
+
+    const zoneCardId = `card_zone_${zoneName.replace(/[^a-zA-Z0-9]/g, "_")}`;
+    const zoneDetails = document.createElement("details");
+    zoneDetails.className = "dropdown-card";
+    zoneDetails.id = zoneCardId;
+    zoneDetails.open = true; // starts open by default
+
+    const zoneSummary = document.createElement("summary");
+    zoneSummary.innerHTML = `
+      <div class="summary-title-wrapper">
+        <span>🚪 Zone: ${zoneName}</span>
+      </div>
+      <span class="summary-chevron">›</span>
+    `;
+    zoneDetails.appendChild(zoneSummary);
+
+    const zoneContent = document.createElement("div");
+    zoneContent.className = "dropdown-content";
+
+    // Zone KPIs HTML
+    let zoneKpiHtml = `<div class="kpi-row">`;
+    if (zoneTempStats.max !== null) {
+      zoneKpiHtml += `
+        <div class="kpi-box">
+          <span class="kpi-label">Max Indoor Temp</span>
+          <span class="kpi-value">${zoneTempStats.max.toFixed(1)} °C</span>
+        </div>
+        <div class="kpi-box">
+          <span class="kpi-label">Min Indoor Temp</span>
+          <span class="kpi-value">${zoneTempStats.min.toFixed(1)} °C</span>
+        </div>
+      `;
+    }
+    if (zoneCoolingkWh !== null) {
+      zoneKpiHtml += `
+        <div class="kpi-box">
+          <span class="kpi-label">Total Cooling</span>
+          <span class="kpi-value">${zoneCoolingkWh.toFixed(2)} kWh</span>
+        </div>
+      `;
+    }
+    if (zoneHeatingkWh !== null) {
+      zoneKpiHtml += `
+        <div class="kpi-box">
+          <span class="kpi-label">Total Heating</span>
+          <span class="kpi-value">${zoneHeatingkWh.toFixed(2)} kWh</span>
+        </div>
+      `;
+    }
+    zoneKpiHtml += `</div>`;
+    zoneContent.innerHTML = zoneKpiHtml;
+
+    // Plots inside Zone Card
+    const zoneTempPlotId = `plot_temp_${zoneCardId}`;
+    const zoneEnergyPlotId = `plot_energy_${zoneCardId}`;
+    const zoneAirflowPlotId = `plot_airflow_${zoneCardId}`;
+
+    zoneContent.innerHTML += `
+      <div class="inner-plot-card">
+        <h5>Zone Temperature Profiles</h5>
+        <div id="${zoneTempPlotId}" class="plotly-container"></div>
+      </div>
+    `;
+
+    // Add temp traces config
+    const tempTraces = [];
+    if (zoneMeanTempCol) {
+      tempTraces.push({
+        x: timeLabels,
+        y: dataRows.map(row => parseFloat(row[zoneMeanTempCol]) || null),
+        type: 'scatter',
+        mode: 'lines',
+        name: 'Zone Mean Air Temp',
+        line: { color: '#2563eb', width: 2 }
+      });
+    }
+    if (zoneAirTempCol) {
+      tempTraces.push({
+        x: timeLabels,
+        y: dataRows.map(row => parseFloat(row[zoneAirTempCol]) || null),
+        type: 'scatter',
+        mode: 'lines',
+        name: 'Zone Air Temp',
+        line: { color: '#10b981', width: 1.5 }
+      });
+    }
+    if (outdoorTempCol) {
+      tempTraces.push({
+        x: timeLabels,
+        y: dataRows.map(row => parseFloat(row[outdoorTempCol]) || null),
+        type: 'scatter',
+        mode: 'lines',
+        name: 'Outdoor Temp (Ref)',
+        line: { color: '#94a3b8', width: 1.5, dash: 'dash' }
+      });
+    }
+    plotlyPlotsToRender.push({ 
+      id: zoneTempPlotId, 
+      traces: tempTraces, 
+      ytitle: { text: 'Temperature (°C)', font: { size: 13, color: '#1e293b' } } 
+    });
+
+    // Sensible energy curves config (converted to kWh)
+    if (coolingEnergyCol || heatingEnergyCol) {
+      zoneContent.innerHTML += `
+        <div class="inner-plot-card">
+          <h5>HVAC Delivered Sensible Energy (kWh)</h5>
+          <div id="${zoneEnergyPlotId}" class="plotly-container"></div>
+        </div>
+      `;
+      const energyTraces = [];
+      if (coolingEnergyCol) {
+        energyTraces.push({
+          x: timeLabels,
+          y: dataRows.map(row => (parseFloat(row[coolingEnergyCol]) / 3.6e6) || null),
+          type: 'scatter',
+          mode: 'lines',
+          name: 'Cooling Energy (kWh)',
+          line: { color: '#3b82f6', width: 2 }
+        });
+      }
+      if (heatingEnergyCol) {
+        energyTraces.push({
+          x: timeLabels,
+          y: dataRows.map(row => (parseFloat(row[heatingEnergyCol]) / 3.6e6) || null),
+          type: 'scatter',
+          mode: 'lines',
+          name: 'Heating Energy (kWh)',
+          line: { color: '#ef4444', width: 2 }
+        });
+      }
+      plotlyPlotsToRender.push({ 
+        id: zoneEnergyPlotId, 
+        traces: energyTraces, 
+        ytitle: { text: 'Energy (kWh)', font: { size: 13, color: '#1e293b' } } 
+      });
+    }
+
+    // Ventilation and flows config
+    if (mechVentCol || nodeFlowCols.length > 0) {
+      zoneContent.innerHTML += `
+        <div class="inner-plot-card">
+          <h5>Mechanical Ventilation & Node Airflow Rate</h5>
+          <div id="${zoneAirflowPlotId}" class="plotly-container"></div>
+        </div>
+      `;
+      const flowTraces = [];
+      if (mechVentCol) {
+        flowTraces.push({
+          x: timeLabels,
+          y: dataRows.map(row => parseFloat(row[mechVentCol]) || null),
+          type: 'scatter',
+          mode: 'lines',
+          name: 'Mech Ventilation Rate',
+          line: { color: '#10b981', width: 2 }
+        });
+      }
+      nodeFlowCols.forEach((col, idx) => {
+        let nodeShortName = col.split(":")[1] || col;
+        nodeShortName = nodeShortName.replace(/\(Hourly\)/g, '').trim();
+        flowTraces.push({
+          x: timeLabels,
+          y: dataRows.map(row => parseFloat(row[col]) || null),
+          type: 'scatter',
+          mode: 'lines',
+          name: nodeShortName,
+          line: { width: 1.5 }
+        });
+      });
+      plotlyPlotsToRender.push({ 
+        id: zoneAirflowPlotId, 
+        traces: flowTraces, 
+        ytitle: { text: 'Flow Rate (kg/s)', font: { size: 13, color: '#1e293b' } } 
+      });
+    }
+
+    zoneDetails.appendChild(zoneContent);
+    zonesGrid.appendChild(zoneDetails);
+
+    // Sidebar navigation link
+      if (resultsNavLinks) {
+      const navItem = document.createElement("li");
+      navItem.className = "results-nav-item";
+      navItem.id = `nav_${zoneCardId}`;
+      navItem.innerHTML = `<button onclick="scrollToCard('${zoneCardId}')">🚪 ${zoneName}</button>`;
+      resultsNavLinks.appendChild(navItem);
+    }
+  });
+
+  // ----------------------------------------------------
+  // Render Plotly Charts (after DOM nodes are attached)
+  // ----------------------------------------------------
   const layoutBase = {
-    margin: { t: 40, r: 20, l: 50, b: 60 },
-    legend: { orientation: "h", y: -0.2 },
+    margin: { t: 40, r: 25, l: 75, b: 80 }, // padded bottom and left margins to avoid label overlaps
+    legend: { orientation: "h", y: -0.25, font: { size: 13 } },
     paper_bgcolor: 'rgba(0,0,0,0)',
     plot_bgcolor: 'rgba(0,0,0,0)',
     hovermode: 'x unified',
-    font: { family: 'Inter, sans-serif' }
+    font: { family: 'Inter, sans-serif', size: 14, color: '#1e293b' }, // larger base font size 14
+    xaxis: {
+      title: {
+        text: 'Simulation Time (Date/Time)',
+        font: { size: 14, weight: 'bold', color: '#1e293b' },
+        standoff: 15
+      },
+      gridcolor: '#e2e8f0',
+      zeroline: false,
+      tickfont: { size: 12 }
+    },
+    yaxis: {
+      gridcolor: '#e2e8f0',
+      zeroline: false,
+      tickfont: { size: 12 }
+    }
   };
 
-  // Plot 1: Temperatures
-  const tempTraces = createTraces(['temperature'], 'Zone Temperatures', 'Temperature (°C)');
-  if (tempTraces.length > 0 && document.getElementById('plotlyZoneTemp')) {
-    Plotly.newPlot('plotlyZoneTemp', tempTraces, { ...layoutBase, yaxis: { title: 'Temperature (°C)' } }, { responsive: true });
+  // Render Global Plots
+  const globalWeatherTraces = [];
+  if (outdoorTempCol) {
+    globalWeatherTraces.push({
+      x: timeLabels,
+      y: dataRows.map(row => parseFloat(row[outdoorTempCol]) || null),
+      type: 'scatter',
+      mode: 'lines',
+      name: 'Outdoor Temperature',
+      line: { color: '#ef4444', width: 2 }
+    });
+  }
+  if (globalWeatherTraces.length > 0 && document.getElementById(globalPlot1Id)) {
+    Plotly.newPlot(globalPlot1Id, globalWeatherTraces, { 
+      ...layoutBase, 
+      yaxis: { 
+        ...layoutBase.yaxis, 
+        title: { text: 'Temperature (°C)', font: { size: 13, color: '#1e293b' } } 
+      } 
+    }, { responsive: true, displayModeBar: false });
   }
 
-  // Plot 2: Energy (Sensible Heating/Cooling)
-  const energyTraces = createTraces(['sensible heating', 'sensible cooling'], 'HVAC Sensible Energy', 'Energy (J)');
-  if (energyTraces.length > 0 && document.getElementById('plotlyZoneEnergy')) {
-    Plotly.newPlot('plotlyZoneEnergy', energyTraces, { ...layoutBase, yaxis: { title: 'Energy (J)' } }, { responsive: true });
+  const globalUtilityTraces = [];
+  if (electricityCol) {
+    globalUtilityTraces.push({
+      x: timeLabels,
+      y: dataRows.map(row => (parseFloat(row[electricityCol]) / 3.6e6) || null),
+      type: 'scatter',
+      mode: 'lines',
+      name: 'Electricity:Facility (kWh)',
+      line: { color: '#2563eb', width: 2 }
+    });
+  }
+  if (gasCol) {
+    globalUtilityTraces.push({
+      x: timeLabels,
+      y: dataRows.map(row => (parseFloat(row[gasCol]) / 3.6e6) || null),
+      type: 'scatter',
+      mode: 'lines',
+      name: 'NaturalGas:Facility (kWh)',
+      line: { color: '#f59e0b', width: 2 }
+    });
+  }
+  if (globalUtilityTraces.length > 0 && document.getElementById(globalPlot2Id)) {
+    Plotly.newPlot(globalPlot2Id, globalUtilityTraces, { 
+      ...layoutBase, 
+      yaxis: { 
+        ...layoutBase.yaxis, 
+        title: { text: 'Energy (kWh)', font: { size: 13, color: '#1e293b' } } 
+      } 
+    }, { responsive: true, displayModeBar: false });
   }
 
-  // Plot 3: Mass Flow Rate
-  const flowTraces = createTraces(['mass flow rate'], 'HVAC Mass Flow Rate', 'Flow Rate (kg/s)');
-  if (flowTraces.length > 0 && document.getElementById('plotlyAirflow')) {
-    Plotly.newPlot('plotlyAirflow', flowTraces, { ...layoutBase, yaxis: { title: 'Flow Rate (kg/s)' } }, { responsive: true });
-  }
+  // Render all Zone plots
+  plotlyPlotsToRender.forEach(config => {
+    const el = document.getElementById(config.id);
+    if (el && config.traces.length > 0) {
+      Plotly.newPlot(config.id, config.traces, { 
+        ...layoutBase, 
+        yaxis: { ...layoutBase.yaxis, title: config.ytitle } 
+      }, { responsive: true, displayModeBar: false });
+    }
+  });
 
-  // Plot 4: Utility Meters
-  const utilityTraces = createTraces(['electricity:facility', 'naturalgas:facility'], 'Utility Meters', 'Energy (J)');
-  if (utilityTraces.length > 0 && document.getElementById('plotlyUtility')) {
-    Plotly.newPlot('plotlyUtility', utilityTraces, { ...layoutBase, yaxis: { title: 'Energy (J)' } }, { responsive: true });
+  // ----------------------------------------------------
+  // Bind Collapsible Toggles & Resize Hook
+  // ----------------------------------------------------
+  document.querySelectorAll("details.dropdown-card").forEach(detailsEl => {
+    detailsEl.addEventListener("toggle", (e) => {
+      if (detailsEl.open) {
+        const plots = detailsEl.querySelectorAll(".js-plotly-plot");
+        plots.forEach(p => {
+          Plotly.Plots.resize(p);
+        });
+
+        // Sync Nav bar item active class
+        const cardId = detailsEl.id;
+        document.querySelectorAll(".results-nav-item").forEach(item => {
+          item.classList.remove("active");
+        });
+        const navItem = document.getElementById(`nav_${cardId}`);
+        if (navItem) {
+          navItem.classList.add("active");
+        }
+      }
+    });
+  });
+
+  // Add scroll spy listener to the main-content container
+  const scrollContainer = document.querySelector(".main-content");
+  if (scrollContainer) {
+    // debounce helper for performance
+    let scrollTimer = null;
+    scrollContainer.addEventListener("scroll", () => {
+      if (scrollTimer) clearTimeout(scrollTimer);
+      scrollTimer = setTimeout(() => {
+        const cards = document.querySelectorAll("details.dropdown-card");
+        let activeCardId = null;
+        let minDistance = Infinity;
+
+        cards.forEach(card => {
+          const rect = card.getBoundingClientRect();
+          const distance = Math.abs(rect.top - 120);
+          if (rect.top < window.innerHeight * 0.4 && rect.bottom > 80) {
+            if (distance < minDistance) {
+              minDistance = distance;
+              activeCardId = card.id;
+            }
+          }
+        });
+
+        if (activeCardId) {
+          document.querySelectorAll(".results-nav-item").forEach(item => {
+            item.classList.remove("active");
+          });
+          const navItem = document.getElementById(`nav_${activeCardId}`);
+          if (navItem) {
+            navItem.classList.add("active");
+          }
+        }
+      }, 100);
+    });
   }
 }
 

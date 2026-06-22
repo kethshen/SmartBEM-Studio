@@ -14,40 +14,203 @@
   
   <style>
     /* Specific enhancements for this page */
-    .plot-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      /* 2x2 for now, user asked for 4x4 style grid */
+    .results-layout {
+      display: flex;
       gap: 1.5rem;
       margin-top: 1.5rem;
+      align-items: start;
     }
 
-    @media (min-width: 1400px) {
-      .plot-grid {
-        grid-template-columns: repeat(4, 1fr);
-      }
-    }
-
-    .plot-card {
+    .results-sidebar {
+      width: 180px; /* very less width as requested */
+      position: sticky;
+      top: 1.5rem;
       background: var(--bg-card);
       border-radius: var(--radius-md);
       border: 1px solid var(--border-subtle);
-      padding: 1rem;
-      min-height: 250px;
-      display: flex;
-      flex-direction: column;
+      padding: 0.75rem;
+      flex-shrink: 0;
     }
 
-    .plot-placeholder {
-      flex: 1;
-      background: var(--bg-app);
+    .results-sidebar h3 {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-secondary);
+      margin-bottom: 0.5rem;
+      padding-left: 0.4rem;
+    }
+
+    .results-nav {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    .results-nav-item button {
+      width: 100%;
+      text-align: left;
+      background: none;
+      border: none;
+      color: var(--text-secondary);
+      font-size: 0.8rem;
+      padding: 0.4rem 0.6rem;
       border-radius: var(--radius-sm);
-      border: 1px dashed var(--border-subtle);
+      cursor: pointer;
+      transition: background 0.2s, color 0.2s;
+      font-weight: 500;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
       display: flex;
       align-items: center;
-      justify-content: center;
-      color: var(--text-muted);
+      gap: 0.4rem;
+    }
+
+    .results-nav-item button:hover {
+      background: var(--bg-app);
+      color: var(--primary);
+    }
+
+    .results-nav-item.active button {
+      background: var(--border-subtle);
+      color: var(--primary);
+      font-weight: 600;
+    }
+
+    .results-content-area {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+      min-width: 0;
+    }
+
+    /* Grid for Zone cards (2 columns as requested) */
+    .zones-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1.5rem;
+      width: 100%;
+    }
+
+    /* Collapsible card dropdown styles */
+    details.dropdown-card {
+      background: var(--bg-card);
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-subtle);
+      box-shadow: var(--shadow-sm);
+      overflow: hidden;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      scroll-margin-top: 1.5rem; /* helps smooth scroll align nicely */
+    }
+
+    details.dropdown-card:hover {
+      border-color: var(--text-muted);
+      box-shadow: var(--shadow-md);
+    }
+
+    details.dropdown-card summary {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1rem 1.25rem;
+      font-weight: 600;
+      cursor: pointer;
+      user-select: none;
+      background: var(--bg-card);
+      list-style: none;
+    }
+
+    details.dropdown-card summary::-webkit-details-marker {
+      display: none;
+    }
+
+    details.dropdown-card summary .summary-title-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 1rem;
+      color: var(--text-primary);
+    }
+
+    details.dropdown-card summary .summary-chevron {
+      font-size: 1.1rem;
+      color: var(--text-secondary);
+      transition: transform 0.2s ease;
+    }
+
+    details.dropdown-card[open] summary .summary-chevron {
+      transform: rotate(90deg);
+    }
+
+    details.dropdown-card .dropdown-content {
+      padding: 1.25rem;
+      border-top: 1px solid var(--border-subtle);
+      background: var(--bg-card);
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    /* KPI Metrics Styles */
+    .kpi-row {
+      display: flex;
+      gap: 0.75rem;
+      width: 100%;
+    }
+
+    .kpi-box {
+      flex: 1;
+      background: var(--bg-app);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      padding: 0.6rem 0.8rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.15rem;
+    }
+
+    .kpi-box .kpi-label {
+      font-size: 0.7rem;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-weight: 500;
+    }
+
+    .kpi-box .kpi-value {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      font-family: var(--font-mono);
+    }
+
+    /* Plot Cards within Dropdowns */
+    .inner-plot-card {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      width: 100%;
+    }
+
+    .inner-plot-card h5 {
       font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      margin: 0;
+    }
+
+    .plotly-container {
+      width: 100%;
+      height: 350px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-subtle);
+      background: var(--bg-app);
+      min-height: 350px;
     }
   </style>
 </head>
@@ -169,42 +332,23 @@
       </div>
 
       <!-- Row 2: Result Plots (Grid) -->
-      <h3 style="font-size: 1.25rem; font-weight: 600; margin-top: 2rem; color: var(--text-primary);">Results
-      </h3>
-      <div id="resultsContainer" class="plot-grid" style="grid-template-columns: repeat(2, 1fr);">
-
-        <!-- Plot 1: Temperatures -->
-        <div class="plot-card" style="grid-column: 1 / -1;">
-          <h4 style="font-size: 0.9rem; font-weight: 600; margin-bottom: 0.5rem;">Zone Temperatures (°C)</h4>
-          <div class="plot-placeholder" style="min-height: 400px; padding: 0;">
-            <div id="plotlyZoneTemp" style="width: 100%; height: 400px; border-radius: var(--radius-sm);"></div>
-          </div>
-        </div>
-
-        <!-- Plot 2: HVAC Energy -->
-        <div class="plot-card" style="grid-column: 1 / -1;">
-          <h4 style="font-size: 0.9rem; font-weight: 600; margin-bottom: 0.5rem;">HVAC Sensible Energy (J)</h4>
-          <div class="plot-placeholder" style="min-height: 300px; padding: 0;">
-            <div id="plotlyZoneEnergy" style="width: 100%; height: 300px; border-radius: var(--radius-sm);"></div>
-          </div>
-        </div>
-
-        <!-- Plot 3: Mass Flow Rates -->
-        <div class="plot-card" style="grid-column: 1 / -1;">
-          <h4 style="font-size: 0.9rem; font-weight: 600; margin-bottom: 0.5rem;">HVAC Mass Flow Rate (kg/s)</h4>
-          <div class="plot-placeholder" style="min-height: 300px; padding: 0;">
-            <div id="plotlyAirflow" style="width: 100%; height: 300px; border-radius: var(--radius-sm);"></div>
-          </div>
-        </div>
+      <h3 style="font-size: 1.25rem; font-weight: 600; margin-top: 2rem; color: var(--text-primary);">Results</h3>
+      
+      <div class="results-layout" style="display: flex; gap: 1.5rem; margin-top: 1.5rem; align-items: start;">
+        <!-- Left Navigation Bar -->
+        <aside id="resultsSidebar" class="results-sidebar" style="display: none;">
+          <h3>Jump To</h3>
+          <ul id="resultsNavLinks" class="results-nav">
+            <!-- Dynamic Navigation Links -->
+          </ul>
+        </aside>
         
-        <!-- Plot 4: Whole Building Utility -->
-        <div class="plot-card" style="grid-column: 1 / -1;">
-          <h4 style="font-size: 0.9rem; font-weight: 600; margin-bottom: 0.5rem;">Building Utility Meters (J)</h4>
-          <div class="plot-placeholder" style="min-height: 300px; padding: 0;">
-            <div id="plotlyUtility" style="width: 100%; height: 300px; border-radius: var(--radius-sm);"></div>
+        <!-- Right Content Area -->
+        <div class="results-content-area">
+          <div id="resultsContainer" style="display: flex; flex-direction: column; gap: 1.5rem; width: 100%;">
+            <!-- Dynamic Dropdown Cards Injected Here -->
           </div>
         </div>
-
       </div>
 
     </main>

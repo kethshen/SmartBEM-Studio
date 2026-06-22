@@ -230,6 +230,10 @@ def run_simulation_job(job_id, idf_path, epw_path, config=None, output_dir_base=
                      "AND (ep.EnvironmentName IS NULL OR ep.EnvironmentName NOT LIKE 'SizingPeriod:%')"
         wide_sql = f"""
             SELECT t.TimeIndex,
+                   t.Month,
+                   t.Day,
+                   t.Hour,
+                   COALESCE(ep.EnvironmentName, 'Simulation') AS env_name,
                    d.Name AS var_name,
                    d.KeyValue AS zone,
                    r.Value
@@ -245,15 +249,41 @@ def run_simulation_job(job_id, idf_path, epw_path, config=None, output_dir_base=
         conn_tmp.close()
         
         if not df_wide_raw.empty:
+            # Create a nice human readable timestamp string
+            # Strip SizingPeriod:DesignDay from environment name
+            df_wide_raw["env_short"] = df_wide_raw["env_name"].str.replace("SizingPeriod:DesignDay", "", case=False, regex=False).str.strip()
+            df_wide_raw["Month"] = df_wide_raw["Month"].fillna(1).astype(int)
+            df_wide_raw["Day"] = df_wide_raw["Day"].fillna(1).astype(int)
+            df_wide_raw["Hour"] = df_wide_raw["Hour"].fillna(1).astype(int)
+            
+            # Format: "Chicago - 7/21 01:00"
+            df_wide_raw["formatted_time"] = (
+                df_wide_raw["env_short"] + " - " +
+                df_wide_raw["Month"].astype(str) + "/" +
+                df_wide_raw["Day"].astype(str) + " " +
+                df_wide_raw["Hour"].apply(lambda h: f"{int(h):02d}:00")
+            )
+
             # Vectorized column name generation for speed
             df_wide_raw["zone"] = df_wide_raw["zone"].fillna("")
             mask = df_wide_raw["zone"] != ""
             df_wide_raw["col_name"] = df_wide_raw["var_name"]
             df_wide_raw.loc[mask, "col_name"] = df_wide_raw["var_name"] + ":" + df_wide_raw["zone"]
             
+            # Pivot table using TimeIndex as index
             df_wide = df_wide_raw.pivot_table(index="TimeIndex", columns="col_name", values="Value")
             df_wide.reset_index(inplace=True)
-            df_wide.rename(columns={"TimeIndex": "Date/Time"}, inplace=True)
+            
+            # Map TimeIndex to formatted_time
+            time_map = df_wide_raw.drop_duplicates("TimeIndex").set_index("TimeIndex")["formatted_time"]
+            df_wide["Date/Time"] = df_wide["TimeIndex"].map(time_map)
+            
+            df_wide.drop(columns=["TimeIndex"], inplace=True)
+            
+            # Reorder columns to put Date/Time first
+            cols = ["Date/Time"] + [c for c in df_wide.columns if c != "Date/Time"]
+            df_wide = df_wide[cols]
+            
             csv_path = os.path.join(run_dir, "results.csv")
             df_wide.to_csv(csv_path, index=False)
             results["csv"] = csv_path
