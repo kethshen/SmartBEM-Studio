@@ -774,9 +774,9 @@ function renderPlotlyCharts(csvText) {
     plotlyPlotsToRender.push({ 
       id: zoneTempPlotId, 
       traces: tempTraces, 
-      ytitle: { text: 'Temperature (°C)', font: { size: 13, color: '#1e293b' } } 
+      ytitle: { text: 'Temperature (°C)', font: { size: 15, weight: 'bold', color: '#1e293b' } } 
     });
-
+ 
     // Sensible energy curves config (converted to kWh)
     if (coolingEnergyCol || heatingEnergyCol) {
       zoneContent.innerHTML += `
@@ -809,10 +809,10 @@ function renderPlotlyCharts(csvText) {
       plotlyPlotsToRender.push({ 
         id: zoneEnergyPlotId, 
         traces: energyTraces, 
-        ytitle: { text: 'Energy (kWh)', font: { size: 13, color: '#1e293b' } } 
+        ytitle: { text: 'Energy (kWh)', font: { size: 15, weight: 'bold', color: '#1e293b' } } 
       });
     }
-
+ 
     // Ventilation and flows config
     if (mechVentCol || nodeFlowCols.length > 0) {
       zoneContent.innerHTML += `
@@ -847,13 +847,13 @@ function renderPlotlyCharts(csvText) {
       plotlyPlotsToRender.push({ 
         id: zoneAirflowPlotId, 
         traces: flowTraces, 
-        ytitle: { text: 'Flow Rate (kg/s)', font: { size: 13, color: '#1e293b' } } 
+        ytitle: { text: 'Flow Rate (kg/s)', font: { size: 15, weight: 'bold', color: '#1e293b' } } 
       });
     }
-
+ 
     zoneDetails.appendChild(zoneContent);
     zonesGrid.appendChild(zoneDetails);
-
+ 
     // Sidebar navigation link
       if (resultsNavLinks) {
       const navItem = document.createElement("li");
@@ -863,34 +863,34 @@ function renderPlotlyCharts(csvText) {
       resultsNavLinks.appendChild(navItem);
     }
   });
-
+ 
   // ----------------------------------------------------
   // Render Plotly Charts (after DOM nodes are attached)
   // ----------------------------------------------------
   const layoutBase = {
-    margin: { t: 40, r: 25, l: 75, b: 80 }, // padded bottom and left margins to avoid label overlaps
-    legend: { orientation: "h", y: -0.25, font: { size: 13 } },
+    margin: { t: 40, r: 25, l: 85, b: 100 }, // padded bottom and left margins to avoid label overlaps
+    legend: { orientation: "h", y: -0.3, font: { size: 14 } },
     paper_bgcolor: 'rgba(0,0,0,0)',
     plot_bgcolor: 'rgba(0,0,0,0)',
     hovermode: 'x unified',
-    font: { family: 'Inter, sans-serif', size: 14, color: '#1e293b' }, // larger base font size 14
+    font: { family: 'Inter, sans-serif', size: 15, color: '#1e293b' }, // larger base font size 15
     xaxis: {
       title: {
         text: 'Simulation Time (Date/Time)',
-        font: { size: 14, weight: 'bold', color: '#1e293b' },
+        font: { size: 15, weight: 'bold', color: '#1e293b' },
         standoff: 15
       },
       gridcolor: '#e2e8f0',
       zeroline: false,
-      tickfont: { size: 12 }
+      tickfont: { size: 13 }
     },
     yaxis: {
       gridcolor: '#e2e8f0',
       zeroline: false,
-      tickfont: { size: 12 }
+      tickfont: { size: 13 }
     }
   };
-
+ 
   // Render Global Plots
   const globalWeatherTraces = [];
   if (outdoorTempCol) {
@@ -908,11 +908,11 @@ function renderPlotlyCharts(csvText) {
       ...layoutBase, 
       yaxis: { 
         ...layoutBase.yaxis, 
-        title: { text: 'Temperature (°C)', font: { size: 13, color: '#1e293b' } } 
+        title: { text: 'Temperature (°C)', font: { size: 15, weight: 'bold', color: '#1e293b' } } 
       } 
     }, { responsive: true, displayModeBar: false });
   }
-
+ 
   const globalUtilityTraces = [];
   if (electricityCol) {
     globalUtilityTraces.push({
@@ -939,11 +939,11 @@ function renderPlotlyCharts(csvText) {
       ...layoutBase, 
       yaxis: { 
         ...layoutBase.yaxis, 
-        title: { text: 'Energy (kWh)', font: { size: 13, color: '#1e293b' } } 
+        title: { text: 'Energy (kWh)', font: { size: 15, weight: 'bold', color: '#1e293b' } } 
       } 
     }, { responsive: true, displayModeBar: false });
   }
-
+ 
   // Render all Zone plots
   plotlyPlotsToRender.forEach(config => {
     const el = document.getElementById(config.id);

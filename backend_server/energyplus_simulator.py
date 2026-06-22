@@ -54,8 +54,57 @@ def run_simulation_job(job_id, idf_path, epw_path, config=None, output_dir_base=
     _idf_text = _re.sub(r'(?is)^\s*Output\s*:\s*SQLite\s*,.*?;[ \t]*\r?\n?', '', _idf_text, flags=_re.MULTILINE)
     _idf_text = _re.sub(r'(?is)^\s*Output\s*:\s*Meter\s*,.*?;[ \t]*\r?\n?', '', _idf_text, flags=_re.MULTILINE)
 
+    # Handle annual vs design day SimulationControl and RunPeriod setup
+    run_type = config.get("run_type", "design_day").lower()
+    
+    if "annual" in run_type:
+        # Strip existing SimulationControl and RunPeriod objects from IDF
+        _idf_text = _re.sub(r'(?is)^\s*SimulationControl\s*,.*?;[ \t]*\r?\n?', '', _idf_text, flags=_re.MULTILINE)
+        _idf_text = _re.sub(r'(?is)^\s*RunPeriod\s*,.*?;[ \t]*\r?\n?', '', _idf_text, flags=_re.MULTILINE)
+        
+        # Inject custom SimulationControl (disabling design periods simulation, enabling weather run periods)
+        # and a full-year RunPeriod
+        control_blocks = """
+
+  SimulationControl,
+    Yes,                     !- Do Zone Sizing Calculation
+    Yes,                     !- Do System Sizing Calculation
+    No,                      !- Do Plant Sizing Calculation
+    No,                      !- Run Simulation for Sizing Periods
+    Yes,                     !- Run Simulation for Weather File Run Periods
+    No,                      !- Do HVAC Sizing Simulation for Sizing Periods
+    1;                       !- Maximum Number of HVAC Sizing Simulation Passes
+
+  RunPeriod,
+    Annual Run,              !- Name
+    1,                       !- Begin Month
+    1,                       !- Begin Day of Month
+    12,                      !- End Month
+    31,                      !- End Day of Month
+    ,                        !- Start Day of Week (blank = Use Weather File)
+    Yes,                     !- Use Weather File Holidays and Special Days
+    Yes,                     !- Use Weather File Daylight Saving Period
+    No,                      !- Apply Weekend Holiday Rule
+    Yes,                     !- Use Weather File Rain Indicators
+    Yes;                     !- Use Weather File Snow Indicators
+"""
+    else:
+        # Design day only: force Sizing periods simulation only (No weather file periods)
+        _idf_text = _re.sub(r'(?is)^\s*SimulationControl\s*,.*?;[ \t]*\r?\n?', '', _idf_text, flags=_re.MULTILINE)
+        control_blocks = """
+
+  SimulationControl,
+    Yes,                     !- Do Zone Sizing Calculation
+    Yes,                     !- Do System Sizing Calculation
+    No,                      !- Do Plant Sizing Calculation
+    Yes,                     !- Run Simulation for Sizing Periods
+    No,                      !- Run Simulation for Weather File Run Periods
+    No,                      !- Do HVAC Sizing Simulation for Sizing Periods
+    1;                       !- Maximum Number of HVAC Sizing Simulation Passes
+"""
+
     # Append our required output blocks
-    _idf_text = _idf_text.rstrip() + """
+    _idf_text = _idf_text.rstrip() + control_blocks + """
 
   Output:SQLite,
     SimpleAndTabular;         !- Output Type
@@ -250,8 +299,21 @@ def run_simulation_job(job_id, idf_path, epw_path, config=None, output_dir_base=
         
         if not df_wide_raw.empty:
             # Create a nice human readable timestamp string
-            # Strip SizingPeriod:DesignDay from environment name
-            df_wide_raw["env_short"] = df_wide_raw["env_name"].str.replace("SizingPeriod:DesignDay", "", case=False, regex=False).str.strip()
+            # Shorten weather file / design day environment names to make it neat on charts
+            def _clean_env_name(name):
+                if not name:
+                    return "Simulation"
+                # Strip SizingPeriod prefix
+                name = _re.sub(r'(?i)^SizingPeriod:DesignDay\s*', '', name)
+                # Split by delimiters like ' - ', ' WMO', ' TMY'
+                for delim in [" - ", " WMO", " TMY"]:
+                    if delim in name:
+                        name = name.split(delim)[0]
+                # Replace common design day suffix terms
+                name = _re.sub(r'(?i)\s+(Cooling|Heating|Ann|Htg|Clg|Conds|Condns|99\.6%|0\.4%|\.4%|Conditions|DesignDay|Sizing|Period).*$', '', name)
+                return name.strip()
+
+            df_wide_raw["env_short"] = df_wide_raw["env_name"].apply(_clean_env_name)
             df_wide_raw["Month"] = df_wide_raw["Month"].fillna(1).astype(int)
             df_wide_raw["Day"] = df_wide_raw["Day"].fillna(1).astype(int)
             df_wide_raw["Hour"] = df_wide_raw["Hour"].fillna(1).astype(int)
