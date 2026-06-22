@@ -156,7 +156,7 @@ async def simulate(req: SimulateRequest):
     """
     Accepts a prompt and simulation settings, creates a job, and starts the background worker.
     """
-    job_id = f"job_{int(time.time())}_{str(uuid.uuid4())[:8]}"
+    job_id = f"job_{time.strftime('%Y_%m_%d_%H_%M_%S')}"
     
     # Initialize job in DB
     jobs_db[job_id] = {

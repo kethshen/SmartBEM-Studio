@@ -526,6 +526,17 @@ def run_simulation_job(job_id, idf_path, epw_path, config=None, output_dir_base=
             else:
                 zone_colors[z] = colors[idx % len(colors)]
 
+        # Build sidebar HTML for quick navigation
+        sidebar_html = '<div class="sidebar"><h3>Navigation</h3><ul>'
+        for z in sorted_zones:
+            categories = zone_grouped[z]
+            if not categories or all(len(objs) == 0 for objs in categories.values()):
+                continue
+            icon = "⚙️" if z == "Global / Shared" else "🚪"
+            z_id = "card_" + "".join(c if c.isalnum() else "_" for c in z)
+            sidebar_html += f'<li><a href="#{z_id}">{icon} {z}</a></li>'
+        sidebar_html += '</ul></div>'
+
         html = f'''<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -535,6 +546,72 @@ def run_simulation_job(job_id, idf_path, epw_path, config=None, output_dir_base=
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
         
+        html {{
+            scroll-behavior: smooth;
+        }}
+
+        .layout-wrapper {{
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            gap: 32px;
+            align-items: start;
+        }}
+
+        .sidebar {{
+            position: sticky;
+            top: 40px;
+            background: var(--bg-card);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border-subtle);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
+            padding: 24px;
+        }}
+
+        .sidebar h3 {{
+            margin-top: 0;
+            margin-bottom: 16px;
+            font-size: 1rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-secondary);
+            border-bottom: 1px solid var(--border-subtle);
+            padding-bottom: 12px;
+        }}
+
+        .sidebar ul {{
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }}
+
+        .sidebar li a {{
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 14px;
+            text-decoration: none;
+            color: var(--text-secondary);
+            font-weight: 500;
+            font-size: 0.95rem;
+            border-radius: var(--radius-sm);
+            transition: all 0.2s ease;
+        }}
+
+        .sidebar li a:hover {{
+            background: #f1f5f9;
+            color: var(--text-primary);
+        }}
+
+        .main-content {{
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }}
+
         :root {{
             --bg-app: #f4f6fc;
             --bg-card: #ffffff;
@@ -618,10 +695,10 @@ def run_simulation_job(job_id, idf_path, epw_path, config=None, output_dir_base=
             border-radius: var(--radius-lg);
             border: 1px solid var(--border-subtle);
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
-            padding: 24px;
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             position: relative;
             overflow: hidden;
+            display: block;
         }}
 
         .zone-card:hover {{
@@ -629,13 +706,45 @@ def run_simulation_job(job_id, idf_path, epw_path, config=None, output_dir_base=
             box-shadow: 0 12px 30px rgba(0, 0, 0, 0.06);
         }}
 
-        .zone-header {{
+        details.zone-card summary {{
+            cursor: pointer;
+            padding: 24px;
+            list-style: none;
+            user-select: none;
+            transition: background-color 0.2s;
+        }}
+
+        details.zone-card summary::-webkit-details-marker {{
+            display: none;
+        }}
+
+        details.zone-card summary:hover {{
+            background-color: #fafbfd;
+        }}
+
+        .zone-header-wrapper {{
             display: flex;
             align-items: center;
             justify-content: space-between;
-            margin-bottom: 20px;
-            padding-bottom: 12px;
-            border-bottom: 2px solid #f1f5f9;
+            width: 100%;
+        }}
+
+        .card-chevron {{
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            transition: transform 0.2s ease;
+        }}
+
+        details.zone-card[open] summary .card-chevron {{
+            transform: rotate(90deg);
+            color: var(--accent-color);
+        }}
+
+        .card-content {{
+            padding: 24px;
+            border-top: 1px solid #f1f5f9;
+            background: var(--bg-card);
         }}
 
         .zone-title {{
@@ -779,12 +888,25 @@ def run_simulation_job(job_id, idf_path, epw_path, config=None, output_dir_base=
         }}
 
         /* Responsive adaptations */
+        @media (max-width: 1024px) {{
+            .layout-wrapper {{
+                grid-template-columns: 1fr;
+            }}
+            .sidebar {{
+                position: relative;
+                top: 0;
+            }}
+        }}
+
         @media (max-width: 900px) {{
             .dashboard-grid {{
                 grid-template-columns: 1fr;
             }}
             .global-card {{
                 grid-column: span 1;
+            }}
+            details.zone-card[open] summary .card-chevron {{
+                transform: rotate(90deg);
             }}
         }}
     </style>
@@ -798,7 +920,10 @@ def run_simulation_job(job_id, idf_path, epw_path, config=None, output_dir_base=
             </div>
             <div class="job-id">Job ID: {job_id}</div>
         </header>
-        <div class="dashboard-grid">'''
+        <div class="layout-wrapper">
+            {sidebar_html}
+            <div class="main-content">
+                <div class="dashboard-grid">'''
 
         for z in sorted_zones:
             color = zone_colors[z]
@@ -813,14 +938,21 @@ def run_simulation_job(job_id, idf_path, epw_path, config=None, output_dir_base=
             
             icon = "⚙️" if z == "Global / Shared" else "🚪"
             card_class = "zone-card global-card" if z == "Global / Shared" else "zone-card"
+            z_id = "card_" + "".join(c if c.isalnum() else "_" for c in z)
             html += f'''
-            <div class="{card_class}" style="--accent-color: {color}; border-top: 4px solid {color};">
-                <div class="zone-header">
-                    <h2 class="zone-title">
-                        <span>{icon} {z}</span>
-                    </h2>
-                    <span class="zone-badge">{total_objs} Objects</span>
-                </div>
+            <details class="{card_class}" id="{z_id}" style="--accent-color: {color}; border-top: 4px solid {color};" open>
+                <summary>
+                    <div class="zone-header-wrapper">
+                        <h2 class="zone-title">
+                            <span>{icon} {z}</span>
+                        </h2>
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <span class="zone-badge">{total_objs} Objects</span>
+                            <span class="card-chevron">›</span>
+                        </div>
+                    </div>
+                </summary>
+                <div class="card-content">
             '''
             
             # Sort categories so they appear in a consistent order
@@ -890,8 +1022,8 @@ def run_simulation_job(job_id, idf_path, epw_path, config=None, output_dir_base=
                     </div>
                 </div>
                 '''
-            html += '</div>'
-        html += '</div></div></body></html>'
+            html += '</div></details>'
+        html += '</div></div></div></div></body></html>'
         
         summary_path = os.path.join(run_dir, "summary.html")
         with open(summary_path, 'w', encoding='utf-8') as f:
