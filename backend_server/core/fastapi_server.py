@@ -177,12 +177,22 @@ async def simulate(req: SimulateRequest):
 @app.get("/api/status/{job_id}")
 async def get_status(job_id: str):
     """
-    Returns the current status of the job and any results if done.
+    Returns the current status of the job and any results if done, omitting heavy data.
     """
     if job_id not in jobs_db:
         return {"status": "not_found", "error": "Job ID does not exist."}
     
-    return jobs_db[job_id]
+    # Create a shallow copy to avoid mutating the in-memory database
+    job_info = jobs_db[job_id].copy()
+    if "result" in job_info and job_info["result"]:
+        job_result = job_info["result"].copy()
+        if "csv_data" in job_result:
+            del job_result["csv_data"]
+        if "idf" in job_result:
+            del job_result["idf"]
+        job_info["result"] = job_result
+        
+    return job_info
 
 @app.get("/api/ping")
 async def ping():

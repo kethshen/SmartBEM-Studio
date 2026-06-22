@@ -141,7 +141,77 @@ function saveLocalJob(jobData) {
   } else {
     jobs.unshift(jobData); // newest first
   }
-  localStorage.setItem("smartbem_jobs", JSON.stringify(jobs));
+  
+  try {
+    localStorage.setItem("smartbem_jobs", JSON.stringify(jobs));
+  } catch (e) {
+    if (e.name === 'QuotaExceededError' || e.code === 22 || e.code === 1014) {
+      console.warn("[Storage] Quota exceeded. Cleaning up large fields from cache and retrying...");
+      // 1. Strip csv_data and idf from all jobs in memory
+      jobs.forEach(j => {
+        if (j.result) {
+          delete j.result.csv_data;
+          delete j.result.idf;
+        }
+      });
+      try {
+        localStorage.setItem("smartbem_jobs", JSON.stringify(jobs));
+        console.log("[Storage] Cleaned up fields and saved successfully.");
+        return;
+      } catch (e2) {
+        console.warn("[Storage] Quota still exceeded after stripping fields. Pruning old jobs...");
+        // 2. Keep only the last 5 jobs
+        while (jobs.length > 5) {
+          jobs.pop(); // Remove oldest
+          try {
+            localStorage.setItem("smartbem_jobs", JSON.stringify(jobs));
+            console.log(`[Storage] Pruned to ${jobs.length} jobs and saved successfully.`);
+            return;
+          } catch (e3) {
+            // continue popping
+          }
+        }
+        // 3. Fallback: clear smartbem_jobs completely or keep only the current job
+        try {
+          const minimalJobs = jobs.filter(j => j.id === jobData.id);
+          localStorage.setItem("smartbem_jobs", JSON.stringify(minimalJobs));
+          console.log("[Storage] Kept only current job to fit quota.");
+        } catch (e4) {
+          console.error("[Storage] Failed to save even a single job to localStorage:", e4);
+        }
+      }
+    } else {
+      console.error("[Storage] Unexpected localStorage error:", e);
+    }
+  }
+}
+
+function cleanupLocalStorage() {
+  try {
+    let jobs = localStorage.getItem("smartbem_jobs");
+    if (jobs) {
+      let parsed = JSON.parse(jobs);
+      let modified = false;
+      parsed.forEach(job => {
+        if (job.result) {
+          if (job.result.csv_data) {
+            delete job.result.csv_data;
+            modified = true;
+          }
+          if (job.result.idf) {
+            delete job.result.idf;
+            modified = true;
+          }
+        }
+      });
+      if (modified) {
+        localStorage.setItem("smartbem_jobs", JSON.stringify(parsed));
+        console.log("[Storage] Stripped large CSV/IDF data from localStorage cache to free quota.");
+      }
+    }
+  } catch (e) {
+    console.error("[Storage] Failed to cleanup localStorage:", e);
+  }
 }
 
 // ----------------------------
@@ -245,13 +315,13 @@ function startPolling(jobId) {
           clearInterval(activePolls[jobId]);
           delete activePolls[jobId];
           
-          // Update local storage
+          // Update local storage without large CSV/IDF content to stay under Quota limit
           const jobData = {
             id: jobId,
             status: data.status,
             prompt: data.prompt,
             createdAt: data.created_at * 1000,
-            result: data.result,
+            result: data.result ? { files: data.result.files } : null,
             error_message: data.error_message
           };
           saveLocalJob(jobData);
@@ -392,8 +462,14 @@ function showJobDetails(jobId, data) {
     if (data.status === "done" && data.result) {
       actionContainer.style.display = "flex";
       btnView.onclick = () => {
-         const w = window.open();
-         w.document.write(`<pre>${data.result.idf.replace(/</g, "&lt;")}</pre>`);
+         if (data.result.files && data.result.files.idf) {
+             window.open(getBackendUrl() + data.result.files.idf, "_blank");
+         } else if (data.result.idf) {
+             const w = window.open();
+             w.document.write(`<pre>${data.result.idf.replace(/</g, "&lt;")}</pre>`);
+         } else {
+             alert("IDF not available.");
+         }
       };
       btnSummary.onclick = () => {
          if (data.result.files && data.result.files.summary) {
@@ -420,9 +496,39 @@ function showJobDetails(jobId, data) {
   const resultsContainer = document.getElementById("resultsContainer");
   const resultsSidebar = document.getElementById("resultsSidebar");
 
-  if (data.status === "done" && data.result && data.result.csv_data) {
+  if (data.status === "done" && data.result) {
     if (resultsSidebar) resultsSidebar.style.display = "block";
-    renderPlotlyCharts(data.result.csv_data);
+    
+    // Check if we have CSV data in the local object (old runs), or need to fetch it from the server
+    if (data.result.csv_data) {
+      renderPlotlyCharts(data.result.csv_data);
+    } else if (data.result.files && data.result.files.csv) {
+      if (resultsContainer) {
+        resultsContainer.innerHTML = `<p style="color:var(--warning); padding:2rem; text-align:center; font-weight:600;">Loading chart data from server...</p>`;
+      }
+      const csvUrl = getBackendUrl() + data.result.files.csv;
+      fetch(csvUrl, {
+        headers: { 'ngrok-skip-browser-warning': 'true' }
+      })
+        .then(res => {
+          if (!res.ok) throw new Error(`HTTP ${res.status} error loading CSV`);
+          return res.text();
+        })
+        .then(csvText => {
+          renderPlotlyCharts(csvText);
+        })
+        .catch(err => {
+          console.error("[Storage] Failed to load results CSV:", err);
+          if (resultsContainer) {
+            resultsContainer.innerHTML = `<p style="color:var(--error); padding:2rem; text-align:center; font-weight:600;">Failed to load chart data: ${err.message}</p>`;
+          }
+        });
+    } else {
+      if (resultsSidebar) resultsSidebar.style.display = "none";
+      if (resultsContainer) {
+        resultsContainer.innerHTML = `<p style="color:var(--error); padding:2rem; text-align:center;">Results file path missing from this run.</p>`;
+      }
+    }
   } else {
     if (resultsSidebar) resultsSidebar.style.display = "none";
     if (resultsContainer) {
@@ -1028,6 +1134,7 @@ function renderPlotlyCharts(csvText) {
 // Auto-Init on Page Load
 // ----------------------------
 window.addEventListener("load", () => {
+  cleanupLocalStorage();
   if (document.getElementById("runsTable")) {
     loadJobs();
   }

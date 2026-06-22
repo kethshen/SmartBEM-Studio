@@ -452,7 +452,7 @@ def run_simulation_job(job_id, idf_path, epw_path, config=None, output_dir_base=
             results["plot_energy"] = os.path.join(run_dir, "plot_energy.png")
     
     # 8. Add SQL and IDF to results
-    results["idf"] = idf_path
+    results["idf"] = _ready_idf_path
     
     # 9. Generate HTML Summary of IDF objects
     try:
