@@ -257,6 +257,11 @@ function startPolling(jobId) {
           saveLocalJob(jobData);
           if (typeof loadJobs === "function") loadJobs();
           
+          // Auto-refresh the details panel if this completed job is the one the user is currently viewing
+          if (typeof selectedJobId !== "undefined" && selectedJobId === jobId) {
+            showJobDetails(jobId, jobData);
+          }
+          
           const simStatusContainer = document.getElementById("simStatusContainer");
           const simStatusMsg = document.getElementById("simStatusMsg");
           const simErrorBox = document.getElementById("simErrorBox");
@@ -341,7 +346,10 @@ function loadJobs() {
 // ----------------------------
 // Show Job Details & Results
 // ----------------------------
+let selectedJobId = null;
+
 function showJobDetails(jobId, data) {
+  selectedJobId = jobId; // Track the currently viewed job
   const placeholder = document.getElementById("detailPlaceholder");
   const content = document.getElementById("detailContent");
   if (placeholder) placeholder.style.display = 'none';

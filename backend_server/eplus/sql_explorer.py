@@ -207,7 +207,7 @@ class EPlusSqlExplorer:
             env_cols = {r[1] for r in conn.execute('PRAGMA table_info("EnvironmentPeriods")').fetchall()}
             if not include_design_days:
                 if "EnvironmentType" in env_cols:
-                    env_filter = "AND ep.EnvironmentType = ?"
+                    env_filter = "AND ep.EnvironmentType IN (?, 3)"
                     env_params = ["WeatherRunPeriod"]
                 elif "EnvironmentName" in env_cols:
                     env_filter = "AND ep.EnvironmentName NOT LIKE 'SizingPeriod:%'"
