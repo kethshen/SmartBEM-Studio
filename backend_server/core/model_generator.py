@@ -385,7 +385,7 @@ class AIPipelines:
             schedules_block += make_compact_schedule("COOLING_SETPOINT_SCH", cool_unocc, cool_occ, hvac_wd_start, hvac_wd_end, hvac_we_start, hvac_we_end)
 
             # Validate hvac_type against allowed options
-            allowed_hvac = ["ideal_loads", "ptac", "psz_ac"]
+            allowed_hvac = ["ideal_loads", "ptac", "psz_ac", "split_ac"]
             if hvac_type not in allowed_hvac:
                 print(f"[AI Assembler] Unknown hvac_type '{hvac_type}', falling back to ideal_loads")
                 hvac_type = "ideal_loads"
@@ -544,7 +544,10 @@ class AIPipelines:
             "   - 'equipment_density' (float, global default: 10.0)\n"
             "   - 'ventilation_ach' (float, global default: 0.5)\n"
             "   - 'infiltration_ach' (float, global default: 0.5)\n"
-            "   - 'hvac_type' (string: 'ideal_loads', 'ptac', 'psz_ac')\n"
+            "   - 'hvac_type' (string: one of 'ideal_loads', 'ptac', 'psz_ac', 'split_ac'. "
+            "Use 'ideal_loads' as default. Use 'split_ac' for phrases like: split AC, mini-split, wall AC, window AC, inverter AC unit, residential AC. "
+            "Use 'ptac' for: packaged terminal AC, hotel AC, through-wall unit. "
+            "Use 'psz_ac' for: packaged AC, rooftop unit, heat pump, packaged heat pump.)\n"
             "   - 'heat_set_occ', 'heat_set_unocc', 'cool_set_occ', 'cool_set_unocc' (floats, global setpoints)\n"
             "   - 'window_u_factor', 'window_shgc' (floats, global)\n"
             "   - 'occ_weekday_start', 'occ_weekday_end', 'occ_weekend_start', 'occ_weekend_end' (integers, occupancy schedule)\n"

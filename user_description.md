@@ -16,7 +16,7 @@ Global paramters, all three zone has pitched roofs with a gable height of 3 mete
 
 The occupancy rate is 30.00 m2/people, the lighting level is 6.00 W/m2, and the equipment power consumption is 45.80 W/m2.
 
-All zones use a packaged AC unit (psz_ac).
+The office uses a packaged AC unit (psz_ac). The meeting room and the lobby each use a split AC (split_ac).
 
 People are in the building from 9am to 5pm on weekdays and completely closed on weekends.
 

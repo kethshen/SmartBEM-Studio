@@ -738,6 +738,34 @@ def build_openstudio_model(params: dict) -> openstudio.model.Model:
             pthp.setName(f"{z['name']}_PSZ_AC")
             pthp.addToThermalZone(thermal_zone)
             print(f"[OpenStudio Builder] Assigned PSZ-AC (PTHP) system to {z['name']}")
+        elif hvac_type == "split_ac":
+            # Split AC / Mini-split: PTAC with cycling fan (FanOnOff) for realistic on/off compressor behavior.
+            # Uses DX cooling + optional electric strip heater (common in tropical buildings where heating is rarely needed).
+            try:
+                fan = openstudio.model.FanOnOff(model)
+                cooling_coil = openstudio.model.CoilCoolingDXSingleSpeed(model)
+                heating_coil = openstudio.model.CoilHeatingElectric(model)  # Minimal electric strip heater
+                split_ac = openstudio.model.ZoneHVACPackagedTerminalAirConditioner(
+                    model,
+                    model.alwaysOnDiscreteSchedule(),
+                    fan,
+                    heating_coil,
+                    cooling_coil
+                )
+                split_ac.setName(f"{z['name']}_SplitAC")
+                split_ac.addToThermalZone(thermal_zone)
+                print(f"[OpenStudio Builder] Assigned Split AC (mini-split) system to {z['name']}")
+            except Exception as e:
+                print(f"[OpenStudio Builder] Split AC constructor failed: {e}. Falling back to ideal_loads.")
+                ideal_loads = openstudio.model.ZoneHVACIdealLoadsAirSystem(model)
+                ideal_loads.setName(f"{z['name']}_IdealLoads_Fallback")
+                ideal_loads.addToThermalZone(thermal_zone)
+        else:
+            # Unknown hvac_type: fall back to Ideal Air Loads
+            print(f"[OpenStudio Builder] Unknown hvac_type '{hvac_type}' for zone '{z['name']}', falling back to ideal_loads.")
+            ideal_loads = openstudio.model.ZoneHVACIdealLoadsAirSystem(model)
+            ideal_loads.setName(f"{z['name']}_IdealLoads_Fallback")
+            ideal_loads.addToThermalZone(thermal_zone)
 
     # 8. Sizing Calculations & Simulation Control Setup
     sim_control = model.getSimulationControl()
