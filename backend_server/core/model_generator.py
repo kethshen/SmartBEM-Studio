@@ -185,6 +185,11 @@ class AIPipelines:
                 else:
                     print(f"[AI Assembler] Zone '{z_name}' has per-zone hvac_type override: {z['hvac_type']}")
 
+                # Normalise floor_construction -> floor_layers (preprocessor may use either key)
+                if z.get("floor_construction") and not z.get("floor_layers"):
+                    z["floor_layers"] = z.pop("floor_construction")
+                    print(f"[AI Assembler] Zone '{z_name}' floor construction: {z['floor_layers']}")
+
                 # 2. Extract subsurfaces list
                 subsurfaces = z_details.get("subsurfaces", [])
 
@@ -594,6 +599,7 @@ class AIPipelines:
             "   - 'wall_layers' (string or array of strings: pick from CONSTRUCTION MENU or ordered list from RAW MATERIAL MENU)\n"
             "   - 'wall_layers_south', 'wall_layers_north', 'wall_layers_east', 'wall_layers_west' (string or array of strings. If not specified, leave null)\n"
             "   - 'roof_layers' (string or array of strings)\n"
+            "   - 'floor_layers' (string or array of strings: pick from CONSTRUCTION MENU or RAW MATERIAL MENU. Leave null if user does not specify floor material for this zone)\n"
             "   - 'window_layers' (string or array of strings)\n"
             "   - 'skylight' (object: {\"width\": float, \"length\": float} or null)\n"
             "   - 'wwr_south', 'wwr_north', 'wwr_east', 'wwr_west' (floats 0-1, default 0.0. Use window-to-wall ratios if custom windows are not specified)\n"

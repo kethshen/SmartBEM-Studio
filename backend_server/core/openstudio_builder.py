@@ -33,6 +33,7 @@ def build_openstudio_model(params: dict) -> openstudio.model.Model:
             "wall_layers_east": params.get("wall_layers_east"),
             "wall_layers_west": params.get("wall_layers_west"),
             "roof_layers": params.get("roof_layers"),
+            "floor_layers": params.get("floor_layers"),
             "window_layers": params.get("window_layers"),
             "roof_type": params.get("roof_type", "flat"),
             "roof_pitch_height": params.get("roof_pitch_height", 2.0),
@@ -67,11 +68,14 @@ def build_openstudio_model(params: dict) -> openstudio.model.Model:
             z["ventilation_ach"] = z.get("ventilation_ach") if z.get("ventilation_ach") is not None else params.get("ventilation_ach", 0.5)
             z["infiltration_ach"] = z.get("infiltration_ach") if z.get("infiltration_ach") is not None else params.get("infiltration_ach", 0.5)
             z["hvac_type"] = z.get("hvac_type") or params.get("hvac_type") or "ideal_loads"
+            # Floor layers: per-zone overrides global, global overrides hardcoded default
+            if not z.get("floor_layers"):
+                z["floor_layers"] = params.get("floor_layers")
 
     # 2. Extract and resolve all required constructions & materials
     names_to_resolve = set(["Composite 2x4 Wood Stud R11", "Dbl Clr 3mm/13mm Air"])
     for z in zones:
-        for key in ["wall_layers", "wall_layers_south", "wall_layers_north", "wall_layers_east", "wall_layers_west", "roof_layers", "window_layers"]:
+        for key in ["wall_layers", "wall_layers_south", "wall_layers_north", "wall_layers_east", "wall_layers_west", "roof_layers", "floor_layers", "window_layers"]:
             val = z.get(key)
             if val:
                 if isinstance(val, str):
@@ -198,7 +202,7 @@ def build_openstudio_model(params: dict) -> openstudio.model.Model:
     wall_default = get_or_create_construction(params.get("wall_layers", "Composite 2x4 Wood Stud R11"), "Composite 2x4 Wood Stud R11")
     roof_default = get_or_create_construction(params.get("roof_layers", "Composite 2x4 Wood Stud R11"), "Composite 2x4 Wood Stud R11")
     window_default = get_or_create_construction(params.get("window_layers", "Dbl Clr 3mm/13mm Air"), "Dbl Clr 3mm/13mm Air")
-    floor_default = get_or_create_construction("Composite 2x4 Wood Stud R11", "Composite 2x4 Wood Stud R11")
+    floor_default = get_or_create_construction(params.get("floor_layers", "Composite 2x4 Wood Stud R11"), "Composite 2x4 Wood Stud R11")
 
     construction_set = openstudio.model.DefaultConstructionSet(model)
     construction_set.setName("Building Default Construction Set")
@@ -369,8 +373,14 @@ def build_openstudio_model(params: dict) -> openstudio.model.Model:
                         r_surf.setConstruction(z_roof_constr_obj)
                 else:
                     surf_roof.setConstruction(z_roof_constr_obj)
+        # Specific floor_layers override for this zone
+        z_floor_layers = z.get("floor_layers")
+        if z_floor_layers:
+            z_floor_constr_obj = get_or_create_construction(z_floor_layers, "Composite 2x4 Wood Stud R11")
+            if z_floor_constr_obj:
+                surf_floor.setConstruction(z_floor_constr_obj)
+                print(f"[OpenStudio Builder] Zone '{name}': Applied floor construction '{z_floor_layers}'")
 
-        # Retrieve window/door constructions for this zone to explicitly assign to subsurfaces
         z_window_constr = get_or_create_construction(z.get("window_layers"), "Dbl Clr 3mm/13mm Air") if z.get("window_layers") else window_default
         z_wall_constr = get_or_create_construction(z.get("wall_layers"), "Composite 2x4 Wood Stud R11") if z.get("wall_layers") else wall_default
 
