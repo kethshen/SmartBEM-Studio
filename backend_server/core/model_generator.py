@@ -173,9 +173,17 @@ class AIPipelines:
                         return f"! Error: AI failed to output valid JSON for zone '{z_name}'. Result was: {zone_details_json}"
                 
                 # 1. Copy all non-subsurface keys from z_details to z
+                # For hvac_type: only override the global value if the zone explicitly specifies one
+                global_hvac = z.get("hvac_type")  # Preserve global hvac_type from topology pass
                 for key, val in z_details.items():
                     if key != "subsurfaces":
                         z[key] = val
+                # Restore global hvac_type if zone-level hvac_type is null/missing
+                if not z.get("hvac_type"):
+                    z["hvac_type"] = global_hvac
+                    print(f"[AI Assembler] Zone '{z_name}' inherits global hvac_type: {global_hvac}")
+                else:
+                    print(f"[AI Assembler] Zone '{z_name}' has per-zone hvac_type override: {z['hvac_type']}")
 
                 # 2. Extract subsurfaces list
                 subsurfaces = z_details.get("subsurfaces", [])
@@ -599,6 +607,9 @@ class AIPipelines:
             "     - 'offset_z' (float: offset distance from reference edge)\n"
             "     - 'ref_z' (string: 'bottom', 'top', or 'center')\n"
             "     Note: if \"fix to ground\" -> 'ref_z': \"bottom\", 'offset_z': 0.0. If \"X meters from left edge\" -> 'ref_x': \"left\", 'offset_x': X. If \"X meters from top edge\" -> 'ref_z': \"top\", 'offset_z': X. Otherwise use default offset values.\n"
+            "   - 'hvac_type' (string or null): HVAC system for this specific zone ONLY. Use one of: 'ideal_loads', 'ptac', 'psz_ac', 'split_ac'. "
+            "Set ONLY if the user explicitly mentions a different HVAC for this zone. If the user uses the same HVAC for all zones or does not specify per-zone HVAC, return null. "
+            "Example: if user says 'meeting room uses a split AC', return 'split_ac' for the MeetingRoom zone and null for all others.\n"
             "=== CRITICAL DIMENSION RULES ===\n"
             "1. DIMENSION ORDER RULE: All dimensions specified in 'AxB' format (e.g. '1x2.5m door' or '0.8x1.5m window') MUST be parsed as width = A and height = B. NEVER swap them. For example, a 1x2.5m door MUST have width = 1.0 and height = 2.5.\n"
             f"CONSTRUCTION MENU: {construction_menu}\n"
