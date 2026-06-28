@@ -9,7 +9,7 @@
   <link rel="stylesheet" href="../style.css">
   <!-- Diff Library CDN -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jsdiff/5.1.0/diff.min.js"></script>
-  
+
   <style>
     .diff-viewer-grid {
       display: grid;
@@ -138,7 +138,6 @@
         <li><a href="nlp.html" class="nav-link"><span>Simulation Setup</span></a></li>
         <li><a href="results.html" class="nav-link"><span>Results</span></a></li>
         <li><a href="ekf.html" class="nav-link"><span>EKF</span></a></li>
-        <li><a href="architecture.html" class="nav-link"><span>Architecture</span></a></li>
         <li><a href="diff_viewer.html" class="nav-link active"><span>Diff Viewer</span></a></li>
         <li><a href="about.html" class="nav-link"><span>About</span></a></li>
       </ul>
@@ -149,9 +148,16 @@
 
     <!-- Main Content -->
     <main class="main-content">
+      <!-- Developer Testing Notice Banner -->
+      <div
+        style="background: rgba(220, 100, 0, 0.12); border: 1px dashed #dc6400; border-radius: var(--radius-sm); padding: 0.75rem 1rem; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.5rem; color: #e67300; font-size: 1.18rem;">
+        🚧 <strong>Developer Testing Feature:</strong> This page is for developer testing and internal validation purposes only. Normal users can ignore this panel.
+      </div>
+
       <header class="page-header">
         <h1 class="page-title">IDF & Prompt Reference Diff Viewer</h1>
-        <p class="page-subtitle">Compare current run outputs against stored gold-standard baselines to verify structural correctness.</p>
+        <p class="page-subtitle">Compare current run outputs against stored gold-standard baselines to verify structural
+          correctness.</p>
       </header>
 
       <!-- Tabs for prompt vs idf -->
@@ -164,8 +170,10 @@
         <!-- Left Pane: Input -->
         <div class="editor-pane">
           <div class="info-bar">
-            <label style="font-weight: 500; font-size: 0.95rem; color: var(--text-primary);" id="inputLabel">Paste New Restructured Prompt Log</label>
-            <button class="btn btn-secondary" onclick="clearInput()" style="padding: 0.25rem 0.75rem; font-size: 0.8rem;">Clear</button>
+            <label style="font-weight: 500; font-size: 0.95rem; color: var(--text-primary);" id="inputLabel">Paste New
+              Restructured Prompt Log</label>
+            <button class="btn btn-secondary" onclick="clearInput()"
+              style="padding: 0.25rem 0.75rem; font-size: 0.8rem;">Clear</button>
           </div>
           <textarea class="editor-textarea" id="inputText" placeholder="Paste the output here to compare..."></textarea>
         </div>
@@ -221,10 +229,10 @@
       activeTab = tab;
       document.getElementById('tabPromptBtn').classList.toggle('active', tab === 'prompt');
       document.getElementById('tabIdfBtn').classList.toggle('active', tab === 'idf');
-      
+
       const inputLabel = document.getElementById('inputLabel');
       const inputTextArea = document.getElementById('inputText');
-      
+
       if (tab === 'prompt') {
         inputLabel.innerText = "Paste New Restructured Prompt Log";
         inputTextArea.placeholder = "Paste the restructured prompt block (from [GLOBAL SETTINGS] to </Zone: Lobby>)...";
@@ -258,10 +266,10 @@
       }
 
       const refText = (activeTab === 'prompt' ? referencePrompt : referenceIdf).replace(/\r\n/g, '\n').trim();
-      
+
       // Perform line-by-line diff using jsdiff
       const diff = Diff.diffLines(refText, newText);
-      
+
       outputDiv.innerHTML = '';
       let additions = 0;
       let deletions = 0;
@@ -276,7 +284,7 @@
         lines.forEach((line) => {
           const span = document.createElement('span');
           span.className = 'diff-line';
-          
+
           if (part.added) {
             span.classList.add('diff-added');
             span.innerText = '+ ' + line;

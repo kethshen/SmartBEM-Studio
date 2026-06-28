@@ -21,7 +21,6 @@
                 <li><a href="nlp.html" class="nav-link"><span>Simulation Setup</span></a></li>
                 <li><a href="results.html" class="nav-link"><span>Results</span></a></li>
                 <li><a href="ekf.html" class="nav-link"><span>EKF</span></a></li>
-                <li><a href="architecture.html" class="nav-link"><span>Architecture</span></a></li>
                 <li><a href="diff_viewer.html" class="nav-link"><span>Diff Viewer</span></a></li>
                 <li><a href="about.html" class="nav-link active"><span>About</span></a></li>
             </ul>
@@ -50,7 +49,7 @@
                     This platform bridges the gap between theoretical modeling and practical HVAC control by
                     establishing an AI-assisted framework for EnergyPlus simulation. Users describe buildings
                     in natural language, and a two-pass Agentic RAG pipeline (powered by a local Ollama
-                    <code>gemma3:12b</code> model) autonomously generates valid IDF files, executes thermal
+                    gemma3:12b model autonomously generates valid IDF files, executes thermal
                     simulations on a Google Colab GPU, and returns time-series result plots to a web dashboard.
                 </p>
 
@@ -61,6 +60,7 @@
                         Affiliation</h3>
                     <div style="color: var(--text-primary); font-weight: 600; font-size: 1rem;">
                         Department of Mechanical Engineering<br>
+                        <span style="font-weight: 400;">Faculty of Engineering</span><br>
                         <span style="font-weight: 400;">University of Peradeniya</span>
                     </div>
                 </div>
@@ -76,7 +76,7 @@
                             style="width: 48px; height: 48px; background: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 1.2rem;">
                             K</div>
                         <div>
-                            <div style="font-weight: 600; font-size: 1rem;">Kethaka</div>
+                            <div style="font-weight: 600; font-size: 1rem;">Kethaka Shehan</div>
                             <div style="font-size: 0.85rem; color: var(--text-secondary);">Research Student</div>
                         </div>
                     </div>
@@ -93,35 +93,33 @@
                     </div>
                 </div>
 
-                <div
-                    style="margin-top: 2rem; padding-top: 1rem; border-top: 1px solid var(--border-subtle);">
-                    <h3
-                        style="font-size: 1rem; color: var(--text-primary); margin-bottom: 1rem;">Technology Stack</h3>
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.75rem;">
-                        <div style="padding: 0.75rem; background: var(--bg-app); border-radius: var(--radius-sm); border: 1px solid var(--border-subtle); font-size: 0.85rem; color: var(--text-secondary);">
+                <div style="margin-top: 2rem; padding-top: 1rem; border-top: 1px solid var(--border-subtle);">
+                    <h3 style="font-size: 1rem; color: var(--text-primary); margin-bottom: 1rem;">Technology Stack</h3>
+                    <div
+                        style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.75rem;">
+                        <div
+                            style="padding: 0.75rem; background: var(--bg-app); border-radius: var(--radius-sm); border: 1px solid var(--border-subtle); font-size: 0.85rem; color: var(--text-secondary);">
                             <strong style="color: var(--text-primary);">Frontend:</strong> HTML, CSS, JavaScript
                         </div>
-                        <div style="padding: 0.75rem; background: var(--bg-app); border-radius: var(--radius-sm); border: 1px solid var(--border-subtle); font-size: 0.85rem; color: var(--text-secondary);">
-                            <strong style="color: var(--text-primary);">Cloud:</strong> Firebase Firestore &amp; Storage
+                        <div
+                            style="padding: 0.75rem; background: var(--bg-app); border-radius: var(--radius-sm); border: 1px solid var(--border-subtle); font-size: 0.85rem; color: var(--text-secondary);">
+                            <strong style="color: var(--text-primary);">Network/API:</strong> FastAPI &amp; ngrok Tunnel
                         </div>
-                        <div style="padding: 0.75rem; background: var(--bg-app); border-radius: var(--radius-sm); border: 1px solid var(--border-subtle); font-size: 0.85rem; color: var(--text-secondary);">
+                        <div
+                            style="padding: 0.75rem; background: var(--bg-app); border-radius: var(--radius-sm); border: 1px solid var(--border-subtle); font-size: 0.85rem; color: var(--text-secondary);">
                             <strong style="color: var(--text-primary);">AI:</strong> Ollama gemma3:12b (local LLM)
                         </div>
-                        <div style="padding: 0.75rem; background: var(--bg-app); border-radius: var(--radius-sm); border: 1px solid var(--border-subtle); font-size: 0.85rem; color: var(--text-secondary);">
+                        <div
+                            style="padding: 0.75rem; background: var(--bg-app); border-radius: var(--radius-sm); border: 1px solid var(--border-subtle); font-size: 0.85rem; color: var(--text-secondary);">
                             <strong style="color: var(--text-primary);">Backend:</strong> Google Colab (Python)
                         </div>
-                        <div style="padding: 0.75rem; background: var(--bg-app); border-radius: var(--radius-sm); border: 1px solid var(--border-subtle); font-size: 0.85rem; color: var(--text-secondary);">
-                            <strong style="color: var(--text-primary);">Simulation:</strong> EnergyPlus 24.1
+                        <div
+                            style="padding: 0.75rem; background: var(--bg-app); border-radius: var(--radius-sm); border: 1px solid var(--border-subtle); font-size: 0.85rem; color: var(--text-secondary);">
+                            <strong style="color: var(--text-primary);">Simulation:</strong> EnergyPlus 25.1
                         </div>
                     </div>
                 </div>
 
-                <div
-                    style="margin-top: 2rem; padding-top: 1rem; border-top: 1px solid var(--border-subtle); text-align: center;">
-                    <span class="badge"
-                        style="background: var(--bg-app); color: var(--text-secondary); border: 1px solid var(--border-subtle);">Academic
-                        Use Only</span>
-                </div>
             </div>
 
         </main>
