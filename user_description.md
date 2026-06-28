@@ -6,17 +6,14 @@ The meeting room is 6.00 meters long, 4.00 meters wide, and 4.00 meters high. Th
 
 The lobby is 5.00 meters long, 8.00 meters wide, and 4.00 meters high.
 
-For the office: place a 1.5x2m window on the South wall 2m from left edge, 1m from top edge. place a 0.8x1.5m window on the West wall 2m from left edge, 1.5m from top edge. place a 1x2.5m door on the West wall 5m from left edge, fix to ground. Make the South wall out of 'M01 100mm brick' and 'I02 50mm insulation board' and the other walls out of 'Medium Exterior Wall'. The office has a heavy concrete floor of 'M15 200mm heavyweight concrete'.
+For the office: place a 1.5x2m window on the South wall 2m from left edge, 1m from top edge. place a 0.8x1.5m window on the West wall 2m from left edge, 1.5m from top edge. place a 1x2.5m door on the West wall 5m from left edge, fix to ground. Make the South wall out of 'M01 100mm brick' and 'I02 50mm insulation board' and the other walls out of 'Medium Exterior Wall'. The office has a heavy concrete floor of 'M15 200mm heavyweight concrete'. The office uses a packaged AC unit (psz_ac). The office has a gable roof with the ridge running east-west (EW gable), gable height 3 meters. Place a 2.0x1.5m skylight on the office roof.
 
-For the meeting room: place a 1x1m window on the North wall 2m from left edge, 1.5m from top edge. place a 0.8x1.5m window on the West wall 1m from left edge, 1.5m from top edge. place a 1x2.5m door on the South wall 0.5m from left edge, fix to ground. Make the North wall out of 'M01 100mm brick' and 'I02 50mm insulation board' and the other walls out of 'Medium Exterior Wall'.
+For the meeting room: place a 1x1m window on the North wall 2m from left edge, 1.5m from top edge. place a 0.8x1.5m window on the West wall 1m from left edge, 1.5m from top edge. place a 1x2.5m door on the South wall 0.5m from left edge, fix to ground. Make the North wall out of 'M01 100mm brick' and 'I02 50mm insulation board' and the other walls out of 'Medium Exterior Wall'. The meeting room uses a split AC (split_ac). The meeting room has a gable roof with the ridge running north-south (NS gable), gable height 3 meters. Place a 2.0x1.5m skylight on the meeting room roof.
 
-For the lobby: place a 2x2.5m door on the East wall 3m from left edge, fix to ground. place a 1x2.5m door on the South wall 2m from left edge, fix to ground. place a 1x1.5m window on the South wall 4.5m from left edge, 1.5m from top edge. Make the South wall out of 'M01 100mm brick' and 'I02 50mm insulation board' and the other walls out of 'Medium Exterior Wall'. The lobby floor is 'Light Floor'.
+For the lobby: place a 2x2.5m door on the East wall 3m from left edge, fix to ground. place a 1x2.5m door on the South wall 2m from left edge, fix to ground. place a 1x1.5m window on the South wall 4.5m from left edge, 1.5m from top edge. Make the South wall out of 'M01 100mm brick' and 'I02 50mm insulation board' and the other walls out of 'Medium Exterior Wall'. The lobby floor is 'Light Floor'. The lobby uses a split AC (split_ac). The lobby has a pyramid hip roof, gable height 3 meters.
 
-Global paramters, all three zone has pitched roofs with a gable height of 3 meters. Place a 2.0x1.5m skylight on the roof.
 
 The occupancy rate is 30.00 m2/people, the lighting level is 6.00 W/m2, and the equipment power consumption is 45.80 W/m2.
-
-The office uses a packaged AC unit (psz_ac). The meeting room uses a split AC (split_ac). The lobby uses a split AC (split_ac).
 
 People are in the building from 9am to 5pm on weekdays and completely closed on weekends.
 
