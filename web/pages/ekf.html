@@ -134,12 +134,20 @@
         <div class="ekf-controls">
           <label for="datasetSelect" style="display: inline-block; margin-right: 0.5rem; font-weight: 600; color: var(--text-secondary);">Dataset / Room:</label>
           <select id="datasetSelect" onchange="onDatasetChange()" style="width: auto; display: inline-block; padding: 0.4rem 2rem 0.4rem 0.8rem; height: 38px; line-height: 1; border-radius: var(--radius-sm); border: 1px solid var(--border-subtle); background-color: var(--bg-card); color: var(--text-primary); cursor: pointer; margin-right: 0.5rem;">
-            <option value="robod3" selected>ROBOD Room 3 (10-State, Office)</option>
-            <option value="kaggle">Kaggle Room (8-State Baseline)</option>
+            <option value="robod1">ROBOD Room 1 (10-State)</option>
+            <option value="robod2">ROBOD Room 2 (10-State)</option>
+            <option value="robod3" selected>ROBOD Room 3 (10-State)</option>
+            <option value="robod4">ROBOD Room 4 (10-State)</option>
+            <option value="robod5">ROBOD Room 5 (10-State)</option>
+            <option value="kaggle">Kaggle Room (8-State - Static)</option>
           </select>
-          <a id="btnRunEKF" href="#" target="_blank" class="btn btn-primary" onclick="openColab()">
-            &#9654; Run EKF in Colab
-          </a>
+          <button id="btnRunEKF" class="btn btn-primary" onclick="runEKFLocal()">
+            &#9654; Run EKF Local
+          </button>
+          <button id="btnUploadCSV" class="btn btn-secondary" onclick="triggerCSVUpload()">
+            📁 Upload CSV
+          </button>
+          <input type="file" id="csvFileInput" accept=".csv" style="display:none;" onchange="onCSVFileSelected(event)">
           <button class="btn btn-secondary" onclick="loadPlots()">
             &#8635; Refresh Plots
           </button>
@@ -154,9 +162,9 @@
         </div>
         <div style="color: var(--text-secondary); font-size: 0.9rem; line-height: 1.6;">
           <p style="margin-bottom: 0.75rem;">
-            <strong>1.</strong> Click <em>"Run EKF in Colab"</em> to open the standalone EKF notebook.
-            <strong>2.</strong> Run all cells &mdash; results save locally/Google Drive as PNG plots.
-            <strong>3.</strong> Click <em>"Refresh Plots"</em> to load the latest results below.
+            <strong>1.</strong> Select the desired room or dataset from the dropdown.
+            <strong>2.</strong> Click <em>"Run EKF Local"</em> to execute the 10-state Extended Kalman Filter on the active backend server.
+            <strong>3.</strong> The system will run the estimation algorithm and stream results dynamically to the dashboard below. Or, you can still view the <a href="https://drive.google.com/file/d/1yYarat7NHYzpYrLB3CsrVgB0tbspnAt-/view?usp=sharing" target="_blank" style="color: var(--primary); text-decoration: underline;">Google Colab Notebook</a>.
           </p>
           <div id="detailsCard" style="background-color: var(--bg-app); padding: 0.85rem; border-radius: var(--radius-sm); border-left: 4px solid var(--primary);">
             <!-- Populated dynamically -->
@@ -191,6 +199,17 @@
     // ---- Configuration & Configurations ----
     const COLAB_URL = 'https://drive.google.com/file/d/1yYarat7NHYzpYrLB3CsrVgB0tbspnAt-/view?usp=sharing';
 
+    function getBackendUrl() {
+      let url = localStorage.getItem("smartbem_backend_url");
+      if (!url) {
+        url = "http://127.0.0.1:8000"; // Default fallback
+      }
+      return url.replace(/\/$/, "");
+    }
+
+    let lastRunResult = null;
+    let uploadedFile = null;
+
     const KAGGLE_CONFIG = {
       subtitle: '8-State Extended Kalman Filter on Kaggle occupancy dataset.',
       resultsBase: '../../EKF/results',
@@ -217,14 +236,6 @@
     };
 
     const ROBOD_CONFIG = {
-      subtitle: '10-State Extended Kalman Filter on ROBOD Room 3 (Office Space) dataset.',
-      resultsBase: '../../EKF/results_robod_room3',
-      detailsHtml: `
-        <strong>Model:</strong> 10-State EKF (restored full advisor equations, including humidity ratio dynamics)<br>
-        <strong>States:</strong> [&alpha;<sub>o</sub>, &alpha;<sub>s</sub>, &alpha;<sub>e</sub>, &beta;<sub>o</sub>, &beta;<sub>s</sub>, &beta;<sub>e</sub>, &gamma;<sub>e</sub>, T<sub>z</sub>, &omega;<sub>z</sub>, c<sub>z</sub>]<br>
-        <strong>Measurements:</strong> Temperature (T<sub>z</sub>), Humidity Ratio (&omega;<sub>z</sub>), CO<sub>2</sub> (c<sub>z</sub>)<br>
-        <strong>Dataset:</strong> ROBOD Room 3 (Office, SDE4 NUS). Occupancy recovery uses fixed room air mass M<sub>room</sub> = 240.0 kg and calibrated occupant CO<sub>2</sub> rate g<sub>CO2</sub> = 1.725 ppm&middot;kg/(s&middot;person) to avoid divergence.
-      `,
       plots: [
         { file: '01_zone_temp.png', title: 'Zone Temperature (Measured vs EKF)' },
         { file: '02_zone_humidity.png', title: 'Zone Humidity Ratio (Measured vs EKF)' },
@@ -243,23 +254,99 @@
       ]
     };
 
-    let currentConfig = ROBOD_CONFIG;
+    let currentConfig = null;
+
+    function triggerCSVUpload() {
+      document.getElementById('csvFileInput').click();
+    }
+
+    function onCSVFileSelected(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      uploadedFile = file;
+
+      // Add to select dropdown or update existing uploaded option
+      const select = document.getElementById('datasetSelect');
+      let uploadedOption = select.querySelector('option[value="uploaded_csv"]');
+      if (!uploadedOption) {
+        uploadedOption = document.createElement('option');
+        uploadedOption.value = 'uploaded_csv';
+        select.add(uploadedOption, select.options.length - 1); // add before kaggle
+      }
+      uploadedOption.textContent = `Uploaded: ${file.name}`;
+      uploadedOption.selected = true;
+
+      // Manually trigger configuration update for uploaded dataset
+      currentConfig = {
+        subtitle: `10-State Extended Kalman Filter on uploaded custom dataset: ${file.name}`,
+        resultsBase: ``, // no local fallback for uploaded file
+        detailsHtml: `
+          <strong>Model:</strong> 10-State EKF (using uploaded custom CSV dataset)<br>
+          <strong>States:</strong> [&alpha;<sub>o</sub>, &alpha;<sub>s</sub>, &alpha;<sub>e</sub>, &beta;<sub>o</sub>, &beta;<sub>s</sub>, &beta;<sub>e</sub>, &gamma;<sub>e</sub>, T<sub>z</sub>, &omega;<sub>z</sub>, c<sub>z</sub>]<br>
+          <strong>File Name:</strong> ${file.name} (${(file.size / 1024).toFixed(1)} KB)<br>
+          <strong>Usage:</strong> Click <em>"Run EKF Local"</em> to upload this file and process it with the 10-state EKF algorithm.
+        `,
+        plots: ROBOD_CONFIG.plots
+      };
+      
+      document.getElementById('btnRunEKF').style.display = 'inline-block';
+      document.getElementById('ekfSubtitle').textContent = currentConfig.subtitle;
+      document.getElementById('detailsCard').innerHTML = currentConfig.detailsHtml;
+      document.getElementById('gridHeader').textContent = `EKF Results (${currentConfig.plots.length} Plots)`;
+      
+      // Clear last run result and rebuild grid
+      lastRunResult = null;
+      buildGrid();
+      loadPlots();
+    }
 
     // ---- Handle dataset selection change ----
     function onDatasetChange() {
       const select = document.getElementById('datasetSelect');
       const val = select.value;
 
-      if (val === 'robod3') {
-        currentConfig = ROBOD_CONFIG;
+      if (val === 'uploaded_csv') {
+        if (uploadedFile) {
+          currentConfig = {
+            subtitle: `10-State Extended Kalman Filter on uploaded custom dataset: ${uploadedFile.name}`,
+            resultsBase: ``,
+            detailsHtml: `
+              <strong>Model:</strong> 10-State EKF (using uploaded custom CSV dataset)<br>
+              <strong>States:</strong> [&alpha;<sub>o</sub>, &alpha;<sub>s</sub>, &alpha;<sub>e</sub>, &beta;<sub>o</sub>, &beta;<sub>s</sub>, &beta;<sub>e</sub>, &gamma;<sub>e</sub>, T<sub>z</sub>, &omega;<sub>z</sub>, c<sub>z</sub>]<br>
+              <strong>File Name:</strong> ${uploadedFile.name} (${(uploadedFile.size / 1024).toFixed(1)} KB)<br>
+              <strong>Usage:</strong> Click <em>"Run EKF Local"</em> to upload this file and process it with the 10-state EKF algorithm.
+            `,
+            plots: ROBOD_CONFIG.plots
+          };
+          document.getElementById('btnRunEKF').style.display = 'inline-block';
+        }
+      } else if (val.startsWith('robod')) {
+        const roomNum = val.replace('robod', '');
+        currentConfig = {
+          subtitle: `10-State Extended Kalman Filter on ROBOD Room ${roomNum} (Office Space) dataset.`,
+          resultsBase: `../../EKF/results_robod_room${roomNum}`,
+          detailsHtml: `
+            <strong>Model:</strong> 10-State EKF (restored full advisor equations, including humidity ratio dynamics)<br>
+            <strong>States:</strong> [&alpha;<sub>o</sub>, &alpha;<sub>s</sub>, &alpha;<sub>e</sub>, &beta;<sub>o</sub>, &beta;<sub>s</sub>, &beta;<sub>e</sub>, &gamma;<sub>e</sub>, T<sub>z</sub>, &omega;<sub>z</sub>, c<sub>z</sub>]<br>
+            <strong>Measurements:</strong> Temperature (T<sub>z</sub>), Humidity Ratio (&omega;<sub>z</sub>), CO<sub>2</sub> (c<sub>z</sub>)<br>
+            <strong>Dataset:</strong> ROBOD Room ${roomNum} (Office, SDE4 NUS). Occupancy recovery uses fixed room air mass M<sub>room</sub> = 240.0 kg and calibrated occupant CO<sub>2</sub> rate g<sub>CO2</sub> = 1.725 ppm&middot;kg/(s&middot;person) to avoid divergence.
+          `,
+          plots: ROBOD_CONFIG.plots
+        };
+        document.getElementById('btnRunEKF').style.display = 'inline-block';
       } else {
         currentConfig = KAGGLE_CONFIG;
+        document.getElementById('btnRunEKF').style.display = 'none';
       }
 
       // Update UI elements
       document.getElementById('ekfSubtitle').textContent = currentConfig.subtitle;
       document.getElementById('detailsCard').innerHTML = currentConfig.detailsHtml;
       document.getElementById('gridHeader').textContent = `EKF Results (${currentConfig.plots.length} Plots)`;
+
+      // Clear any last run results
+      lastRunResult = null;
 
       buildGrid();
       loadPlots();
@@ -282,7 +369,7 @@
       });
     }
 
-    // ---- Load plots from local results folder ----
+    // ---- Load plots ----
     function loadPlots() {
       const status = document.getElementById('ekfStatus');
       status.textContent = 'Loading...';
@@ -295,7 +382,13 @@
       currentConfig.plots.forEach((p, i) => {
         const img = document.getElementById(`img_${i}`);
         const ph = document.getElementById(`ph_${i}`);
-        const url = `${currentConfig.resultsBase}/${p.file}?t=${Date.now()}`; // cache bust
+        
+        let url;
+        if (lastRunResult && lastRunResult.files && lastRunResult.files[p.file]) {
+          url = getBackendUrl() + lastRunResult.files[p.file] + `?t=${Date.now()}`;
+        } else {
+          url = `${currentConfig.resultsBase}/${p.file}?t=${Date.now()}`; // cache bust
+        }
 
         // Test if image exists by loading it
         const testImg = new Image();
@@ -332,9 +425,141 @@
       }
     }
 
-    // ---- Open Colab notebook ----
-    function openColab() {
-      window.open(COLAB_URL, '_blank');
+    // ---- Run EKF locally ----
+    async function runEKFLocal() {
+      const select = document.getElementById('datasetSelect');
+      const val = select.value;
+      
+      if (val === 'kaggle') {
+        alert("The Kaggle dataset is pre-computed. Please select a ROBOD Room to run the EKF algorithm live.");
+        return;
+      }
+      
+      const status = document.getElementById('ekfStatus');
+      const btn = document.getElementById('btnRunEKF');
+      
+      status.textContent = 'Triggering...';
+      status.className = 'ekf-status status-idle';
+      btn.disabled = true;
+      btn.textContent = 'Running...';
+      
+      const backendUrl = getBackendUrl();
+      let datasetPath = null;
+      const roomNum = val.startsWith('robod') ? parseInt(val.replace('robod', '')) : 3;
+
+      if (val === 'uploaded_csv') {
+        if (!uploadedFile) {
+          alert("Please select a CSV file to upload first.");
+          btn.disabled = false;
+          btn.textContent = '▶ Run EKF Local';
+          status.textContent = 'Idle';
+          return;
+        }
+
+        status.textContent = 'Uploading CSV...';
+
+        try {
+          const formData = new FormData();
+          formData.append('file', uploadedFile);
+
+          const uploadRes = await fetch(`${backendUrl}/api/upload_ekf_dataset`, {
+            method: 'POST',
+            headers: {
+              'ngrok-skip-browser-warning': 'true'
+            },
+            body: formData
+          });
+
+          if (!uploadRes.ok) {
+            throw new Error(`Upload failed with status ${uploadRes.status}`);
+          }
+
+          const uploadData = await uploadRes.json();
+          datasetPath = uploadData.file_path;
+
+        } catch (err) {
+          console.error(err);
+          status.textContent = 'Upload Error';
+          status.className = 'ekf-status status-error';
+          btn.disabled = false;
+          btn.textContent = '▶ Run EKF Local';
+          alert(`Failed to upload the CSV dataset to the backend. Please check the backend connection.`);
+          return;
+        }
+      }
+      
+      try {
+        status.textContent = 'Running EKF...';
+        const response = await fetch(`${backendUrl}/api/run_ekf`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'ngrok-skip-browser-warning': 'true'
+          },
+          body: JSON.stringify({ 
+            room_num: roomNum,
+            dataset_path: datasetPath
+          })
+        });
+        
+        if (!response.ok) {
+          throw new Error(`Server returned status ${response.status}`);
+        }
+        
+        const data = await response.json();
+        const jobId = data.job_id;
+        
+        pollStatus(jobId);
+        
+      } catch (err) {
+        console.error(err);
+        status.textContent = 'Connection Error';
+        status.className = 'ekf-status status-error';
+        btn.disabled = false;
+        btn.textContent = '▶ Run EKF Local';
+        alert(`Failed to connect to the backend at ${backendUrl}. Please make sure your FastAPI server/ngrok tunnel is running.`);
+      }
+    }
+
+    function pollStatus(jobId) {
+      const status = document.getElementById('ekfStatus');
+      const btn = document.getElementById('btnRunEKF');
+      const backendUrl = getBackendUrl();
+      
+      const interval = setInterval(async () => {
+        try {
+          const res = await fetch(`${backendUrl}/api/status/${jobId}`, {
+            headers: { 'ngrok-skip-browser-warning': 'true' }
+          });
+          if (!res.ok) throw new Error("Status check failed");
+          
+          const job = await res.json();
+          if (job.status === 'done') {
+            clearInterval(interval);
+            status.textContent = 'Done';
+            status.className = 'ekf-status status-done';
+            btn.disabled = false;
+            btn.textContent = '▶ Run EKF Local';
+            
+            lastRunResult = job.result;
+            loadPlots();
+          } else if (job.status === 'error') {
+            clearInterval(interval);
+            status.textContent = 'Failed';
+            status.className = 'ekf-status status-error';
+            btn.disabled = false;
+            btn.textContent = '▶ Run EKF Local';
+            alert(`EKF Run failed:\n${job.error_message || 'Unknown error'}`);
+          } else if (job.status === 'processing') {
+            status.textContent = 'Processing...';
+          } else {
+            status.textContent = job.status || 'Queued...';
+          }
+        } catch (err) {
+          console.error(err);
+          status.textContent = 'Reconnecting...';
+        }
+      }, 2000);
     }
 
     // ---- Init ----

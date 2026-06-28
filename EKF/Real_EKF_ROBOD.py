@@ -37,24 +37,10 @@ import pandas as pd
 import sys
 import os
 
-# ── CLI flags ──────────────────────────────────────────────────────────────────
-SAVE_MODE = '--save' in sys.argv
-ROOM_NUM  = 3                           # default room
-for i, arg in enumerate(sys.argv):
-    if arg == '--room' and i + 1 < len(sys.argv):
-        ROOM_NUM = int(sys.argv[i + 1])
-
-if SAVE_MODE:
-    import matplotlib
-    matplotlib.use('Agg')
-import matplotlib.pyplot as plt
-
 # ── Paths ──────────────────────────────────────────────────────────────────────
 SCRIPT_DIR  = os.path.dirname(os.path.abspath(__file__))
 ROBOD_DIR   = os.path.join(SCRIPT_DIR, "Datasets for EKF",
                            "ROBOD, Room level Occupancy and Building Operation Dataset")
-ROBOD_CSV   = os.path.join(ROBOD_DIR, f"combined_Room{ROOM_NUM}.csv")
-RESULTS_DIR = os.path.join(SCRIPT_DIR, f"results_robod_room{ROOM_NUM}")
 
 # ── Physical constants ─────────────────────────────────────────────────────────
 c_pa       = 1006.0   # specific heat of air              [J/(kg*K)]
@@ -285,14 +271,23 @@ def jacobian_F(X_prev, inputs, dt):
 #  MAIN
 # ═══════════════════════════════════════════════════════════════════════════════
 
-def main():
+def main(room_num=3, save_mode=False, results_dir=None, dataset_path=None):
+    if save_mode:
+        import matplotlib
+        matplotlib.use('Agg')
+    import matplotlib.pyplot as plt
+
+    if results_dir is None:
+        results_dir = os.path.join(SCRIPT_DIR, f"results_robod_room{room_num}")
+    robod_csv = dataset_path if dataset_path else os.path.join(ROBOD_DIR, f"combined_Room{room_num}.csv")
+
     print("=" * 60)
-    print(f"  SmartBEM — 10-State EKF  (ROBOD Room {ROOM_NUM})")
+    print(f"  SmartBEM — 10-State EKF  (ROBOD Room {room_num})")
     print("=" * 60)
 
     # ── Load data ─────────────────────────────────────────────────────────────
     print("\n[1] Loading ROBOD CSV ...")
-    df = load_robod(ROBOD_CSV)
+    df = load_robod(robod_csv)
     steps = len(df)
     print(f"    {steps} rows | "
           f"T_z {df['T_z'].min():.1f}-{df['T_z'].max():.1f} C | "
@@ -453,8 +448,8 @@ def main():
         return arr[mask]
 
     # ── Plot definitions ──────────────────────────────────────────────────────
-    if SAVE_MODE:
-        os.makedirs(RESULTS_DIR, exist_ok=True)
+    if save_mode:
+        os.makedirs(results_dir, exist_ok=True)
 
     MEAS  = {'style': '.', 'color': '#2ca02c', 'alpha': 0.6, 'lw': 0,   'ms': 1.5}
     EKF   = {'style': '--','color': '#ff7f0e', 'alpha': 0.8, 'lw': 1.2}
@@ -511,21 +506,27 @@ def main():
             if 'ms' in tr:
                 kw['markersize'] = tr['ms']
             ax.plot(t_plot, tr['y'], tr['style'], **kw)
-        ax.set_title(f"{title}  [ROBOD Room {ROOM_NUM}]")
+        ax.set_title(f"{title}  [ROBOD Room {room_num}]")
         ax.set_xlabel('Time [hours]')
         ax.set_ylabel(ylabel)
         ax.legend(fontsize=8)
         ax.grid(True, alpha=0.3)
         plt.tight_layout()
-        if SAVE_MODE:
-            fig.savefig(os.path.join(RESULTS_DIR, fname), dpi=150, bbox_inches='tight')
+        if save_mode:
+            fig.savefig(os.path.join(results_dir, fname), dpi=150, bbox_inches='tight')
             plt.close(fig)
 
-    if SAVE_MODE:
-        print(f"    Saved 14 plots -> {RESULTS_DIR}")
+    if save_mode:
+        print(f"    Saved 14 plots -> {results_dir}")
     else:
         plt.show()
 
 
 if __name__ == "__main__":
-    main()
+    import sys
+    cli_save_mode = '--save' in sys.argv
+    cli_room_num = 3
+    for i, arg in enumerate(sys.argv):
+        if arg == '--room' and i + 1 < len(sys.argv):
+            cli_room_num = int(sys.argv[i + 1])
+    main(room_num=cli_room_num, save_mode=cli_save_mode)

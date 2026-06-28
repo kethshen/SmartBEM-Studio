@@ -4,7 +4,7 @@ import threading
 import uuid
 import time
 import tempfile
-from fastapi import FastAPI, BackgroundTasks, Request
+from fastapi import FastAPI, BackgroundTasks, Request, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
@@ -149,6 +149,84 @@ def run_simulation_pipeline(job_id: str, prompt: str, settings: dict):
     finally:
         sys.stdout = original_stdout
         sys.stderr = original_stderr
+
+
+class RunEKFRequest(BaseModel):
+    room_num: int = 3
+    dataset_path: str = None
+
+def run_ekf_pipeline(job_id: str, room_num: int, dataset_path: str = None):
+    """
+    Background worker that runs the 10-state EKF algorithm on a room dataset.
+    """
+    try:
+        jobs_db[job_id]["status"] = "processing"
+        
+        # Prepare output directory under our static files path
+        target_dir = os.path.join(OUTPUT_DIR, "ekf_runs", job_id)
+        os.makedirs(target_dir, exist_ok=True)
+        
+        # Add root to path so we can import EKF module
+        root_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        if root_dir not in sys.path:
+            sys.path.append(root_dir)
+        from EKF.Real_EKF_ROBOD import main as run_ekf_script
+        
+        print(f"[{job_id}] Starting EKF run for room {room_num}...")
+        run_ekf_script(room_num=room_num, save_mode=True, results_dir=target_dir, dataset_path=dataset_path)
+        
+        # Get list of files generated
+        generated_files = []
+        if os.path.exists(target_dir):
+            generated_files = sorted(os.listdir(target_dir))
+        
+        # Build relative URLs (using the mapped static mount /results)
+        file_urls = {fname: f"/results/ekf_runs/{job_id}/{fname}" for fname in generated_files if fname.endswith(".png")}
+        
+        jobs_db[job_id]["status"] = "done"
+        jobs_db[job_id]["result"] = {
+            "files": file_urls
+        }
+        print(f"[{job_id}] EKF run completed successfully.")
+        
+    except Exception as e:
+        import traceback
+        tb_str = traceback.format_exc()
+        print(f"[{job_id}] EKF run failed:\n{tb_str}")
+        jobs_db[job_id]["status"] = "error"
+        jobs_db[job_id]["error_message"] = f"Error: {str(e)}\n\nTraceback:\n{tb_str}"
+
+@app.post("/api/run_ekf")
+async def run_ekf(req: RunEKFRequest):
+    job_id = f"ekf_room{req.room_num}_{time.strftime('%Y_%m_%d_%H_%M_%S')}"
+    
+    jobs_db[job_id] = {
+        "status": "queued",
+        "room_num": req.room_num,
+        "created_at": time.time(),
+        "result": None,
+        "error_message": None
+    }
+    
+    thread = threading.Thread(target=run_ekf_pipeline, args=(job_id, req.room_num, req.dataset_path))
+    thread.start()
+    
+    return {"job_id": job_id, "status": "queued"}
+
+@app.post("/api/upload_ekf_dataset")
+async def upload_ekf_dataset(file: UploadFile = File(...)):
+    """
+    Accepts a CSV dataset file upload and saves it to a unique location under the temp directory.
+    """
+    os.makedirs(os.path.join(OUTPUT_DIR, "uploads"), exist_ok=True)
+    file_id = str(uuid.uuid4())
+    filename = f"ekf_upload_{file_id}_{file.filename}"
+    file_path = os.path.join(OUTPUT_DIR, "uploads", filename)
+    
+    with open(file_path, "wb") as buffer:
+        buffer.write(await file.read())
+        
+    return {"file_path": file_path, "filename": file.filename}
 
 
 @app.post("/api/simulate", response_model=SimulateResponse)
