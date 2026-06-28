@@ -108,15 +108,21 @@ class AIPipelines:
             def score_item(item_name):
                 return sum(1 for kw in keywords if kw.lower() in item_name.lower())
                 
-            # Sort by score and take the top 15 most relevant walls/roofs!
-            construction_menu = sorted(all_constructions, key=score_item, reverse=True)[:15]
-            print(f"[AI RAG] Filtered Menu down to 15 items: {construction_menu}")
+            # Sort by score and take top 12, then always pin floor & roof constructions so they are never crowded out
+            scored_constructions = sorted(all_constructions, key=score_item, reverse=True)
+            pinned_constructions = [c for c in all_constructions if any(kw in c.lower() for kw in ["floor", "roof", "ceiling"])]
+            top_scored = [c for c in scored_constructions if c not in pinned_constructions][:12]
+            construction_menu = list(dict.fromkeys(top_scored + pinned_constructions))  # dedup, preserve order
+            print(f"[AI RAG] Filtered Menu down to {len(construction_menu)} items (includes pinned floor/roof): {construction_menu}")
             
             # Extract raw materials for dynamic constructions
-            raw_materials = []
+            # Pin floor-related and roof-related materials so they are never crowded out by other keyword matches
+            all_raw = []
             for cat in ["Material", "Material:NoMass", "Material:AirGap"]:
-                raw_materials.extend(list(index_data.get(cat, {}).keys()))
-            raw_materials = sorted(raw_materials, key=score_item, reverse=True)[:15]
+                all_raw.extend(list(index_data.get(cat, {}).keys()))
+            pinned_raw = [m for m in all_raw if any(kw in m.lower() for kw in ["floor", "roof", "ceiling", "concrete", "slab"])]
+            scored_raw = sorted([m for m in all_raw if m not in pinned_raw], key=score_item, reverse=True)
+            raw_materials = (pinned_raw + scored_raw)[:20]  # Increased cap to 20 to accommodate pins
             
             # Extract window materials for dynamic windows
             window_materials = []

@@ -549,6 +549,9 @@ def build_openstudio_model(params: dict) -> openstudio.model.Model:
 
     # Reconcile constructions for adjacent surfaces to prevent EnergyPlus layer count mismatch errors
     for surf in model.getSurfaces():
+        # Skip floor surfaces — user-specified floor materials must not be overwritten by ceiling constructions
+        if surf.surfaceType() == "Floor":
+            continue
         if surf.outsideBoundaryCondition() == "Surface":
             adj_surf_opt = surf.adjacentSurface()
             if adj_surf_opt.is_initialized():
