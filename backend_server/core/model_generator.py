@@ -101,34 +101,57 @@ class AIPipelines:
             keywords = self._generate_search_keywords(nlp_text, model_type)
             print(f"[AI RAG] Extracted Keywords: {keywords}")
 
-            # --- RETRIEVER: Filter the Massive Menu ---
+            # --- RETRIEVER: Extract explicitly named materials from the structured prompt ---
+            # Any material/construction the user quoted (e.g. 'M01 100mm brick') is pinned unconditionally
+            # so keyword-score competition can never crowd them out.
+            import re
+            explicit_names = set(re.findall(r"'([^']+)'", nlp_text))
+            print(f"[AI RAG] Explicitly quoted names in prompt: {sorted(explicit_names)}")
+
             all_constructions = list(index_data.get("Construction", {}).keys())
-            
-            # Simple scoring function: How many keywords are in the construction name?
-            def score_item(item_name):
-                return sum(1 for kw in keywords if kw.lower() in item_name.lower())
-                
-            # Sort by score and take top 12, then always pin floor & roof constructions so they are never crowded out
-            scored_constructions = sorted(all_constructions, key=score_item, reverse=True)
-            pinned_constructions = [c for c in all_constructions if any(kw in c.lower() for kw in ["floor", "roof", "ceiling"])]
-            top_scored = [c for c in scored_constructions if c not in pinned_constructions][:12]
-            construction_menu = list(dict.fromkeys(top_scored + pinned_constructions))  # dedup, preserve order
-            print(f"[AI RAG] Filtered Menu down to {len(construction_menu)} items (includes pinned floor/roof): {construction_menu}")
-            
-            # Extract raw materials for dynamic constructions
-            # Pin floor-related and roof-related materials so they are never crowded out by other keyword matches
             all_raw = []
             for cat in ["Material", "Material:NoMass", "Material:AirGap"]:
                 all_raw.extend(list(index_data.get(cat, {}).keys()))
-            pinned_raw = [m for m in all_raw if any(kw in m.lower() for kw in ["floor", "roof", "ceiling", "concrete", "slab"])]
-            scored_raw = sorted([m for m in all_raw if m not in pinned_raw], key=score_item, reverse=True)
-            raw_materials = (pinned_raw + scored_raw)[:20]  # Increased cap to 20 to accommodate pins
-            
-            # Extract window materials for dynamic windows
-            window_materials = []
+            all_window = []
             for cat in ["WindowMaterial:Glazing", "WindowMaterial:Gas"]:
-                window_materials.extend(list(index_data.get(cat, {}).keys()))
-            window_materials = sorted(window_materials, key=score_item, reverse=True)[:10]
+                all_window.extend(list(index_data.get(cat, {}).keys()))
+
+            # Build a set of all known database names for fast lookup
+            all_db_names = set(all_constructions + all_raw + all_window)
+
+            # Pin: any name from the prompt that exists in the database (exact match)
+            pinned = {n for n in explicit_names if n in all_db_names}
+            # Also pin by substring: catch cases where user writes a short alias
+            for explicit in explicit_names:
+                for db_name in all_db_names:
+                    if explicit.lower() in db_name.lower() or db_name.lower() in explicit.lower():
+                        pinned.add(db_name)
+            print(f"[AI RAG] Pinned names (explicit + alias matches): {sorted(pinned)}")
+
+            # Scoring function for non-pinned items
+            def score_item(item_name):
+                return sum(1 for kw in keywords if kw.lower() in item_name.lower())
+
+            # Build construction_menu: pinned items + type-based pins (floor/roof) + scored fill
+            type_pinned_c = {c for c in all_constructions if any(kw in c.lower() for kw in ["floor", "roof", "ceiling"])}
+            explicit_pinned_c = {c for c in all_constructions if c in pinned}
+            all_pinned_c = type_pinned_c | explicit_pinned_c
+            scored_c = sorted([c for c in all_constructions if c not in all_pinned_c], key=score_item, reverse=True)
+            construction_menu = list(dict.fromkeys(list(all_pinned_c) + scored_c))[:25]
+            print(f"[AI RAG] Construction menu ({len(construction_menu)} items): {construction_menu}")
+
+            # Build raw_materials: pinned items + type-based pins + scored fill
+            type_pinned_r = {m for m in all_raw if any(kw in m.lower() for kw in ["floor", "roof", "ceiling", "concrete", "slab"])}
+            explicit_pinned_r = {m for m in all_raw if m in pinned}
+            all_pinned_r = type_pinned_r | explicit_pinned_r
+            scored_r = sorted([m for m in all_raw if m not in all_pinned_r], key=score_item, reverse=True)
+            raw_materials = list(dict.fromkeys(list(all_pinned_r) + scored_r))[:25]
+            print(f"[AI RAG] Raw materials ({len(raw_materials)} items): {raw_materials}")
+
+            # Build window_materials: pinned items + scored fill
+            explicit_pinned_w = {m for m in all_window if m in pinned}
+            scored_w = sorted([m for m in all_window if m not in explicit_pinned_w], key=score_item, reverse=True)
+            window_materials = list(dict.fromkeys(list(explicit_pinned_w) + scored_w))[:12]
 
         except Exception as e:
             print(f"Warning: Could not load index.json or RAG failed: {e}")
