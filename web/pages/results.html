@@ -7,11 +7,11 @@
   <title>Results - SmartBEM Studio</title>
   <link rel="icon" type="image/svg+xml" href="../assets/icons/bolt_boost_48dp_14EF10_FILL0_wght400_GRAD0_opsz48.svg">
   <link rel="stylesheet" href="../style.css">
-  
+
   <!-- Plotly & PapaParse for Frontend CSV Rendering -->
   <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
-  
+
   <style>
     /* Specific enhancements for this page */
     .results-layout {
@@ -22,7 +22,8 @@
     }
 
     .results-sidebar {
-      width: 180px; /* very less width as requested */
+      width: 180px;
+      /* very less width as requested */
       position: sticky;
       top: 1.5rem;
       background: var(--bg-card);
@@ -105,7 +106,8 @@
       box-shadow: var(--shadow-sm);
       overflow: hidden;
       transition: border-color 0.2s, box-shadow 0.2s;
-      scroll-margin-top: 1.5rem; /* helps smooth scroll align nicely */
+      scroll-margin-top: 1.5rem;
+      /* helps smooth scroll align nicely */
     }
 
     details.dropdown-card:hover {
@@ -121,14 +123,17 @@
       font-weight: 600;
       cursor: pointer;
       user-select: none;
-      background: #eff6ff; /* Premium light blue highlight for card header */
-      border-bottom: 1px solid #bfdbfe; /* Coordinating light blue border */
+      background: #eff6ff;
+      /* Premium light blue highlight for card header */
+      border-bottom: 1px solid #bfdbfe;
+      /* Coordinating light blue border */
       list-style: none;
       transition: background-color 0.2s;
     }
 
     details.dropdown-card summary:hover {
-      background: #dbeafe; /* Richer light blue on hover */
+      background: #dbeafe;
+      /* Richer light blue on hover */
     }
 
     details.dropdown-card summary::-webkit-details-marker {
@@ -212,7 +217,8 @@
 
     .plotly-container {
       width: 100%;
-      height: 480px; /* Increased height to give plots more vertical space */
+      height: 480px;
+      /* Increased height to give plots more vertical space */
       border-radius: var(--radius-sm);
       border: 1px solid var(--border-subtle);
       background: var(--bg-app);
@@ -260,9 +266,14 @@
       <div class="grid-2" style="grid-template-columns: 1fr 1fr; align-items: start;">
 
         <!-- Left Col: Job List (Master) -->
-        <section class="card" style="height: 450px; display: flex; flex-direction: column;">
-          <div class="card-header">
+        <section class="card" style="height: 500px; display: flex; flex-direction: column;">
+          <div class="card-header" style="display: flex; flex-direction: column; align-items: flex-start; gap: 0.5rem;">
             <h2 class="card-title">Job History</h2>
+            <div
+              style="background: var(--bg-app); border: 1px solid var(--border-subtle); border-left: 4px solid var(--primary); padding: 0.5rem 0.75rem; border-radius: var(--radius-sm); font-size: 0.82rem; font-weight: bold; color: var(--text-secondary); width: 100%; box-sizing: border-box;">
+              <strong>Tip:</strong> Click any job row in the list below to load its details, 3D model, and results
+              charts!
+            </div>
           </div>
           <div style="flex: 1; overflow: hidden;"> <!-- No scroll -->
             <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
@@ -286,12 +297,13 @@
         </section>
 
         <!-- Right Col: Details (Detail) -->
-        <section class="card" style="height: 450px; display: flex; flex-direction: column;">
+        <section class="card" style="height: 500px; display: flex; flex-direction: column;">
           <div class="card-header">
             <h2 class="card-title">Selected Job Details</h2>
           </div>
 
-          <div id="runDetails" style="flex: 1; display: flex; flex-direction: column; justify-content: center; overflow: hidden;">
+          <div id="runDetails"
+            style="flex: 1; display: flex; flex-direction: column; justify-content: center; overflow: hidden;">
             <!-- Placeholder when nothing selected -->
             <div id="detailPlaceholder" style="text-align: center; color: var(--text-secondary);">
               Select a job from the list to view details.
@@ -309,12 +321,12 @@
               <span style="color: var(--text-secondary); font-weight: 500;">Created At:</span>
               <span id="detailTime">-</span>
 
-              <span style="color: var(--text-secondary); font-weight: 500;">Output Path:</span>
-              <span id="detailPath"
-                style="font-family: var(--font-mono); font-size: 0.85rem; word-break: break-all;">-</span>
 
-              <span id="detailErrorLabel" style="color: var(--text-secondary); font-weight: 500; display: none;">Error Details:</span>
-              <div id="detailErrorBox" style="display: none; grid-column: span 2; color: var(--error); background: #ffe6e6; border: 1px solid var(--error); border-radius: var(--radius-sm); padding: 0.75rem; font-family: var(--font-mono); font-size: 0.8rem; white-space: pre-wrap; word-break: break-all; max-height: 200px; overflow-y: auto;"></div>
+              <span id="detailErrorLabel" style="color: var(--text-secondary); font-weight: 500; display: none;">Error
+                Details:</span>
+              <div id="detailErrorBox"
+                style="display: none; grid-column: span 2; color: var(--error); background: #ffe6e6; border: 1px solid var(--error); border-radius: var(--radius-sm); padding: 0.75rem; font-family: var(--font-mono); font-size: 0.8rem; white-space: pre-wrap; word-break: break-all; max-height: 200px; overflow-y: auto;">
+              </div>
             </div>
           </div>
         </section>
@@ -322,24 +334,22 @@
       </div>
 
       <!-- Row 1.5: Action Buttons -->
-      <div id="actionButtonsContainer" style="display: none; margin-top: 1.5rem; gap: 1rem; width: 100%; flex-direction: row;">
-        <button id="btnViewIDF" class="btn btn-primary" style="flex: 1;"
-          onclick="viewIDF()">
+      <div id="actionButtonsContainer"
+        style="display: none; margin-top: 1.5rem; gap: 1rem; width: 100%; flex-direction: row;">
+        <button id="btnViewIDF" class="btn btn-primary" style="flex: 1;" onclick="viewIDF()">
           View Full IDF Text
         </button>
-        <button id="btnViewIDFSummary" class="btn btn-primary" style="flex: 1;"
-          onclick="viewIDFSummary()">
+        <button id="btnViewIDFSummary" class="btn btn-primary" style="flex: 1;" onclick="viewIDFSummary()">
           View Object Summary
         </button>
-        <button id="btnView3D" class="btn btn-primary" style="flex: 1;"
-          onclick="view3DGeometry()">
+        <button id="btnView3D" class="btn btn-primary" style="flex: 1;" onclick="view3DGeometry()">
           View 3D Model
         </button>
       </div>
 
       <!-- Row 2: Result Plots (Grid) -->
       <h3 style="font-size: 1.25rem; font-weight: 600; margin-top: 2rem; color: var(--text-primary);">Results</h3>
-      
+
       <div class="results-layout" style="display: flex; gap: 1.5rem; margin-top: 1.5rem; align-items: start;">
         <!-- Left Navigation Bar -->
         <aside id="resultsSidebar" class="results-sidebar" style="display: none;">
@@ -348,7 +358,7 @@
             <!-- Dynamic Navigation Links -->
           </ul>
         </aside>
-        
+
         <!-- Right Content Area -->
         <div class="results-content-area">
           <div id="resultsContainer" style="display: flex; flex-direction: column; gap: 1.5rem; width: 100%;">
