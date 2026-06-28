@@ -248,8 +248,12 @@ The lights are on from 8am to 6pm, and the equipment runs 24/7.</textarea>
                             <li style="margin-bottom: 0.5rem;"><strong>Wall Materials:</strong><br> Make the south
                                 wall out of 'Light Exterior Wall' and the other walls out of 'Medium Exterior
                                 Wall'.</li>
-                            <li style="margin-bottom: 0.5rem;"><strong>Floor Materials:</strong><br> The office has a floor of 'M15 200mm heavyweight concrete' or The lobby floor is 'Light Floor'.</li>
-                            <li style="margin-bottom: 0.5rem;"><strong>Advanced Roofs:</strong><br> The office has a gable roof with the ridge running east-west (EW gable) or The meeting room has a gable roof with the ridge running north-south (NS gable) or The lobby has a pyramid hip roof.</li>
+                            <li style="margin-bottom: 0.5rem;"><strong>Floor Materials:</strong><br> The office has a
+                                floor of 'M15 200mm heavyweight concrete' or The lobby floor is 'Light Floor'.</li>
+                            <li style="margin-bottom: 0.5rem;"><strong>Advanced Roofs:</strong><br> The office has a
+                                gable roof with the ridge running east-west (EW gable) or The meeting room has a gable
+                                roof with the ridge running north-south (NS gable) or The lobby has a pyramid hip roof.
+                            </li>
                             <li style="margin-bottom: 0.5rem;"><strong>Internal Loads:</strong><br> The occupancy rate
                                 is 30.0 m2/people, lighting level is 6.0 W/m2, and equipment power is 45.8 W/m2.
                             </li>
@@ -288,13 +292,33 @@ The lights are on from 8am to 6pm, and the equipment runs 24/7.</textarea>
                     </div>
                 </section>
 
-                <!-- Right Column: Placeholder -->
-                <section class="card">
-                    <div class="card-header">
-                        <h2 class="card-title card-title-pill">7. Placeholder</h2>
+                <!-- Right Column: Capabilities Catalogue -->
+                <section class="card" style="display: flex; flex-direction: column;">
+                    <div class="card-header"
+                        style="display: flex; flex-direction: column; align-items: flex-start; gap: 1rem;">
+                        <h2 class="card-title card-title-pill">7. Objects Catalogue</h2>
+                        <div style="display: flex; gap: 0.5rem; width: 100%;">
+                            <select id="capCategorySelect"
+                                style="padding: 0.8rem; border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); background: var(--bg-app); color: var(--text-primary); font-size: 0.95rem; width: 40%; cursor: pointer;">
+                                <option value="all">All Categories</option>
+                                <option value="geometry">Geometry &amp; Zones</option>
+                                <option value="materials">Construction &amp; Materials</option>
+                                <option value="roof">Roof Types</option>
+                                <option value="windows">Windows &amp; Doors</option>
+                                <option value="hvac">HVAC Systems</option>
+                                <option value="loads">Lighting &amp; Loads</option>
+                                <option value="occupancy">Occupancy &amp; Ventilation</option>
+                                <option value="weather">Weather &amp; Location</option>
+                                <option value="outputs">Simulation Outputs</option>
+                            </select>
+                            <input type="text" id="capSearchInput"
+                                placeholder="Search capabilities (e.g. roof, split AC)..."
+                                style="flex: 1; padding: 0.8rem; border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); background: var(--bg-app); color: var(--text-primary); font-size: 1rem;">
+                        </div>
                     </div>
-                    <div style="color: var(--text-muted); text-align: center; margin-top: 2rem;">
-                        Content coming soon...
+                    <div id="capContainer"
+                        style="margin-top: 1.5rem; max-height: 800px; overflow-y: auto; border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 1rem; background: var(--bg-app); display: flex; flex-direction: column; gap: 0.5rem;">
+                        <div style="text-align: center; color: var(--text-muted);">Initializing catalogue...</div>
                     </div>
                 </section>
             </div>
@@ -570,7 +594,7 @@ The lights are on from 8am to 6pm, and the equipment runs 24/7.</textarea>
                             const copyBtn = document.createElement('button');
                             copyBtn.textContent = 'Copy';
                             copyBtn.style.fontSize = '0.7rem';
-                            copyBtn.style.padding = '2px 6px';
+                            copyBtn.style.padding = '4px 9px';
                             copyBtn.style.border = 'none';
                             copyBtn.style.background = 'var(--primary)';
                             copyBtn.style.color = 'white';
@@ -616,6 +640,190 @@ The lights are on from 8am to 6pm, and the equipment runs 24/7.</textarea>
             advancedSearchCheckbox.addEventListener('change', () => {
                 renderDictionary(dictionaryData, searchInput.value);
             });
+
+            // --- CAPABILITIES CATALOGUE LOGIC ---
+            const capContainer = document.getElementById('capContainer');
+            const capSearchInput = document.getElementById('capSearchInput');
+            const capCategorySelect = document.getElementById('capCategorySelect');
+
+            const capabilities = [
+                // Geometry & Zones
+                { name: "Single thermal zone", category: "geometry", supported: true, desc: "A single room simulation", example: "Simulate a building with an office..." },
+                { name: "Multiple thermal zones", category: "geometry", supported: true, desc: "Auto-layout multi-room simulations", example: "Simulate a building with three zones: an office, a meeting room, a lobby..." },
+                { name: "Rectangular floor plans", category: "geometry", supported: true, desc: "Length and width geometry configurations", example: "The office is 6.00 meters long, 8.00 meters wide..." },
+                { name: "L-shape / complex footprints", category: "geometry", supported: false, desc: "Non-rectangular zones or curved coordinates", example: "" },
+                { name: "Building orientation (True North)", category: "geometry", supported: false, desc: "Custom azimuth/orientation angles", example: "" },
+                { name: "Zone adjacency & shared walls", category: "geometry", supported: true, desc: "Automatic intersection of adjacent surfaces", example: "The meeting room is attached to the North wall of the office." },
+                { name: "Attic / Plenum zones", category: "geometry", supported: false, desc: "Dedicated unconditioned spaces", example: "" },
+                { name: "Multi-storey buildings", category: "geometry", supported: false, desc: "Multi-floor stacking", example: "" },
+
+                // Construction & Materials
+                { name: "Layer-by-layer wall construction", category: "materials", supported: true, desc: "Describe materials for each orientation", example: "Make the South wall out of 'M01 100mm brick' and 'I02 50mm insulation board'." },
+                { name: "Custom material U-value / R-value", category: "materials", supported: true, desc: "Load custom materials from database", example: "wall layers of 'Medium Exterior Wall'" },
+                { name: "Floor materials override", category: "materials", supported: true, desc: "Custom slab/floor layers per zone", example: "The office has a heavy concrete floor of 'M15 200mm heavyweight concrete'." },
+                { name: "Interior partition walls", category: "materials", supported: false, desc: "Internal space boundaries", example: "" },
+                { name: "Phase change materials (PCM)", category: "materials", supported: false, desc: "Phase change heat absorption layers", example: "" },
+
+                // Roof
+                { name: "Flat roof geometry", category: "roof", supported: true, desc: "Flat horizontal roofs", example: "flat roof" },
+                { name: "Pitched / Gable roof", category: "roof", supported: true, desc: "Double sloped roof with gables", example: "pitched roof with a gable height of 3 meters" },
+                { name: "Gable direction control", category: "roof", supported: true, desc: "Specify ridge direction (EW / NS)", example: "ridge running north-south (NS gable) or ridge running east-west (EW gable)" },
+                { name: "Pyramid hip roof", category: "roof", supported: true, desc: "4 triangular slopes converging to a single central apex", example: "The lobby has a pyramid hip roof, gable height 3 meters." },
+                { name: "Green roof", category: "roof", supported: false, desc: "Vegetated roof system", example: "" },
+                { name: "Roof overhang / Shading", category: "roof", supported: false, desc: "Eaves shading models", example: "" },
+
+                // Windows & Doors
+                { name: "Window-to-Wall Ratio (WWR)", category: "windows", supported: true, desc: "Percentage glass per facade", example: "WWR of 0.25 on south wall" },
+                { name: "Explicit window dimensions", category: "windows", supported: true, desc: "Precise dimensions and offsets", example: "place a 1.5x2m window on the South wall 2m from left edge, 1m from top edge" },
+                { name: "Window materials & gas fill", category: "windows", supported: true, desc: "Double/triple glazing from index.json", example: "window layers of 'Dbl Clr 3mm/13mm Air'" },
+                { name: "Window U-factor / SHGC override", category: "windows", supported: true, desc: "Manual glazing properties override", example: "window_u_factor=3.0, window_shgc=0.5" },
+                { name: "Doors (opaque)", category: "windows", supported: true, desc: "Precise external/interzone doors", example: "place a 1x2.5m door on the West wall 5m from left edge, fix to ground" },
+                { name: "Skylights", category: "windows", supported: true, desc: "Skylights on flat or pitched roofs", example: "Place a 2.0x1.5m skylight on the roof." },
+
+                // HVAC Systems
+                { name: "Ideal Air Loads", category: "hvac", supported: true, desc: "Simplified HVAC (no outdoor unit / unlimited capacity)", example: "ideal_loads" },
+                { name: "PTAC (Packaged Terminal AC)", category: "hvac", supported: true, desc: "Hotel-style unit", example: "ptac" },
+                { name: "PSZ-AC (Packaged Rooftop Unit / HP)", category: "hvac", supported: true, desc: "Commercial package unit", example: "psz_ac" },
+                { name: "Split AC (Mini-Split / Inverter)", category: "hvac", supported: true, desc: "Residential split system / wall units", example: "split_ac" },
+                { name: "VAV central HVAC loops", category: "hvac", supported: false, desc: "Variable Air Volume with air handler, boilers, chillers", example: "" },
+                { name: "VRF (Variable Refrigerant Flow)", category: "hvac", supported: false, desc: "Multi-split VRF systems", example: "" },
+
+                // Lighting & Loads
+                { name: "Lighting power density (LPD)", category: "loads", supported: true, desc: "Power density in W/m²", example: "lighting level is 6.00 W/m2" },
+                { name: "Lighting schedule", category: "loads", supported: true, desc: "Daily hours for lights", example: "lights are on from 8am to 6pm" },
+                { name: "Equipment power density", category: "loads", supported: true, desc: "Plug load density in W/m²", example: "equipment power consumption is 45.80 W/m2" },
+                { name: "Equipment schedule", category: "loads", supported: true, desc: "24/7 or custom run times", example: "equipment runs 24/7" },
+                { name: "Daylighting controls", category: "loads", supported: false, desc: "Automatic dimming based on daylight lux", example: "" },
+
+                // Occupancy & Ventilation
+                { name: "People density", category: "occupancy", supported: true, desc: "Density in m²/person", example: "occupancy rate is 30.00 m2/people" },
+                { name: "Occupancy schedule", category: "occupancy", supported: true, desc: "Weekday/weekend occupied hours", example: "People in building from 9am to 5pm on weekdays, closed on weekends." },
+                { name: "Infiltration rate (ACH)", category: "occupancy", supported: true, desc: "Building tightness / leakage", example: "infiltration_ach: 0.5" },
+                { name: "Ventilation rate (ACH)", category: "occupancy", supported: true, desc: "Mechanical fresh air exchange", example: "ventilation_ach: 0.5" },
+                { name: "CO₂ concentration tracking", category: "occupancy", supported: true, desc: "Carbon dioxide simulation in zones", example: "CO2 tracking via EKF" },
+                { name: "Metabolic rate override", category: "occupancy", supported: false, desc: "Heat output per occupant (defaults to 120W)", example: "" },
+                { name: "Thermal comfort (PMV/PPD)", category: "occupancy", supported: false, desc: "Fanger thermal comfort indices", example: "" },
+
+                // Weather & Location
+                { name: "EPW weather file lookup", category: "weather", supported: true, desc: "Search and download weather files", example: " Colombo, Sri Lanka" },
+                { name: "Design day simulation", category: "weather", supported: true, desc: "Peak heating/cooling design sizing day", example: "Design Day option in settings dropdown" },
+                { name: "Annual full-year simulation", category: "weather", supported: true, desc: "8760 hour run time", example: "Annual option in settings dropdown" },
+                { name: "Custom EPW upload", category: "weather", supported: true, desc: "Upload a local weather file", example: "Upload Custom .epw button" },
+                { name: "Ground temperature profiles", category: "weather", supported: false, desc: "Custom ground model configurations", example: "" },
+
+                // Simulation Outputs
+                { name: "Air Temperature & Humidity", category: "outputs", supported: true, desc: "Hourly/daily time-series outputs", example: "results.html plots" },
+                { name: "HVAC Energy consumption", category: "outputs", supported: true, desc: "Heating & cooling energy in kWh", example: "results.html plots" },
+                { name: "Lighting & Equipment Energy", category: "outputs", supported: true, desc: "Plug loads and lighting in kWh", example: "results.html plots" },
+                { name: "Occupant count estimation (EKF)", category: "outputs", supported: true, desc: "SmartBEM EKF occupancy estimation", example: "EKF tab charts" },
+                { name: "Daylight illuminance", category: "outputs", supported: false, desc: "Lux level grid results", example: "" },
+                { name: "Solar gains per surface", category: "outputs", supported: false, desc: "Hourly incident solar radiation", example: "" }
+            ];
+
+            function renderCapabilities() {
+                const query = capSearchInput.value.toLowerCase();
+                const selectedCat = capCategorySelect.value;
+                capContainer.innerHTML = '';
+
+                const filtered = capabilities.filter(cap => {
+                    const matchesSearch = cap.name.toLowerCase().includes(query) || cap.desc.toLowerCase().includes(query);
+                    const matchesCategory = selectedCat === 'all' || cap.category === selectedCat;
+                    return matchesSearch && matchesCategory;
+                });
+
+                if (filtered.length === 0) {
+                    capContainer.innerHTML = '<div style="text-align: center; color: var(--text-muted); padding: 1.5rem;">No capabilities found matching filters.</div>';
+                    return;
+                }
+
+                filtered.forEach(cap => {
+                    const row = document.createElement('div');
+                    row.style.padding = '0.75rem';
+                    row.style.border = '1px solid var(--border-subtle)';
+                    row.style.borderRadius = 'var(--radius-sm)';
+                    row.style.background = cap.supported ? 'var(--bg-app)' : 'var(--bg-subtle)';
+                    row.style.display = 'flex';
+                    row.style.justifyContent = 'space-between';
+                    row.style.alignItems = 'center';
+                    row.style.gap = '1rem';
+                    if (!cap.supported) {
+                        row.style.opacity = '0.55';
+                    }
+
+                    // Left side details
+                    const detailsDiv = document.createElement('div');
+                    detailsDiv.style.flex = '1';
+
+                    const nameLabel = document.createElement('div');
+                    nameLabel.style.fontWeight = 'bold';
+                    nameLabel.style.fontSize = '0.92rem';
+                    nameLabel.style.color = cap.supported ? 'var(--text-primary)' : 'var(--text-secondary)';
+                    nameLabel.textContent = cap.name;
+                    detailsDiv.appendChild(nameLabel);
+
+                    const descLabel = document.createElement('div');
+                    descLabel.style.fontSize = '0.8rem';
+                    descLabel.style.color = 'var(--text-muted)';
+                    descLabel.style.marginTop = '0.15rem';
+                    descLabel.textContent = cap.desc;
+                    detailsDiv.appendChild(descLabel);
+
+                    // Right side badge and action
+                    const actionDiv = document.createElement('div');
+                    actionDiv.style.display = 'flex';
+                    actionDiv.style.alignItems = 'center';
+                    actionDiv.style.gap = '0.5rem';
+
+                    const badge = document.createElement('span');
+                    badge.style.fontSize = '0.75rem';
+                    badge.style.padding = '0.2rem 0.5rem';
+                    badge.style.borderRadius = 'var(--radius-sm)';
+                    badge.style.fontWeight = '600';
+
+                    if (cap.supported) {
+                        badge.style.background = 'rgba(20, 180, 50, 0.1)';
+                        badge.style.color = '#14b432';
+                        badge.style.border = '1px solid rgba(20, 180, 50, 0.2)';
+                        badge.textContent = 'Supported';
+                        actionDiv.appendChild(badge);
+
+                        if (cap.example) {
+                            const copyBtn = document.createElement('button');
+                            copyBtn.textContent = 'Copy';
+                            copyBtn.style.fontSize = '0.7rem';
+                            copyBtn.style.padding = '4px 9px';
+                            copyBtn.style.border = 'none';
+                            copyBtn.style.background = 'var(--primary)';
+                            copyBtn.style.color = 'white';
+                            copyBtn.style.borderRadius = '3px';
+                            copyBtn.style.cursor = 'pointer';
+                            copyBtn.onclick = () => {
+                                navigator.clipboard.writeText(cap.example);
+                                copyBtn.textContent = 'Copied!';
+                                setTimeout(() => copyBtn.textContent = 'Copy', 1500);
+                            };
+                            actionDiv.appendChild(copyBtn);
+                        }
+                    } else {
+                        badge.style.background = '#e2e8f0';
+                        badge.style.color = '#718096';
+                        badge.style.border = '1px solid #cbd5e0';
+                        badge.textContent = 'Not Exposed';
+                        actionDiv.appendChild(badge);
+                    }
+
+                    row.appendChild(detailsDiv);
+                    row.appendChild(actionDiv);
+                    capContainer.appendChild(row);
+                });
+            }
+
+            // Bind listeners
+            capSearchInput.addEventListener('input', renderCapabilities);
+            capCategorySelect.addEventListener('change', renderCapabilities);
+
+            // Initial render
+            renderCapabilities();
         });
     </script>
 </body>
