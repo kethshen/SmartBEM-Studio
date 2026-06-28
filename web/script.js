@@ -264,11 +264,11 @@ function submitDescription() {
     
     if (simStatusContainer && simStatusMsg) {
       simStatusContainer.style.display = "block";
-      simStatusMsg.innerText = `Job ${jobId} submitted! Running...`;
+      simStatusMsg.innerHTML = `Job ${jobId} submitted! Running... <a href="results.html" style="color: var(--primary); text-decoration: underline; margin-left: 0.5rem; font-weight: bold;">Go to Results page to see job status</a>`;
       simStatusMsg.style.color = "var(--warning)";
       if (simErrorBox) simErrorBox.style.display = "none";
     } else if (statusMsg) {
-      statusMsg.innerText = `Job submitted! ID: ${jobId}. Simulation running...`;
+      statusMsg.innerHTML = `Job submitted! ID: ${jobId}. Simulation running... <a href="results.html" style="color: var(--primary); text-decoration: underline; margin-left: 0.5rem; font-weight: bold;">Go to Results page to see job status</a>`;
       statusMsg.style.color = "orange";
     }
     
