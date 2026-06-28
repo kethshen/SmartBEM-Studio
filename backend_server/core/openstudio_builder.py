@@ -36,6 +36,7 @@ def build_openstudio_model(params: dict) -> openstudio.model.Model:
             "floor_layers": params.get("floor_layers"),
             "window_layers": params.get("window_layers"),
             "roof_type": params.get("roof_type", "flat"),
+            "gable_dir": params.get("gable_dir", "ew"),
             "roof_pitch_height": params.get("roof_pitch_height", 2.0),
             "skylight": params.get("skylight"),
             "wwr_south": params.get("wwr_south", 0.0),
@@ -71,6 +72,11 @@ def build_openstudio_model(params: dict) -> openstudio.model.Model:
             # Floor layers: per-zone overrides global, global overrides hardcoded default
             if not z.get("floor_layers"):
                 z["floor_layers"] = params.get("floor_layers")
+            # Roof type and gable direction: per-zone wins, fall back to global
+            if not z.get("roof_type"):
+                z["roof_type"] = params.get("roof_type", "flat")
+            if not z.get("gable_dir"):
+                z["gable_dir"] = params.get("gable_dir", "ew")
 
     # 2. Extract and resolve all required constructions & materials
     names_to_resolve = set(["Composite 2x4 Wood Stud R11", "Dbl Clr 3mm/13mm Air"])
@@ -309,43 +315,101 @@ def build_openstudio_model(params: dict) -> openstudio.model.Model:
 
         # Roof geometry
         roof_type = z.get("roof_type", "flat").lower()
+        gable_dir = z.get("gable_dir", "ew").lower()  # "ew" = ridge E-W (default), "ns" = ridge N-S
         roof_pitch_height = float(z.get("roof_pitch_height", 2.0))
+        all_roof_surfs = []   # all roof surfaces for this zone (construction & logging)
+        skylight_surf = None  # the slope surface used for skylight placement
 
-        if roof_type == "pitched":
+        if roof_type == "pitched" and gable_dir == "ns":
+            # NS Gable: ridge runs N-S (parallel to Y axis), eaves face East and West
+            v_roof_west = [
+                (ox + L/2, oy,     oz + H + roof_pitch_height),
+                (ox + L/2, oy + W, oz + H + roof_pitch_height),
+                (ox,       oy + W, oz + H),
+                (ox,       oy,     oz + H)
+            ]
+            v_roof_east = [
+                (ox + L,   oy + W, oz + H),
+                (ox + L/2, oy + W, oz + H + roof_pitch_height),
+                (ox + L/2, oy,     oz + H + roof_pitch_height),
+                (ox + L,   oy,     oz + H)
+            ]
+            v_gable_south = [
+                (ox + L,   oy, oz + H),
+                (ox + L/2, oy, oz + H + roof_pitch_height),
+                (ox,       oy, oz + H)
+            ]
+            v_gable_north = [
+                (ox,       oy + W, oz + H),
+                (ox + L/2, oy + W, oz + H + roof_pitch_height),
+                (ox + L,   oy + W, oz + H)
+            ]
+            surf_roof_w  = create_surface(v_roof_west,   f"{name}_Roof_West")
+            surf_roof_e  = create_surface(v_roof_east,   f"{name}_Roof_East")
+            surf_gable_s = create_surface(v_gable_south, f"{name}_Gable_South")
+            surf_gable_n = create_surface(v_gable_north, f"{name}_Gable_North")
+            all_roof_surfs = [surf_roof_w, surf_roof_e, surf_gable_s, surf_gable_n]
+            skylight_surf  = surf_roof_w
+            print(f"[OpenStudio Builder] Zone '{name}': NS gable roof (ridge runs N-S)")
+
+        elif roof_type == "pyramid":
+            # Pyramid hip: 4 triangular slopes converge at a single central apex
+            apex_x = ox + L / 2
+            apex_y = oy + W / 2
+            apex_z = oz + H + roof_pitch_height
+            v_pyr_s = [(ox,     oy,     oz + H), (ox + L,   oy,     oz + H), (apex_x, apex_y, apex_z)]
+            v_pyr_n = [(ox + L, oy + W, oz + H), (ox,       oy + W, oz + H), (apex_x, apex_y, apex_z)]
+            v_pyr_e = [(ox + L, oy,     oz + H), (ox + L,   oy + W, oz + H), (apex_x, apex_y, apex_z)]
+            v_pyr_w = [(ox,     oy + W, oz + H), (ox,       oy,     oz + H), (apex_x, apex_y, apex_z)]
+            surf_pyr_s = create_surface(v_pyr_s, f"{name}_Roof_South")
+            surf_pyr_n = create_surface(v_pyr_n, f"{name}_Roof_North")
+            surf_pyr_e = create_surface(v_pyr_e, f"{name}_Roof_East")
+            surf_pyr_w = create_surface(v_pyr_w, f"{name}_Roof_West")
+            all_roof_surfs = [surf_pyr_s, surf_pyr_n, surf_pyr_e, surf_pyr_w]
+            skylight_surf  = None  # triangular faces do not support rectangular skylights
+            print(f"[OpenStudio Builder] Zone '{name}': Pyramid hip roof (apex at {apex_x:.1f},{apex_y:.1f},{apex_z:.1f})")
+
+        elif roof_type == "pitched":  # EW gable (default direction)
+            # EW Gable: ridge runs E-W (parallel to X axis), eaves face North and South
             v_roof_south = [
-                (ox, oy, oz + H),
-                (ox + L, oy, oz + H),
+                (ox,     oy,       oz + H),
+                (ox + L, oy,       oz + H),
                 (ox + L, oy + W/2, oz + H + roof_pitch_height),
-                (ox, oy + W/2, oz + H + roof_pitch_height)
+                (ox,     oy + W/2, oz + H + roof_pitch_height)
             ]
             v_roof_north = [
-                (ox + L, oy + W, oz + H),
-                (ox, oy + W, oz + H),
-                (ox, oy + W/2, oz + H + roof_pitch_height),
+                (ox + L, oy + W,   oz + H),
+                (ox,     oy + W,   oz + H),
+                (ox,     oy + W/2, oz + H + roof_pitch_height),
                 (ox + L, oy + W/2, oz + H + roof_pitch_height)
             ]
             v_gable_east = [
-                (ox + L, oy, oz + H),
-                (ox + L, oy + W, oz + H),
+                (ox + L, oy,       oz + H),
+                (ox + L, oy + W,   oz + H),
                 (ox + L, oy + W/2, oz + H + roof_pitch_height)
             ]
             v_gable_west = [
-                (ox, oy + W, oz + H),
-                (ox, oy, oz + H),
+                (ox, oy + W,   oz + H),
+                (ox, oy,       oz + H),
                 (ox, oy + W/2, oz + H + roof_pitch_height)
             ]
-            surf_roof_s = create_surface(v_roof_south, f"{name}_Roof_South")
-            surf_roof_n = create_surface(v_roof_north, f"{name}_Roof_North")
+            surf_roof_s  = create_surface(v_roof_south, f"{name}_Roof_South")
+            surf_roof_n  = create_surface(v_roof_north, f"{name}_Roof_North")
             surf_gable_e = create_surface(v_gable_east, f"{name}_Gable_East")
             surf_gable_w = create_surface(v_gable_west, f"{name}_Gable_West")
-        else:
+            all_roof_surfs = [surf_roof_s, surf_roof_n, surf_gable_e, surf_gable_w]
+            skylight_surf  = surf_roof_s
+
+        else:  # flat
             v_roof = [
-                (ox, oy + W, oz + H),
-                (ox, oy, oz + H),
-                (ox + L, oy, oz + H),
+                (ox,     oy + W, oz + H),
+                (ox,     oy,     oz + H),
+                (ox + L, oy,     oz + H),
                 (ox + L, oy + W, oz + H)
             ]
             surf_roof = create_surface(v_roof, f"{name}_Roof")
+            all_roof_surfs = [surf_roof]
+            skylight_surf  = surf_roof
 
         # Specific constructions/materials overrides for this zone
         z_wall_layers = z.get("wall_layers")
@@ -363,16 +427,13 @@ def build_openstudio_model(params: dict) -> openstudio.model.Model:
                 c_obj = get_or_create_construction(c_val, "Composite 2x4 Wood Stud R11")
                 if c_obj: surf.setConstruction(c_obj)
 
-        # Specific roof_layers override for this zone
+        # Specific roof_layers override for this zone (applied to all roof surfaces)
         z_roof_layers = z.get("roof_layers")
         if z_roof_layers:
             z_roof_constr_obj = get_or_create_construction(z_roof_layers, "Composite 2x4 Wood Stud R11")
             if z_roof_constr_obj:
-                if roof_type == "pitched":
-                    for r_surf in [surf_roof_s, surf_roof_n, surf_gable_e, surf_gable_w]:
-                        r_surf.setConstruction(z_roof_constr_obj)
-                else:
-                    surf_roof.setConstruction(z_roof_constr_obj)
+                for r_surf in all_roof_surfs:
+                    r_surf.setConstruction(z_roof_constr_obj)
         # Specific floor_layers override for this zone
         z_floor_layers = z.get("floor_layers")
         if z_floor_layers:
@@ -530,14 +591,12 @@ def build_openstudio_model(params: dict) -> openstudio.model.Model:
                 sub.setConstruction(z_window_constr)
             return sub
 
-        # Roof Skylights
+        # Roof Skylights (only on quad slope surfaces; triangular pyramid faces are skipped)
         skylight_data = z.get("skylight")
-        if skylight_data and isinstance(skylight_data, dict):
+        if skylight_data and isinstance(skylight_data, dict) and skylight_surf is not None:
             s_w = float(skylight_data.get("width", 2.0))
             s_h = float(skylight_data.get("height", skylight_data.get("length", 1.5)))
-            roof_surf = surf_roof_s if roof_type == "pitched" else (surf_roof if 'surf_roof' in locals() else None)
-            if roof_surf:
-                make_centered_subsurface(roof_surf, s_w, s_h, "Skylight", "Skylight")
+            make_centered_subsurface(skylight_surf, s_w, s_h, "Skylight", "Skylight")
 
     # 5. Resolve Zone Adjacencies (Shared Walls)
     space_vector = openstudio.model.SpaceVector()
