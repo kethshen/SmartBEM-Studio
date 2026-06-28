@@ -10,4 +10,3 @@ nest-asyncio
 fastapi
 uvicorn
 pydantic
-ollama
