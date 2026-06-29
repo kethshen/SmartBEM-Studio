@@ -40,11 +40,13 @@
             <!-- Top Connectivity Check Section -->
             <section class="card" style="margin-bottom: 2rem;">
                 <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
-                    <h2 class="card-title card-title-pill">Step 1: Connect to ngrok Colab Server Connection</h2>
+                    <h2 class="card-title card-title-pill">Step 1: Connect to ngrok Colab Server</h2>
                 </div>
 
                 <label style="margin-bottom: 1rem; line-height: 1.6;">
-                    Run backend_server in Colab and run the [i will set this later] cell, copy the printed URL and paste
+                    Run <strong>backend_server.ipynb</strong> in Colab and run the <strong>"12. Run FastAPI server and
+                        Ngrok"</strong> cell, copy the printed
+                    URL and paste
                     it in here. This will connect this locally-hosted frontend on your machine to your Colab backend via
                     Ngrok and FastAPI.
                 </label>
@@ -62,7 +64,7 @@
                     <span id="statusMsg" style="font-size: 0.9em; font-weight: bold; white-space: nowrap;"></span>
                     <a id="backendLogsLink" href="#" target="_blank"
                         style="display: none; font-size: 0.9em; margin-left: 1rem; text-decoration: underline; color: var(--primary); font-weight: 500; white-space: nowrap;">View
-                        Backend Logs 📋</a>
+                        Backend Logs </a>
                 </div>
 
                 <!-- Dedicated container for simulation status updates (separate from connection status) -->

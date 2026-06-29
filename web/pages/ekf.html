@@ -126,14 +126,64 @@
 
     <!-- Main Content Area -->
     <main class="main-content">
-      <header class="page-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+      <header class="page-header">
         <div>
           <h1 class="page-title">EKF &mdash; Unknown Parameter Estimation</h1>
-          <p class="page-subtitle" id="ekfSubtitle">10-State Extended Kalman Filter on real sensor data. View estimation results here.</p>
+          <p class="page-subtitle" id="ekfSubtitle">10-State Extended Kalman Filter on real sensor data. View estimation
+            results here.</p>
         </div>
-        <div class="ekf-controls">
-          <label for="datasetSelect" style="display: inline-block; margin-right: 0.5rem; font-weight: 600; color: var(--text-secondary);">Dataset / Room:</label>
-          <select id="datasetSelect" onchange="onDatasetChange()" style="width: auto; display: inline-block; padding: 0.4rem 2rem 0.4rem 0.8rem; height: 38px; line-height: 1; border-radius: var(--radius-sm); border: 1px solid var(--border-subtle); background-color: var(--bg-card); color: var(--text-primary); cursor: pointer; margin-right: 0.5rem;">
+      </header>
+
+      <!-- Connection Card -->
+      <section class="card" style="margin-bottom: 2rem;">
+        <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+          <h2 class="card-title card-title-pill">Step 1: Connect to ngrok Colab Server</h2>
+        </div>
+
+        <label style="margin-bottom: 1rem; line-height: 1.6;">
+          Run <strong>backend_server.ipynb</strong> in Colab and run the <strong>"12. Run FastAPI server and
+            Ngrok"</strong> cell, copy the printed
+          URL and paste
+          it in here. This will connect this locally-hosted frontend on your machine to your Colab backend via
+          Ngrok and FastAPI.
+        </label>
+
+        <div id="backendUrlRow"
+          style="display: flex; gap: 1rem; align-items: center; padding: 1rem; border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); transition: background-color 0.3s;">
+          <label style="font-weight: bold; color: var(--text-secondary); white-space: nowrap;">Backend
+            URL:</label>
+          <input type="text" id="backendUrlInput"
+            style="padding: 0.5rem; border-radius: 4px; border: 1px solid #ccc; flex: 1; font-family: monospace;"
+            placeholder="https://xyz.ngrok-free.app">
+          <button onclick="saveAndTestConnection()" class="btn btn-primary"
+            style="padding: 0.5rem 1rem;">Connect</button>
+          <span id="statusMsg" style="font-size: 0.9em; font-weight: bold; white-space: nowrap;"></span>
+        </div>
+
+        <!-- Copyable error box -->
+        <div id="ekfErrorBox"
+          style="display:none; margin-top: 0.75rem; color: var(--error, #dc2626); background: #ffe6e6; border: 1px solid #dc2626; border-radius: var(--radius-sm, 6px); padding: 0.75rem; font-family: monospace; font-size: 0.8rem; white-space: pre-wrap; word-break: break-all; max-height: 300px; overflow-y: auto; user-select: text; cursor: text;">
+        </div>
+      </section>
+
+      <!-- Step 2: Run EKF Analysis Card -->
+      <section class="card" style="margin-bottom: 2rem;">
+        <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+          <h2 class="card-title card-title-pill">Step 2: Run EKF Analysis</h2>
+        </div>
+
+        <label style="margin-bottom: 1rem; line-height: 1.6;">
+          Select a room dataset, then click <strong>Run EKF</strong> to execute the 10-state Extended Kalman Filter on
+          the
+          connected Colab backend. Results will appear below once the run completes.
+        </label>
+
+        <div
+          style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; padding: 1rem; border: 1px solid var(--border-subtle); border-radius: var(--radius-sm);">
+          <label for="datasetSelect"
+            style="font-weight: bold; color: var(--text-secondary); white-space: nowrap;">Dataset / Room:</label>
+          <select id="datasetSelect" onchange="onDatasetChange()"
+            style="width: auto; display: inline-block; padding: 0.4rem 2rem 0.4rem 0.8rem; height: 38px; line-height: 1; border-radius: var(--radius-sm); border: 1px solid var(--border-subtle); background-color: var(--bg-card); color: var(--text-primary); cursor: pointer;">
             <option value="robod1">ROBOD Room 1 (10-State)</option>
             <option value="robod2">ROBOD Room 2 (10-State)</option>
             <option value="robod3" selected>ROBOD Room 3 (10-State)</option>
@@ -153,41 +203,15 @@
           </button>
           <span id="ekfStatus" class="ekf-status status-idle">Idle</span>
         </div>
-      </header>
 
-      <!-- Connection Card -->
-      <section class="card" style="margin-bottom: 1rem;">
-        <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
-          <h2 class="card-title card-title-pill">Backend Connection</h2>
-        </div>
-        <div id="backendUrlRow" style="display: flex; gap: 1rem; align-items: center; padding: 1rem; border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); transition: background-color 0.3s; margin-top: 0.5rem;">
-          <label style="font-weight: bold; color: var(--text-secondary); white-space: nowrap;">Backend URL:</label>
-          <input type="text" id="backendUrlInput" style="padding: 0.5rem; border-radius: 4px; border: 1px solid #ccc; flex: 1; font-family: monospace;" placeholder="http://127.0.0.1:8000">
-          <button onclick="saveAndTestConnection()" class="btn btn-primary" style="padding: 0.5rem 1rem;">Connect</button>
-          <span id="statusMsg" style="font-size: 0.9em; font-weight: bold; white-space: nowrap;"></span>
-        </div>
-        <!-- Copyable error box -->
-        <div id="ekfErrorBox" style="display:none; margin-top: 0.75rem; color: var(--error, #dc2626); background: #ffe6e6; border: 1px solid #dc2626; border-radius: var(--radius-sm, 6px); padding: 0.75rem; font-family: monospace; font-size: 0.8rem; white-space: pre-wrap; word-break: break-all; max-height: 300px; overflow-y: auto; user-select: text; cursor: text;"></div>
-      </section>
-
-      <!-- Info Card -->
-      <section class="card" style="margin-bottom: 1rem;">
-        <div class="card-header">
-          <h2 class="card-title">How It Works</h2>
-        </div>
-        <div style="color: var(--text-secondary); font-size: 0.9rem; line-height: 1.6;">
-          <p style="margin-bottom: 0.75rem;">
-            <strong>1.</strong> Select the desired room or dataset from the dropdown.
-            <strong>2.</strong> Click <em>"Run EKF Local"</em> to execute the 10-state Extended Kalman Filter on the active backend server.
-            <strong>3.</strong> The system will run the estimation algorithm and stream results dynamically to the dashboard below. Or, you can still view the <a href="https://drive.google.com/file/d/1yYarat7NHYzpYrLB3CsrVgB0tbspnAt-/view?usp=sharing" target="_blank" style="color: var(--primary); text-decoration: underline;">Google Colab Notebook</a>.
-          </p>
-          <div id="detailsCard" style="background-color: var(--bg-app); padding: 0.85rem; border-radius: var(--radius-sm); border-left: 4px solid var(--primary);">
-            <!-- Populated dynamically -->
-          </div>
+        <!-- Dataset details info box -->
+        <div id="detailsCard"
+          style="margin-top: 1rem; background-color: var(--bg-app); padding: 0.85rem; border-radius: var(--radius-sm); border-left: 4px solid var(--primary); color: var(--text-secondary); font-size: 0.9rem;">
+          <!-- Populated dynamically -->
         </div>
       </section>
 
-      <!-- Plot Grid Header -->
+      <!-- Plot Grid -->
       <h3 id="gridHeader" style="font-size: 1.15rem; font-weight: 600; margin-top: 1.5rem; color: var(--text-primary);">
         EKF Results
       </h3>
@@ -327,12 +351,12 @@
         `,
         plots: ROBOD_CONFIG.plots
       };
-      
+
       document.getElementById('btnRunEKF').style.display = 'inline-block';
       document.getElementById('ekfSubtitle').textContent = currentConfig.subtitle;
       document.getElementById('detailsCard').innerHTML = currentConfig.detailsHtml;
       document.getElementById('gridHeader').textContent = `EKF Results (${currentConfig.plots.length} Plots)`;
-      
+
       // Clear last run result and rebuild grid
       lastRunResult = null;
       buildGrid();
@@ -365,10 +389,10 @@
           subtitle: `10-State Extended Kalman Filter on ROBOD Room ${roomNum} (Office Space) dataset.`,
           resultsBase: `../../EKF/results_robod_room${roomNum}`,
           detailsHtml: `
-            <strong>Model:</strong> 10-State EKF (restored full advisor equations, including humidity ratio dynamics)<br>
+            <strong>Model:</strong> 10-State EKF (joint state and parameter estimation)<br>
             <strong>States:</strong> [&alpha;<sub>o</sub>, &alpha;<sub>s</sub>, &alpha;<sub>e</sub>, &beta;<sub>o</sub>, &beta;<sub>s</sub>, &beta;<sub>e</sub>, &gamma;<sub>e</sub>, T<sub>z</sub>, &omega;<sub>z</sub>, c<sub>z</sub>]<br>
             <strong>Measurements:</strong> Temperature (T<sub>z</sub>), Humidity Ratio (&omega;<sub>z</sub>), CO<sub>2</sub> (c<sub>z</sub>)<br>
-            <strong>Dataset:</strong> ROBOD Room ${roomNum} (Office, SDE4 NUS). Occupancy recovery uses fixed room air mass M<sub>room</sub> = 240.0 kg and calibrated occupant CO<sub>2</sub> rate g<sub>CO2</sub> = 1.725 ppm&middot;kg/(s&middot;person) to avoid divergence.
+            <strong>Dataset:</strong> ROBOD — Room-level Occupancy and Building Operation Dataset, National University of Singapore
           `,
           plots: ROBOD_CONFIG.plots
         };
@@ -420,7 +444,7 @@
       currentConfig.plots.forEach((p, i) => {
         const img = document.getElementById(`img_${i}`);
         const ph = document.getElementById(`ph_${i}`);
-        
+
         let url;
         if (lastRunResult && lastRunResult.files && lastRunResult.files[p.file]) {
           url = getBackendUrl() + lastRunResult.files[p.file] + `?t=${Date.now()}`;
@@ -467,22 +491,22 @@
     async function runEKFLocal() {
       const select = document.getElementById('datasetSelect');
       const val = select.value;
-      
+
       if (val === 'kaggle') {
         showError("The Kaggle dataset is pre-computed. Please select a ROBOD Room to run the EKF algorithm live.");
         return;
       }
-      
+
       clearError(); // dismiss any previous error
-      
+
       const status = document.getElementById('ekfStatus');
       const btn = document.getElementById('btnRunEKF');
-      
+
       status.textContent = 'Triggering...';
       status.className = 'ekf-status status-idle';
       btn.disabled = true;
       btn.textContent = 'Running...';
-      
+
       const backendUrl = getBackendUrl();
       let datasetPath = null;
       const roomNum = val.startsWith('robod') ? parseInt(val.replace('robod', '')) : 3;
@@ -528,7 +552,7 @@
           return;
         }
       }
-      
+
       try {
         status.textContent = 'Running EKF...';
         const response = await fetch(`${backendUrl}/api/run_ekf`, {
@@ -537,22 +561,22 @@
             'Content-Type': 'application/json',
             'ngrok-skip-browser-warning': 'true'
           },
-          body: JSON.stringify({ 
+          body: JSON.stringify({
             room_num: roomNum,
             dataset_path: datasetPath
           })
         });
-        
+
         if (!response.ok) {
           const errText = await response.text().catch(() => '');
           throw new Error(`Server returned HTTP ${response.status}\n\nURL: ${backendUrl}/api/run_ekf\n\nResponse body:\n${errText}`);
         }
-        
+
         const data = await response.json();
         const jobId = data.job_id;
-        
+
         pollStatus(jobId);
-        
+
       } catch (err) {
         console.error(err);
         status.textContent = 'Connection Error';
@@ -567,14 +591,14 @@
       const status = document.getElementById('ekfStatus');
       const btn = document.getElementById('btnRunEKF');
       const backendUrl = getBackendUrl();
-      
+
       const interval = setInterval(async () => {
         try {
           const res = await fetch(`${backendUrl}/api/status/${jobId}`, {
             headers: { 'ngrok-skip-browser-warning': 'true' }
           });
           if (!res.ok) throw new Error("Status check failed");
-          
+
           const job = await res.json();
           if (job.status === 'done') {
             clearInterval(interval);
@@ -582,7 +606,7 @@
             status.className = 'ekf-status status-done';
             btn.disabled = false;
             btn.textContent = '▶ Run EKF';
-            
+
             lastRunResult = job.result;
             loadPlots();
           } else if (job.status === 'error') {
@@ -617,7 +641,7 @@
       const url = getBackendUrl();
       const statusMsg = document.getElementById("statusMsg");
       const row = document.getElementById("backendUrlRow");
-      
+
       if (!silent && statusMsg) {
         statusMsg.innerText = "Checking connection...";
         statusMsg.style.color = "var(--primary)";
@@ -658,11 +682,6 @@
 
     // ---- Init ----
     window.addEventListener('load', () => {
-      const input = document.getElementById('backendUrlInput');
-      if (input) {
-        input.value = getBackendUrl();
-        testBackendConnection(true);
-      }
       onDatasetChange(); // automatically sets up UI and triggers load
     });
   </script>
