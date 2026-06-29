@@ -8,6 +8,7 @@ from fastapi import FastAPI, BackgroundTasks, Request, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
+from typing import Optional
 import uvicorn
 import nest_asyncio
 from pyngrok import ngrok
@@ -153,7 +154,7 @@ def run_simulation_pipeline(job_id: str, prompt: str, settings: dict):
 
 class RunEKFRequest(BaseModel):
     room_num: int = 3
-    dataset_path: str = None
+    dataset_path: Optional[str] = None
 
 def run_ekf_pipeline(job_id: str, room_num: int, dataset_path: str = None):
     """

@@ -142,7 +142,7 @@
             <option value="kaggle">Kaggle Room (8-State - Static)</option>
           </select>
           <button id="btnRunEKF" class="btn btn-primary" onclick="runEKFLocal()">
-            &#9654; Run EKF Local
+            &#9654; Run EKF
           </button>
           <button id="btnUploadCSV" class="btn btn-secondary" onclick="triggerCSVUpload()">
             📁 Upload CSV
@@ -154,6 +154,19 @@
           <span id="ekfStatus" class="ekf-status status-idle">Idle</span>
         </div>
       </header>
+
+      <!-- Connection Card -->
+      <section class="card" style="margin-bottom: 1rem;">
+        <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+          <h2 class="card-title card-title-pill">Backend Connection</h2>
+        </div>
+        <div id="backendUrlRow" style="display: flex; gap: 1rem; align-items: center; padding: 1rem; border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); transition: background-color 0.3s; margin-top: 0.5rem;">
+          <label style="font-weight: bold; color: var(--text-secondary); white-space: nowrap;">Backend URL:</label>
+          <input type="text" id="backendUrlInput" style="padding: 0.5rem; border-radius: 4px; border: 1px solid #ccc; flex: 1; font-family: monospace;" placeholder="http://127.0.0.1:8000">
+          <button onclick="saveAndTestConnection()" class="btn btn-primary" style="padding: 0.5rem 1rem;">Connect</button>
+          <span id="statusMsg" style="font-size: 0.9em; font-weight: bold; white-space: nowrap;"></span>
+        </div>
+      </section>
 
       <!-- Info Card -->
       <section class="card" style="margin-bottom: 1rem;">
@@ -200,10 +213,16 @@
     const COLAB_URL = 'https://drive.google.com/file/d/1yYarat7NHYzpYrLB3CsrVgB0tbspnAt-/view?usp=sharing';
 
     function getBackendUrl() {
-      let url = localStorage.getItem("smartbem_backend_url");
-      if (!url) {
-        url = "http://127.0.0.1:8000"; // Default fallback
+      // Always read from the live input box first (so the user can see & change it)
+      const input = document.getElementById('backendUrlInput');
+      if (input && input.value.trim()) {
+        const url = input.value.trim().replace(/\/$/, "");
+        localStorage.setItem("smartbem_backend_url", url); // keep localStorage in sync
+        return url;
       }
+      // Fallback to localStorage (pre-filled on load)
+      let url = localStorage.getItem("smartbem_backend_url");
+      if (!url) url = "http://127.0.0.1:8000";
       return url.replace(/\/$/, "");
     }
 
@@ -451,7 +470,7 @@
         if (!uploadedFile) {
           alert("Please select a CSV file to upload first.");
           btn.disabled = false;
-          btn.textContent = '▶ Run EKF Local';
+          btn.textContent = '▶ Run EKF';
           status.textContent = 'Idle';
           return;
         }
@@ -482,7 +501,7 @@
           status.textContent = 'Upload Error';
           status.className = 'ekf-status status-error';
           btn.disabled = false;
-          btn.textContent = '▶ Run EKF Local';
+          btn.textContent = '▶ Run EKF';
           alert(`Failed to upload the CSV dataset to the backend. Please check the backend connection.`);
           return;
         }
@@ -516,7 +535,7 @@
         status.textContent = 'Connection Error';
         status.className = 'ekf-status status-error';
         btn.disabled = false;
-        btn.textContent = '▶ Run EKF Local';
+        btn.textContent = '▶ Run EKF';
         alert(`Failed to connect to the backend at ${backendUrl}. Please make sure your FastAPI server/ngrok tunnel is running.`);
       }
     }
@@ -539,7 +558,7 @@
             status.textContent = 'Done';
             status.className = 'ekf-status status-done';
             btn.disabled = false;
-            btn.textContent = '▶ Run EKF Local';
+            btn.textContent = '▶ Run EKF';
             
             lastRunResult = job.result;
             loadPlots();
@@ -548,7 +567,7 @@
             status.textContent = 'Failed';
             status.className = 'ekf-status status-error';
             btn.disabled = false;
-            btn.textContent = '▶ Run EKF Local';
+            btn.textContent = '▶ Run EKF';
             alert(`EKF Run failed:\n${job.error_message || 'Unknown error'}`);
           } else if (job.status === 'processing') {
             status.textContent = 'Processing...';
@@ -562,8 +581,65 @@
       }, 2000);
     }
 
+    // ---- Connection Testing ----
+    function saveAndTestConnection() {
+      const input = document.getElementById('backendUrlInput');
+      if (input) {
+        localStorage.setItem("smartbem_backend_url", input.value);
+        testBackendConnection(false);
+      }
+    }
+
+    function testBackendConnection(silent = false) {
+      const url = getBackendUrl();
+      const statusMsg = document.getElementById("statusMsg");
+      const row = document.getElementById("backendUrlRow");
+      
+      if (!silent && statusMsg) {
+        statusMsg.innerText = "Checking connection...";
+        statusMsg.style.color = "var(--primary)";
+        if (row) row.style.backgroundColor = "transparent";
+      }
+
+      fetch(`${url}/api/ping`, {
+        headers: { 'ngrok-skip-browser-warning': 'true' }
+      })
+        .then(res => {
+          if (!res.ok) throw new Error("Network response was not ok");
+          return res.json();
+        })
+        .then(data => {
+          if (statusMsg) {
+            statusMsg.innerText = "Connection successful! " + data.message;
+            statusMsg.style.color = "green";
+          } else if (!silent) {
+            alert("Connection successful! " + data.message);
+          }
+          if (row) {
+            row.style.backgroundColor = "rgba(22, 101, 52, 0.1)"; // light green
+          }
+        })
+        .catch(err => {
+          console.error(err);
+          if (statusMsg) {
+            statusMsg.innerText = "Failed to connect to backend.";
+            statusMsg.style.color = "red";
+          } else if (!silent) {
+            alert("Failed to connect to backend at " + url);
+          }
+          if (row) {
+            row.style.backgroundColor = "rgba(185, 28, 28, 0.1)"; // light red
+          }
+        });
+    }
+
     // ---- Init ----
     window.addEventListener('load', () => {
+      const input = document.getElementById('backendUrlInput');
+      if (input) {
+        input.value = getBackendUrl();
+        testBackendConnection(true);
+      }
       onDatasetChange(); // automatically sets up UI and triggers load
     });
   </script>
