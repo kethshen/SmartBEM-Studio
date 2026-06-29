@@ -70,3 +70,98 @@ SmartBEM-Studio/
 | `backend_server/sim_runs/` | EnergyPlus runner | Raw simulation output files |
 | `backend_server/ollama_models/` | Ollama on Colab | Downloaded model weights |
 | `backend_server/secrets.json` | You | Ngrok authtoken (never commit) |
+
+---
+
+## Detailed System Flowchart
+
+Here is the complete end-to-end execution pipeline from raw prompt inputs to final dynamic charts:
+
+```mermaid
+flowchart TD
+    %% Styling
+    classDef llm fill:#e1f5fe,stroke:#0288d1,stroke-width:2px,color:#01579b;
+    classDef engine fill:#e8f5e9,stroke:#388e3c,stroke-width:2px,color:#1b5e20;
+    classDef db fill:#fff3e0,stroke:#f57c00,stroke-width:2px,color:#e65100;
+    classDef ui fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px,color:#4a148c;
+    
+    A["User Natural Language Prompt"] --> B["Prompt Preprocessor Gemma 3 12B"]
+    class B llm;
+    
+    B -->|Restructures prompt into Global Settings and XML tags| C["Structured Intermediate Prompt"]
+    
+    %% RAG Pass 1
+    C --> D["Pass 1 RAG Planner Ollama Keyword Extractor"]
+    class D llm;
+    
+    D -->|Generates Search Keywords| E["Extracted Material Keywords"]
+    C -->|Crawls for quoted strings| F["Pinned Database Materials"]
+    
+    E --> G["RAG Semantic Score Engine"]
+    F --> G
+    class G engine;
+    
+    H[("Local Datasets index.json")] -->|Retrieves catalog items| G
+    class H db;
+    
+    G -->|Frequency-Based Token Intersection and Context Boosts| I["Candidate Material Menus Top 25"]
+    
+    %% RAG Pass 2
+    C --> J["Pass 2 RAG Builder"]
+    I --> J
+    
+    J -->|Pass 2A Extract Topology| K["Topology JSON Global Settings and Zone Lists"]
+    class J llm;
+    
+    K -->|Loop for each Zone| L["Pass 2B Extract Zone Details"]
+    class L llm;
+    
+    L -->|Maps materials from menus and subsurfaces| M["Zone details JSON"]
+    
+    M --> N["JSON Auto-Repairer Adds missing quotes and braces"]
+    class N engine;
+    
+    N -->|Clean output| O["Merged Building Schema JSON"]
+    
+    %% Geometry Calculations
+    O --> P["Multi-Zone Geometry Engine coordinates_calculator.py"]
+    class P engine;
+    
+    P -->|3D CCW Vertex Sorting and Normal Vector plane projections| Q["Correct CCW Wall Vertices"]
+    P -->|Splits partially attached walls into separate surfaces| R["Interzone Wall Boundary Mapping"]
+    P -->|Clips and aligns windows and doors relative to wall edges| S["Subsurface Coordinates"]
+    P -->|Generates Flat Pitched Gable or Pyramid Hip structures| T["Roof Surface Coordinates"]
+    
+    Q --> U["IDF Assembler OpenStudio and EnergyPlus"]
+    R --> U
+    S --> U
+    T --> U
+    class U engine;
+    
+    V[("IDF Base Template and HVAC Templates")] -->|Injects custom parameters| U
+    class V db;
+    
+    U --> W["Assembled Valid idf File"]
+    
+    %% Weather & Execution
+    W --> X["Runtime EPW Weather Fetcher"]
+    class X engine;
+    
+    Y[("NREL S3 Weather DB or Custom Upload")] -->|Retrieves epw| X
+    class Y db;
+    
+    X --> Z["EnergyPlus Simulation Engine on Google Colab"]
+    class Z engine;
+    
+    Z -->|Simulates hourly heat-balance and sizing loop| AA["Output Database eplusout.sql"]
+    class AA db;
+    
+    %% Post-processing
+    AA --> AB["SQLite Output Parser"]
+    class AB engine;
+    
+    AB -->|Relational JOIN query of ReportData and Time tables| AC["JSON Simulated Output Payload Wh to kWh"]
+    
+    AC --> AD["Plotly Interactive Dashboard Charts"]
+    class AD ui;
+```
