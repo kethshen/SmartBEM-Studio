@@ -433,6 +433,8 @@ def main(room_num=3, save_mode=False, results_dir=None, dataset_path=None):
                                 est_arr[:, I_bs], np.nan)
     m_inf_arr = est_arr[:, I_bo] * M_arr
     UA_arr    = est_arr[:, I_ao] * Cs_arr - c_pa * m_inf_arr
+    Q_int_arr = est_arr[:, I_ae] * Cs_arr
+    G_int_arr = est_arr[:, I_be] * M_arr
 
     # ── Time axis ─────────────────────────────────────────────────────────────
     t_hrs = elapsed / 3600.0
@@ -489,11 +491,18 @@ def main(room_num=3, save_mode=False, results_dir=None, dataset_path=None):
             {**PARAM,'y': s(est_arr[:, I_be]),    'label': 'β_e'}]),
         ('12_gamma_e.png', 'γ_e (CO₂ source rate)', 'ppm/s', [
             {**PARAM,'y': s(est_arr[:, I_ge]),    'label': 'γ_e'}]),
-        # ── Derived physical quantities ─────────────────────────────────────
         ('13_thermal_cap.png', 'C_s (thermal capacitance)', 'J/K', [
             {**PARAM,'y': s(Cs_arr),              'label': 'C_s'}]),
         ('14_UA.png', 'UA (heat transfer coefficient)', 'W/K', [
             {**PARAM,'y': s(UA_arr),              'label': 'UA'}]),
+        ('15_dry_air_mass.png', 'M (dry air mass)', 'kg', [
+            {**PARAM,'y': s(M_arr),               'label': 'M'}]),
+        ('16_infiltration_flow.png', 'm_inf (infiltration mass flow)', 'kg/s', [
+            {**PARAM,'y': s(m_inf_arr),           'label': 'm_inf'}]),
+        ('17_internal_heat.png', 'Q_internal (internal heat gain)', 'W', [
+            {**PARAM,'y': s(Q_int_arr),           'label': 'Q_int'}]),
+        ('18_internal_moisture.png', 'G_internal (internal moisture gain)', 'kg/s', [
+            {**PARAM,'y': s(G_int_arr),           'label': 'G_int'}]),
     ]
 
     for fname, title, ylabel, traces in plot_defs:
@@ -537,7 +546,11 @@ def main(room_num=3, save_mode=False, results_dir=None, dataset_path=None):
                 'beta_e': s(est_arr[:, I_be]),
                 'gamma_e': s(est_arr[:, I_ge]),
                 'C_s': s(Cs_arr),
-                'UA': s(UA_arr)
+                'UA': s(UA_arr),
+                'M': s(M_arr),
+                'm_inf': s(m_inf_arr),
+                'Q_int': s(Q_int_arr),
+                'G_int': s(G_int_arr)
             })
             csv_out_path = os.path.join(results_dir, "ekf_results.csv")
             res_df.to_csv(csv_out_path, index=False)
@@ -545,7 +558,7 @@ def main(room_num=3, save_mode=False, results_dir=None, dataset_path=None):
         except Exception as e:
             print(f"    Failed to save EKF results CSV: {e}")
             
-        print(f"    Saved 14 plots -> {results_dir}")
+        print(f"    Saved 18 plots -> {results_dir}")
     else:
         plt.show()
 

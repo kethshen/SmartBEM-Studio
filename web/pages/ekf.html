@@ -454,8 +454,16 @@
           file: '10_gamma_e.png', title: 'γₑ — CO₂ Source Rate',
           equation: '$$\\gamma_e = \\frac{g^{occ}_{CO_2} N}{M}$$', group: 'compact'
         },
-        { file: '11_thermal_cap.png', title: 'Cₛ — Thermal Capacitance', group: 'physical' },
-        { file: '12_UA.png', title: 'UA — Heat Transfer Coefficient', group: 'physical' },
+        {
+          file: '11_thermal_cap.png', title: 'Cₛ — Thermal Capacitance',
+          equation: '$$C_s = \\frac{c_{pa}}{\\alpha_s}$$', group: 'physical',
+          yaxisRange: [0, 8000000]
+        },
+        {
+          file: '12_UA.png', title: 'UA — Heat Transfer Coefficient',
+          equation: '$$UA = \\alpha_o C_s - c_{pa} m_{inf}$$', group: 'physical',
+          yaxisRange: [-20, 250]
+        },
       ]
     };
 
@@ -494,8 +502,36 @@
           file: '12_gamma_e.png', title: 'γₑ — CO₂ Source Rate',
           equation: '$$\\gamma_e = \\frac{g^{occ}_{CO_2} N}{M}$$', group: 'compact'
         },
-        { file: '13_thermal_cap.png', title: 'Cₛ — Thermal Capacitance', group: 'physical' },
-        { file: '14_UA.png', title: 'UA — Heat Transfer Coefficient', group: 'physical' },
+        {
+          file: '13_thermal_cap.png', title: 'Cₛ — Thermal Capacitance',
+          equation: '$$C_s = \\frac{c_{pa}}{\\alpha_s}$$', group: 'physical',
+          yaxisRange: [0, 8000000]
+        },
+        {
+          file: '14_UA.png', title: 'UA — Heat Transfer Coefficient',
+          equation: '$$UA = \\alpha_o C_s - c_{pa} m_{inf}$$', group: 'physical',
+          yaxisRange: [-20, 250]
+        },
+        {
+          file: '15_dry_air_mass.png', title: 'M — Dry Air Mass',
+          equation: '$$M = \\frac{1}{\\beta_s}$$', group: 'physical',
+          yaxisRange: [0, 1000]
+        },
+        {
+          file: '16_infiltration_flow.png', title: 'm_inf — Infiltration Mass Flow',
+          equation: '$$m_{inf} = \\beta_o M$$', group: 'physical',
+          yaxisRange: [0, 0.2]
+        },
+        {
+          file: '17_internal_heat.png', title: 'Q_internal — Internal Heat Gain',
+          equation: '$$Q_{int} = \\alpha_e C_s$$', group: 'physical',
+          yaxisRange: [0, 3000]
+        },
+        {
+          file: '18_internal_moisture.png', title: 'G_internal — Internal Moisture Gain',
+          equation: '$$G_{int} = \\beta_e M$$', group: 'physical',
+          yaxisRange: [0, 0.0005]
+        },
       ]
     };
 
@@ -781,6 +817,11 @@
         const container = document.getElementById(divId);
         if (!container) return;
         
+        const ph = document.getElementById(`ph_${i}`);
+        const img = document.getElementById(`img_${i}`);
+        if (ph) ph.style.display = 'none';
+        if (img) img.style.display = 'none';
+        
         container.style.display = 'block';
         
         let traces = [];
@@ -862,6 +903,26 @@
             { x: time_hrs, y: colMap['UA'], name: 'UA', mode: 'lines', line: { color: '#1f77b4', width: 1.5 } }
           ];
           yaxisLabel = 'UA Coefficient (W/K)';
+        } else if (fname.includes('dry_air_mass')) {
+          traces = [
+            { x: time_hrs, y: colMap['M'], name: 'M', mode: 'lines', line: { color: '#1f77b4', width: 1.5 } }
+          ];
+          yaxisLabel = 'Mass (kg)';
+        } else if (fname.includes('infiltration_flow')) {
+          traces = [
+            { x: time_hrs, y: colMap['m_inf'], name: 'm_inf', mode: 'lines', line: { color: '#1f77b4', width: 1.5 } }
+          ];
+          yaxisLabel = 'Mass Flow (kg/s)';
+        } else if (fname.includes('internal_heat')) {
+          traces = [
+            { x: time_hrs, y: colMap['Q_int'], name: 'Q_int', mode: 'lines', line: { color: '#1f77b4', width: 1.5 } }
+          ];
+          yaxisLabel = 'Heat Rate (W)';
+        } else if (fname.includes('internal_moisture')) {
+          traces = [
+            { x: time_hrs, y: colMap['G_int'], name: 'G_int', mode: 'lines', line: { color: '#1f77b4', width: 1.5 } }
+          ];
+          yaxisLabel = 'Moisture Rate (kg/s)';
         }
         
         const layout = {
@@ -873,6 +934,10 @@
           legend: { orientation: 'h', y: -0.2, x: 0.5, xanchor: 'center' },
           showlegend: true
         };
+        
+        if (p.yaxisRange) {
+          layout.yaxis.range = p.yaxisRange;
+        }
         
         const config = { responsive: true, displayModeBar: true };
         Plotly.newPlot(container, traces, layout, config);
