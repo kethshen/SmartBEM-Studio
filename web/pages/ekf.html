@@ -505,32 +505,32 @@
         {
           file: '13_thermal_cap.png', title: 'Cₛ — Thermal Capacitance',
           equation: '$$C_s = \\frac{c_{pa}}{\\alpha_s}$$', group: 'physical',
-          yaxisRange: [0, 25000000]
+          yaxisRange: [0, 100000000]
         },
         {
           file: '14_UA.png', title: 'UA — Heat Transfer Coefficient',
           equation: '$$UA = \\alpha_o C_s - c_{pa} m_{inf}$$', group: 'physical',
-          yaxisRange: [-100, 600]
+          yaxisRange: [0, 5000]
         },
         {
           file: '15_dry_air_mass.png', title: 'M — Dry Air Mass',
-          equation: '$$M = \\frac{1}{\\beta_s}$$', group: 'physical',
-          yaxisRange: [0, 3000]
+          equation: '$$M = M_{room}$$', group: 'physical',
+          yaxisRange: [0, 500]
         },
         {
           file: '16_infiltration_flow.png', title: 'm_inf — Infiltration Mass Flow',
-          equation: '$$m_{inf} = \\beta_o M$$', group: 'physical',
-          yaxisRange: [0, 0.8]
+          equation: '$$m_{inf} = \\beta_o M_{room}$$', group: 'physical',
+          yaxisRange: [0, 0.4]
         },
         {
           file: '17_internal_heat.png', title: 'Q_internal — Internal Heat Gain',
           equation: '$$Q_{int} = \\alpha_e C_s$$', group: 'physical',
-          yaxisRange: [0, 8000]
+          yaxisRange: [-2000, 6000]
         },
         {
           file: '18_internal_moisture.png', title: 'G_internal — Internal Moisture Gain',
-          equation: '$$G_{int} = \\beta_e M$$', group: 'physical',
-          yaxisRange: [0, 0.002]
+          equation: '$$G_{int} = \\beta_e M_{room}$$', group: 'physical',
+          yaxisRange: [-0.0015, 0.0015]
         },
       ]
     };
@@ -809,7 +809,11 @@
         'beta_e': cleanData.map(row => row.beta_e),
         'gamma_e': cleanData.map(row => row.gamma_e),
         'C_s': cleanData.map(row => row.C_s),
-        'UA': cleanData.map(row => row.UA)
+        'UA': cleanData.map(row => row.UA),
+        'M': cleanData.map(row => row.M),
+        'm_inf': cleanData.map(row => row.m_inf),
+        'Q_int': cleanData.map(row => row.Q_int),
+        'G_int': cleanData.map(row => row.G_int)
       };
 
       currentConfig.plots.forEach((p, i) => {

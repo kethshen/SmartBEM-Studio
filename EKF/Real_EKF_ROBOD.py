@@ -429,12 +429,13 @@ def main(room_num=3, save_mode=False, results_dir=None, dataset_path=None):
     # ── Derived physical parameters ───────────────────────────────────────────
     Cs_arr    = c_pa / np.where(np.abs(est_arr[:, I_as]) > 1e-12,
                                 est_arr[:, I_as], np.nan)
-    M_arr     = 1.0 / np.where(np.abs(est_arr[:, I_bs]) > 1e-12,
-                                est_arr[:, I_bs], np.nan)
-    m_inf_arr = est_arr[:, I_bo] * M_arr
+    # Since beta_s = 1/M diverges due to lack of excitation, we use the known
+    # physical room air mass M_ROOM = 240.0 kg to recover physical parameters.
+    M_arr     = np.full(steps, M_ROOM)
+    m_inf_arr = est_arr[:, I_bo] * M_ROOM
     UA_arr    = est_arr[:, I_ao] * Cs_arr - c_pa * m_inf_arr
     Q_int_arr = est_arr[:, I_ae] * Cs_arr
-    G_int_arr = est_arr[:, I_be] * M_arr
+    G_int_arr = est_arr[:, I_be] * M_ROOM
 
     # ── Time axis ─────────────────────────────────────────────────────────────
     t_hrs = elapsed / 3600.0
