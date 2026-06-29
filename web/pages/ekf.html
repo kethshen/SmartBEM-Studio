@@ -207,6 +207,22 @@
       gap: 1.5rem;
       min-width: 0;
     }
+
+    /* Premium card-style section headers matching results.html card summary style */
+    .ekf-section-header {
+      background-color: #eff6ff;
+      border: 1px solid #bfdbfe;
+      border-radius: var(--radius-md);
+      padding: 0.8rem 1.25rem;
+      font-weight: 600;
+      font-size: 0.95rem;
+      color: var(--text-primary);
+      margin-bottom: 0.75rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: var(--shadow-sm);
+    }
   </style>
 </head>
 
@@ -342,23 +358,23 @@
         <!-- Main content area for grids -->
         <div class="results-content-area">
           <div id="sectionStates" class="scroll-target" style="scroll-margin-top: 1.5rem;">
-            <h4 style="margin-bottom: 0.75rem; color: var(--text-primary); font-size: 1rem; border-bottom: 1.5px solid var(--border-subtle); padding-bottom: 0.35rem;">
-              Measured States & Inputs
-            </h4>
+            <div class="ekf-section-header">
+              <span>Measured States & Inputs</span>
+            </div>
             <div class="ekf-grid" id="gridStates"></div>
           </div>
 
           <div id="sectionCompact" class="scroll-target" style="scroll-margin-top: 1.5rem;">
-            <h4 style="margin-bottom: 0.75rem; color: var(--text-primary); font-size: 1rem; border-bottom: 1.5px solid var(--border-subtle); padding-bottom: 0.35rem;">
-              Estimated Compact Parameters (&alpha;, &beta;, &gamma;)
-            </h4>
+            <div class="ekf-section-header">
+              <span>Estimated Compact Parameters (&alpha;, &beta;, &gamma;)</span>
+            </div>
             <div class="ekf-grid" id="gridCompact"></div>
           </div>
 
           <div id="sectionPhysical" class="scroll-target" style="scroll-margin-top: 1.5rem;">
-            <h4 style="margin-bottom: 0.75rem; color: var(--text-primary); font-size: 1rem; border-bottom: 1.5px solid var(--border-subtle); padding-bottom: 0.35rem;">
-              Recovered Physical Parameters
-            </h4>
+            <div class="ekf-section-header">
+              <span>Recovered Physical Parameters</span>
+            </div>
             <div class="ekf-grid" id="gridPhysical"></div>
           </div>
         </div>
