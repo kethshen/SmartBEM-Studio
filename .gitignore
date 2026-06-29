@@ -22,6 +22,11 @@ EKF/Datasets for EKF/Room Occupancy Estimation UCI/
 EKF/results/
 EKF/Exp setup/
 EKF/results_robod_room3
+EKF/diag_occupancy.py
+EKF/EKF_Next_Steps_Plan.md
+EKF/EKF_Progress_Revision.md
+EKF/implementation_plan_for_EKF.md
+EKF/Practise demos/
 
 # ==============================================================
 # 3. DEVELOPMENT & TESTING ARTIFACTS (backend_server/)
