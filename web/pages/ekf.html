@@ -166,6 +166,8 @@
           <button onclick="saveAndTestConnection()" class="btn btn-primary" style="padding: 0.5rem 1rem;">Connect</button>
           <span id="statusMsg" style="font-size: 0.9em; font-weight: bold; white-space: nowrap;"></span>
         </div>
+        <!-- Copyable error box -->
+        <div id="ekfErrorBox" style="display:none; margin-top: 0.75rem; color: var(--error, #dc2626); background: #ffe6e6; border: 1px solid #dc2626; border-radius: var(--radius-sm, 6px); padding: 0.75rem; font-family: monospace; font-size: 0.8rem; white-space: pre-wrap; word-break: break-all; max-height: 300px; overflow-y: auto; user-select: text; cursor: text;"></div>
       </section>
 
       <!-- Info Card -->
@@ -224,6 +226,23 @@
       let url = localStorage.getItem("smartbem_backend_url");
       if (!url) url = "http://127.0.0.1:8000";
       return url.replace(/\/$/, "");
+    }
+
+    // ---- In-page copyable error display (replaces alert popups) ----
+    function showError(msg) {
+      const box = document.getElementById('ekfErrorBox');
+      if (box) {
+        box.textContent = msg;
+        box.style.display = 'block';
+        box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      } else {
+        alert(msg); // fallback
+      }
+    }
+
+    function clearError() {
+      const box = document.getElementById('ekfErrorBox');
+      if (box) box.style.display = 'none';
     }
 
     let lastRunResult = null;
@@ -444,15 +463,17 @@
       }
     }
 
-    // ---- Run EKF locally ----
+    // ---- Run EKF ----
     async function runEKFLocal() {
       const select = document.getElementById('datasetSelect');
       const val = select.value;
       
       if (val === 'kaggle') {
-        alert("The Kaggle dataset is pre-computed. Please select a ROBOD Room to run the EKF algorithm live.");
+        showError("The Kaggle dataset is pre-computed. Please select a ROBOD Room to run the EKF algorithm live.");
         return;
       }
+      
+      clearError(); // dismiss any previous error
       
       const status = document.getElementById('ekfStatus');
       const btn = document.getElementById('btnRunEKF');
@@ -468,7 +489,7 @@
 
       if (val === 'uploaded_csv') {
         if (!uploadedFile) {
-          alert("Please select a CSV file to upload first.");
+          showError("Please select a CSV file to upload first.");
           btn.disabled = false;
           btn.textContent = '▶ Run EKF';
           status.textContent = 'Idle';
@@ -490,7 +511,8 @@
           });
 
           if (!uploadRes.ok) {
-            throw new Error(`Upload failed with status ${uploadRes.status}`);
+            const errText = await uploadRes.text().catch(() => '');
+            throw new Error(`Upload failed (HTTP ${uploadRes.status})\n\n${errText}`);
           }
 
           const uploadData = await uploadRes.json();
@@ -502,7 +524,7 @@
           status.className = 'ekf-status status-error';
           btn.disabled = false;
           btn.textContent = '▶ Run EKF';
-          alert(`Failed to upload the CSV dataset to the backend. Please check the backend connection.`);
+          showError(`Upload failed:\n${err.message}`);
           return;
         }
       }
@@ -522,7 +544,8 @@
         });
         
         if (!response.ok) {
-          throw new Error(`Server returned status ${response.status}`);
+          const errText = await response.text().catch(() => '');
+          throw new Error(`Server returned HTTP ${response.status}\n\nURL: ${backendUrl}/api/run_ekf\n\nResponse body:\n${errText}`);
         }
         
         const data = await response.json();
@@ -536,7 +559,7 @@
         status.className = 'ekf-status status-error';
         btn.disabled = false;
         btn.textContent = '▶ Run EKF';
-        alert(`Failed to connect to the backend at ${backendUrl}. Please make sure your FastAPI server/ngrok tunnel is running.`);
+        showError(`Failed to run EKF:\n${err.message}`);
       }
     }
 
@@ -568,7 +591,7 @@
             status.className = 'ekf-status status-error';
             btn.disabled = false;
             btn.textContent = '▶ Run EKF';
-            alert(`EKF Run failed:\n${job.error_message || 'Unknown error'}`);
+            showError(`EKF Run failed:\n${job.error_message || 'Unknown error'}`);
           } else if (job.status === 'processing') {
             status.textContent = 'Processing...';
           } else {

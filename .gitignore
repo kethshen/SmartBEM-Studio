@@ -14,7 +14,11 @@ daily summary/
 Research/
 docs/
 3. ME420_Evaluation scheme.pdf
-EKF/Datasets for EKF/
+EKF/Datasets for EKF/Air quality and occupancy dataset Mendeley/
+EKF/Datasets for EKF/Occupancy Detection UCI/
+EKF/Datasets for EKF/Room Occupancy Estimation Keggle/
+EKF/Datasets for EKF/Room Occupancy Estimation UCI/
+# ROBOD folder is committed (needed by Colab EKF runs)
 EKF/results/
 EKF/Exp setup/
 EKF/results_robod_room3
