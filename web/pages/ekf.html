@@ -862,37 +862,37 @@
           traces = [
             { x: time_hrs, y: colMap['alpha_o'], name: 'α_o', mode: 'lines', line: { color: '#1f77b4', width: 1.5 } }
           ];
-          yaxisLabel = 'Leak Rate (1/s)';
+          yaxisLabel = 'α_o [s⁻¹]';
         } else if (fname.includes('alpha_s')) {
           traces = [
             { x: time_hrs, y: colMap['alpha_s'], name: 'α_s', mode: 'lines', line: { color: '#1f77b4', width: 1.5 } }
           ];
-          yaxisLabel = 'Air Coupling (1/(kg*s))';
+          yaxisLabel = 'α_s [kg⁻¹]';
         } else if (fname.includes('alpha_e')) {
           traces = [
             { x: time_hrs, y: colMap['alpha_e'], name: 'α_e', mode: 'lines', line: { color: '#1f77b4', width: 1.5 } }
           ];
-          yaxisLabel = 'Heat Gains (°C/s)';
+          yaxisLabel = 'α_e [°C · s⁻¹]';
         } else if (fname.includes('beta_o')) {
           traces = [
             { x: time_hrs, y: colMap['beta_o'], name: 'β_o', mode: 'lines', line: { color: '#1f77b4', width: 1.5 } }
           ];
-          yaxisLabel = 'Infiltration Rate (1/s)';
+          yaxisLabel = 'β_o [s⁻¹]';
         } else if (fname.includes('beta_s')) {
           traces = [
             { x: time_hrs, y: colMap['beta_s'], name: 'β_s', mode: 'lines', line: { color: '#1f77b4', width: 1.5 } }
           ];
-          yaxisLabel = 'Capacity Term (1/kg)';
+          yaxisLabel = 'β_s [kg⁻¹]';
         } else if (fname.includes('beta_e')) {
           traces = [
             { x: time_hrs, y: colMap['beta_e'], name: 'β_e', mode: 'lines', line: { color: '#1f77b4', width: 1.5 } }
           ];
-          yaxisLabel = 'Moisture Gains (kg/kg/s)';
+          yaxisLabel = 'β_e [s⁻¹]';
         } else if (fname.includes('gamma_e')) {
           traces = [
             { x: time_hrs, y: colMap['gamma_e'], name: 'γ_e', mode: 'lines', line: { color: '#1f77b4', width: 1.5 } }
           ];
-          yaxisLabel = 'CO2 Rate (ppm/s)';
+          yaxisLabel = 'γ_e [ppm · s⁻¹]';
         } else if (fname.includes('thermal_cap')) {
           traces = [
             { x: time_hrs, y: colMap['C_s'], name: 'C_s', mode: 'lines', line: { color: '#1f77b4', width: 1.5 } }
