@@ -1,10 +1,10 @@
 # SmartBEM Studio
 
-**Intelligent Building Modeling, Simulation & Estimation**  
-*ME420 Final Year Project — Faculty of Engineering, University of Peradeniya*
+**Intelligent Building Modeling, Simulation & Parameter Estimation**  
+*ME420 Final Year Project — Department of Mechanical Engineering, Faculty of Engineering, University of Peradeniya*
 
-[![EnergyPlus](https://img.shields.io/badge/Simulation-EnergyPlus_24.1-green)](https://energyplus.net/)
-[![Ollama](https://img.shields.io/badge/AI-Ollama_qwen3.5:9b-blueviolet)](https://ollama.com/)
+[![EnergyPlus](https://img.shields.io/badge/Simulation-EnergyPlus_25.1.0-green)](https://energyplus.net/)
+[![Ollama](https://img.shields.io/badge/AI-Ollama_gemma3:12b-blueviolet)](https://ollama.com/)
 [![FastAPI](https://img.shields.io/badge/Backend-FastAPI-009688)](https://fastapi.tiangolo.com/)
 [![Colab](https://img.shields.io/badge/Runtime-Google_Colab-F9AB00)](https://colab.research.google.com/)
 
@@ -16,29 +16,9 @@ SmartBEM Studio lets you simulate a building's thermal energy performance by sim
 
 > *"Create a 3-zone office. Zone A is a 6x8m open office. Zone B is a 4x4m meeting room attached to the North wall of Zone A. Use concrete walls and double-glazed windows on the south."*
 
-A local AI model (Ollama `qwen3.5:9b`) interprets your description, generates a valid EnergyPlus IDF model, runs a full thermal simulation on Google Colab's GPU, and returns interactive charts of zone temperatures, energy loads, and weather data - all in your browser.
+A local AI model (`gemma3:12b` via Ollama) running on a GPU-accelerated Google Colab server interprets your description, generates a valid EnergyPlus IDF model, runs a full thermal simulation, and returns interactive charts of zone temperatures, energy loads, and weather data - all in your browser.
 
-The project also includes an **Extended Kalman Filter (EKF)** module for estimating hidden building parameters from real sensor data.
-
----
-
-## System Architecture
-
-```
-[Web Dashboard]  ──HTTP──►  [Ngrok Tunnel]  ──►  [FastAPI Server]  (Google Colab)
-  (Browser)      ◄──JSON──                  ◄──       │
-                                                       ├─► Ollama gemma3:12b (AI)
-                                                       ├─► Geometry Engine   (Python)
-                                                       └─► EnergyPlus 25.1   (Simulation)
-```
-
-| Layer | Technology | Role |
-|---|---|---|
-| Frontend | Vanilla JS / HTML / CSS | Prompt input, 3D viewer, result charts |
-| Tunnel | Ngrok | Exposes the Colab server to the browser |
-| API Server | FastAPI + Uvicorn | Receives jobs, orchestrates the pipeline |
-| AI Engine | Ollama `qwen3.5:9b` | Extracts geometry & materials from text |
-| Simulation | EnergyPlus 25.1 | High-fidelity thermal simulation |
+The project also includes an **Extended Kalman Filter (EKF)** dashboard to estimate hidden building parameters (thermal capacitance, infiltration flow, heat transfer coefficient, and occupant counts) from real sensor data.
 
 ---
 
@@ -46,65 +26,114 @@ The project also includes an **Extended Kalman Filter (EKF)** module for estimat
 
 ### Prerequisites
 - A **Google Account** (for Google Colab + Google Drive)
-- **~8 GB free** in your Google Drive (to downoload the Ollama model - first run only)
-- A free **Ngrok account** (to get your Authtoken)
+- **~8–10 GB free** in your Google Drive (to cache the Ollama model - first run only)
+- A free **Ngrok account** (to tunnel the Colab server to the web)
 
 ---
 
-### Step 1 — Create your `secrets.json`
+### Step 1 — Open the Backend Notebook in Colab
 
-Create a file at `backend_server/secrets.json` with your Ngrok Authtoken:
-
-```json
-{
-  "ngrok_authtoken": "YOUR_NGROK_AUTHTOKEN_HERE"
-}
-```
-
-> ⚠️ This file is in `.gitignore`. Never commit it.
+1. Locate the backend notebook file at [backend_server/main_backend.ipynb](backend_server/main_backend.ipynb) within this repository.
+2. Upload and open this notebook in **Google Colab**.
+3. Set the runtime type to GPU: Go to **Runtime → Change runtime type** and ensure a **T4 GPU** accelerator is selected.
 
 ---
 
-### Step 2 — Start the Backend (Google Colab)
+### Step 2 — Configure Ngrok in Colab Secrets (🔑)
 
-1. Open `backend_server/main_backend.ipynb` in Google Colab.
-2. Click **Runtime → Run All**.
-3. The notebook will automatically:
-   - Install all dependencies
-   - Mount your Google Drive
-   - Download `qwen3.5:9b` to your Drive (~8 GB, **first run only**)
-   - Start the FastAPI server and Ngrok tunnel
-4. At the end of the last cell, you'll see:
+Instead of manually creating local configuration files, we load credentials securely using Google Colab secrets:
+1. Create a free account at [ngrok.com](https://ngrok.com/).
+2. Copy your **Authtoken** from your Ngrok dashboard.
+3. In your Colab notebook window, click the key icon (**🔑 Secrets**) in the left sidebar.
+4. Add a new secret with:
+   - **Name**: `NGROK_AUTHTOKEN`
+   - **Value**: *[Paste your copied Ngrok authtoken]*
+5. Turn **ON** the "Notebook access" toggle for this secret.
+
+---
+
+### Step 3 — Run the Backend Server
+
+> [!IMPORTANT]
+> **Follow the step-by-step instructions documented in [backend_server/main_backend.ipynb](backend_server/main_backend.ipynb).** 
+
+1. Select **Runtime → Run All** to run all cells.
+2. The notebook will automatically:
+   - Mount your Google Drive (to cache the large LLM weights)
+   - Install all required dependencies (FastAPI, PyNgrok, OpenStudio SDK, etc.)
+   - Download the `gemma3:12b` model to your Drive (**first run only**; takes ~8–10 mins, direct server-to-server download with zero personal internet data charges)
+   - Start the local Ollama service, FastAPI server, and Ngrok tunnel
+3. In **Section 12. Run FastAPI server and Ngrok**, wait for the live URL to print:
    ```
    ✅ SmartBEM Backend is LIVE at: https://xxxx-xx-xx.ngrok-free.app
    ```
-5. **Copy that URL.**
-
-> 💡 On subsequent runs, the model loads instantly from Google Drive.
+4. **Copy that Ngrok URL.**
 
 ---
 
-### Step 3 — Open the Web Dashboard
+### Step 4 — Clone the Repo & Start the Local Server
 
-Download or clone the repository, then open `web/index.html` in any browser. No local server required.
+1. Clone this repository to your local system.
+2. Open the repository folder in **VS Code**.
+3. Open your terminal in VS Code, navigate to the web directory by running:
+   ```bash
+   cd web
+   ```
+4. Start a local Python server by running:
+   ```bash
+   python -m http.server 8000
+   ```
+5. Open your web browser and navigate to:
+   ```
+   http://localhost:8000
+   ```
+   This will open the web frontend dashboard UI.
 
 ---
 
-### Step 4 — Connect & Simulate
+### Step 5 — Connect & Run Building Energy Simulation
 
-1. Paste the Ngrok URL into the **Backend URL** field on the dashboard.
-2. Click **Connect** — the status indicator turns green ✅.
-3. Go to **Simulation Setup**, type your building description, and click **Generate & Simulate**.
+#### A. Simulation Setup Page
+1. Navigate to the **Simulation Setup** page in the dashboard.
+2. Paste the copied Ngrok URL (from Colab Section 12) into the frontend UI under **Step 1: Connect to ngrok Colab Server**, and click **Connect** (the status indicator turns green ✅).
+3. Enter your building description in **Step 2: Add Building Description** (refer to the example description format in [user_description.md](user_description.md)).
+   *Note: A **Material Catalogue** and **Object Catalogue** are also included on this page for your reference to give you an idea of what materials and parameters can be simulated.*
+4. Set your configurations (location, weather, dates) under **Step 3: Simulation Settings** and click **Queue Simulation**.
+
+#### B. Results Page
+1. Navigate to the **Results** page in the dashboard.
+2. Wait for the job row in the simulations table to change status from `Running...` to `Done` ✅.
+3. Click that row in the table, and the interactive results charts (temperatures, weather variables, electricity/gas loads) will load below.
+4. Use the tab menu items on the result card to explore the simulation outputs:
+   - **View Full IDF Text** to inspect the raw EnergyPlus Input Data File generated.
+   - **View Object Summary** to check the parsed structural details (zone areas, constructions, surfaces).
+   - **View 3D Model** to render the interactive 3D model of the building.
 
 ---
 
-### Troubleshooting
+### Step 6 — Run EKF Parameter Estimation
 
-| Problem | Fix |
-|---|---|
-| Colab session disconnected | Click **Runtime → Run All** again. Copy the new Ngrok URL and reconnect. |
-| "Backend Offline" on dashboard | Make sure the Colab notebook is still running and the URL is correct. |
-| Model download is slow | First-time only (~10–15 min). Subsequent runs load from Drive in seconds. |
+1. Navigate to the **EKF** page in the dashboard.
+2. Ensure your backend connection is active (paste the Ngrok URL and click **Connect** if not already connected).
+3. Under **Step 2: Run EKF Analysis**:
+   - Select a dataset (e.g. ROBOD Room 3) or click **Upload CSV** to upload a custom building operation CSV.
+   - Click **▶ Run EKF**.
+4. The backend executes the EKF estimation asynchronously. Once complete:
+   - Interactive Plotly time-series results will stream back to the dashboard, organized into distinct sections (**Measured States**, **Estimated Compact Parameters**, and **Recovered Physical Parameters**).
+   - Zoom, pan, and hover over individual parameters (thermal capacitance $C_s$, infiltration flow $m_{inf}$, UA heat transfer coefficient, and occupant counts $N$) to analyze the room thermal behavior.
+
+---
+
+## Example Description
+
+For a comprehensive test of the system's capabilities, refer to [user_description.md](user_description.md). 
+
+This file contains a detailed, production-grade example of a **3-zone building** specifying:
+* **Custom constructions & material layers** (e.g. brick walls with insulation boards, heavyweight concrete floors)
+* **Specific window, door, and skylight layouts** (with dimensional offsets)
+* **Custom roofing profiles** (gable heights, roof ridge orientations, pyramid hip roofs)
+* **HVAC system selections** (Packaged Terminal Air Conditioners vs Split ACs)
+* **Occupancy profiles, internal heat loads, lighting levels, and operational schedules** (daily weekday/weekend occupancy, lighting, and equipment timetables).
 
 ---
 
@@ -112,21 +141,15 @@ Download or clone the repository, then open `web/index.html` in any browser. No 
 
 ```
 SmartBEM-Studio/
-├── web/          # Web Dashboard (HTML / CSS / JS)
-├── backend_server/ # Backend — FastAPI server, AI pipeline, EnergyPlus runner
-├── EKF/          # Extended Kalman Filter module
-├── Datasets/     # EnergyPlus object library (used for RAG)
-└── scripts/      # Developer utilities
+├── web/                  # Web Dashboard (HTML / CSS / JS)
+├── backend_server/       # Backend — FastAPI server, AI pipeline, EnergyPlus wrapper
+├── EKF/                  # Extended Kalman Filter module (algorithms, datasets)
+├── Datasets/             # EnergyPlus object library (RAG library for building materials)
+├── EnergyPlus utility/   # Python wrappers for compiling, running & retrieving simulations
+├── scripts/              # Helper scripts and developer utilities
+├── STRUCTURE.md          # File-by-file annotated structure guide of the codebase
+└── user_description.md   # 3-zone building specification example prompt
 ```
-
-For the full annotated breakdown of every file and folder, see [STRUCTURE.md](STRUCTURE.md).
-
-## Key Technical Features
-
-- **Two-Pass Agentic RAG:** The AI pipeline runs two Ollama passes — a *Planner* pass to extract zone layouts and a *Builder* pass to resolve material/window/schedule details from the EnergyPlus dataset library.
-- **Multi-Zone Geometry Engine:** Automatically computes `LowerLeftCorner` coordinates and Counter-Clockwise vertex ordering for any number of adjacent zones, meeting EnergyPlus's strict geometric requirements.
-- **Runtime EPW Download:** Weather files are fetched directly from NREL's S3 at simulation time based on the user's selection — no large EPW files committed to the repo.
-- **Extended Kalman Filter (EKF):** Estimates latent building parameters (thermal capacitance, infiltration rate, internal heat gain) from time-series sensor data using a nonlinear state-space model.
 
 ---
 
@@ -135,4 +158,4 @@ For the full annotated breakdown of every file and folder, see [STRUCTURE.md](ST
 **Kethaka Shehan** - Final Year Mechanical Engineering Undergraduate  
 **Supervisor:** [Dr. D.H.S. Maithripala (@mugalan)](https://github.com/mugalan)
 
-Department of Mechanical Engineering, Faculty of Engineering, University of Peradeniya, Sri Lanka.
+*Department of Mechanical Engineering, Faculty of Engineering, University of Peradeniya, Sri Lanka.*
