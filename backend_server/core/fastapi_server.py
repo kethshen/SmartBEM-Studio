@@ -184,9 +184,14 @@ def run_ekf_pipeline(job_id: str, room_num: int, dataset_path: str = None):
         # Build relative URLs (using the mapped static mount /results)
         file_urls = {fname: f"/results/ekf_runs/{job_id}/{fname}" for fname in generated_files if fname.endswith(".png")}
         
+        csv_url = None
+        if "ekf_results.csv" in generated_files:
+            csv_url = f"/results/ekf_runs/{job_id}/ekf_results.csv"
+            
         jobs_db[job_id]["status"] = "done"
         jobs_db[job_id]["result"] = {
-            "files": file_urls
+            "files": file_urls,
+            "csv_url": csv_url
         }
         print(f"[{job_id}] EKF run completed successfully.")
         

@@ -517,6 +517,34 @@ def main(room_num=3, save_mode=False, results_dir=None, dataset_path=None):
             plt.close(fig)
 
     if save_mode:
+        try:
+            res_df = pd.DataFrame({
+                'time_hrs': t_plot,
+                'T_z_measured': s(T_z_meas),
+                'T_z_ekf': s(est_arr[:, I_Tz]),
+                'w_z_measured': s(w_z_meas),
+                'w_z_ekf': s(est_arr[:, I_wz]),
+                'c_z_measured': s(c_z_meas),
+                'c_z_ekf': s(est_arr[:, I_cz]),
+                'N_true': s(N_true),
+                'N_ekf': s(N_est_arr),
+                'T_o': s(T_o_arr),
+                'alpha_o': s(est_arr[:, I_ao]),
+                'alpha_s': s(est_arr[:, I_as]),
+                'alpha_e': s(est_arr[:, I_ae]),
+                'beta_o': s(est_arr[:, I_bo]),
+                'beta_s': s(est_arr[:, I_bs]),
+                'beta_e': s(est_arr[:, I_be]),
+                'gamma_e': s(est_arr[:, I_ge]),
+                'C_s': s(Cs_arr),
+                'UA': s(UA_arr)
+            })
+            csv_out_path = os.path.join(results_dir, "ekf_results.csv")
+            res_df.to_csv(csv_out_path, index=False)
+            print(f"    Saved EKF results CSV -> {csv_out_path}")
+        except Exception as e:
+            print(f"    Failed to save EKF results CSV: {e}")
+            
         print(f"    Saved 14 plots -> {results_dir}")
     else:
         plt.show()

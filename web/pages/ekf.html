@@ -7,11 +7,23 @@
   <title>EKF - SmartBEM Studio</title>
   <link rel="icon" type="image/svg+xml" href="../assets/icons/bolt_boost_48dp_14EF10_FILL0_wght400_GRAD0_opsz48.svg">
   <link rel="stylesheet" href="../style.css">
+  <!-- Plotly & PapaParse for EKF Interactive Plotting -->
+  <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['$', '$'], ['\\(', '\\)']],
+        displayMath: [['$$', '$$'], ['\\[', '\\]']]
+      }
+    };
+  </script>
+  <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
   <style>
     .ekf-grid {
       display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 1.25rem;
+      grid-template-columns: 1fr;
+      gap: 1.5rem;
       margin-top: 1.5rem;
     }
 
@@ -35,6 +47,14 @@
       color: var(--text-primary);
     }
 
+    .plot-equation {
+      font-size: 1.05rem;
+      color: var(--text-primary);
+      text-align: center;
+      margin-bottom: 0.65rem;
+      line-height: 1.6;
+    }
+
     .ekf-plot-card img {
       width: 100%;
       height: auto;
@@ -46,6 +66,16 @@
 
     .ekf-plot-card img:hover {
       transform: scale(1.02);
+    }
+
+    .plotly-container {
+      width: 100%;
+      height: 380px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-subtle);
+      background: var(--bg-card);
+      min-height: 380px;
+      margin-top: 0.5rem;
     }
 
     .ekf-plot-card .placeholder {
@@ -100,6 +130,82 @@
     .btn-secondary:hover {
       background-color: var(--bg-app);
       transform: translateY(-1px);
+    }
+
+    /* Results layout (navigation sidebar + content area) */
+    .results-layout {
+      display: flex;
+      gap: 1.5rem;
+      margin-top: 1.5rem;
+      align-items: start;
+    }
+
+    .results-sidebar {
+      width: 200px;
+      position: sticky;
+      top: 1.5rem;
+      background: var(--bg-card);
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-subtle);
+      padding: 0.75rem;
+      flex-shrink: 0;
+    }
+
+    .results-sidebar h3 {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-secondary);
+      margin-bottom: 0.5rem;
+      padding-left: 0.4rem;
+    }
+
+    .results-nav {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    .results-nav-item button {
+      width: 100%;
+      text-align: left;
+      background: none;
+      border: none;
+      color: var(--text-secondary);
+      font-size: 0.8rem;
+      padding: 0.4rem 0.6rem;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: background 0.2s, color 0.2s;
+      font-weight: 500;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .results-nav-item button:hover {
+      background: var(--bg-app);
+      color: var(--primary);
+    }
+
+    .results-nav-item.active button {
+      background: var(--border-subtle);
+      color: var(--primary);
+      font-weight: 600;
+    }
+
+    .results-content-area {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+      min-width: 0;
     }
   </style>
 </head>
@@ -211,13 +317,51 @@
         </div>
       </section>
 
-      <!-- Plot Grid -->
+      <!-- Plot Grid Sections -->
       <h3 id="gridHeader" style="font-size: 1.15rem; font-weight: 600; margin-top: 1.5rem; color: var(--text-primary);">
         EKF Results
       </h3>
 
-      <div class="ekf-grid" id="ekfGrid">
-        <!-- JS populates this -->
+      <div class="results-layout">
+        <!-- Sidebar Navigation -->
+        <aside class="results-sidebar" style="position: sticky; top: 1.5rem;">
+          <h3>Categories</h3>
+          <ul class="results-nav">
+            <li class="results-nav-item active" id="navItemStates">
+              <button onclick="scrollToEKFSection('sectionStates')">📈 States & Inputs</button>
+            </li>
+            <li class="results-nav-item" id="navItemCompact">
+              <button onclick="scrollToEKFSection('sectionCompact')">⚙️ Compact Params</button>
+            </li>
+            <li class="results-nav-item" id="navItemPhysical">
+              <button onclick="scrollToEKFSection('sectionPhysical')">💡 Physical Params</button>
+            </li>
+          </ul>
+        </aside>
+
+        <!-- Main content area for grids -->
+        <div class="results-content-area">
+          <div id="sectionStates" class="scroll-target" style="scroll-margin-top: 1.5rem;">
+            <h4 style="margin-bottom: 0.75rem; color: var(--text-primary); font-size: 1rem; border-bottom: 1.5px solid var(--border-subtle); padding-bottom: 0.35rem;">
+              Measured States & Inputs
+            </h4>
+            <div class="ekf-grid" id="gridStates"></div>
+          </div>
+
+          <div id="sectionCompact" class="scroll-target" style="scroll-margin-top: 1.5rem;">
+            <h4 style="margin-bottom: 0.75rem; color: var(--text-primary); font-size: 1rem; border-bottom: 1.5px solid var(--border-subtle); padding-bottom: 0.35rem;">
+              Estimated Compact Parameters (&alpha;, &beta;, &gamma;)
+            </h4>
+            <div class="ekf-grid" id="gridCompact"></div>
+          </div>
+
+          <div id="sectionPhysical" class="scroll-target" style="scroll-margin-top: 1.5rem;">
+            <h4 style="margin-bottom: 0.75rem; color: var(--text-primary); font-size: 1rem; border-bottom: 1.5px solid var(--border-subtle); padding-bottom: 0.35rem;">
+              Recovered Physical Parameters
+            </h4>
+            <div class="ekf-grid" id="gridPhysical"></div>
+          </div>
+        </div>
       </div>
 
     </main>
@@ -282,37 +426,76 @@
         <strong>Dataset:</strong> Kaggle Room Occupancy + EPW weather. Standard baseline with occupancy recovery using the estimated parameters.
       `,
       plots: [
-        { file: '01_zone_temp.png', title: 'Zone Temperature (Measured vs EKF)' },
-        { file: '02_zone_co2.png', title: 'Zone CO\u2082 (Measured vs EKF)' },
-        { file: '03_occupancy.png', title: 'Occupancy N (Recovered vs Truth)' },
-        { file: '04_outdoor_temp.png', title: 'Outdoor Temperature (Input)' },
-        { file: '05_alpha_o.png', title: '\u03B1\u2092 \u2014 Heat Leak + Infiltration' },
-        { file: '06_alpha_s.png', title: '\u03B1\u209B \u2014 Airflow Effect on Temp' },
-        { file: '07_alpha_e.png', title: '\u03B1\u2091 \u2014 Internal Heat Gains' },
-        { file: '08_beta_o.png', title: '\u03B2\u2092 \u2014 Infiltration CO\u2082' },
-        { file: '09_beta_s.png', title: '\u03B2\u209B \u2014 Air Capacity' },
-        { file: '10_gamma_e.png', title: '\u03B3\u2091 \u2014 CO\u2082 Source Rate' },
-        { file: '11_thermal_cap.png', title: 'C\u209B \u2014 Thermal Capacitance' },
-        { file: '12_UA.png', title: 'UA \u2014 Heat Transfer Coefficient' },
+        { file: '01_zone_temp.png', title: 'Zone Temperature (Measured vs EKF)', group: 'states' },
+        { file: '02_zone_co2.png', title: 'Zone CO₂ (Measured vs EKF)', group: 'states' },
+        { file: '03_occupancy.png', title: 'Occupancy N (Recovered vs Truth)', group: 'states' },
+        { file: '04_outdoor_temp.png', title: 'Outdoor Temperature (Input)', group: 'states' },
+        {
+          file: '05_alpha_o.png', title: 'αₒ — Heat Leak + Infiltration',
+          equation: '$$\\alpha_o = \\frac{UA + c_{pa} m_{inf}}{C_s}$$', group: 'compact'
+        },
+        {
+          file: '06_alpha_s.png', title: 'αₛ — Airflow Effect on Temp',
+          equation: '$$\\alpha_s = \\frac{c_{pa}}{C_s}$$', group: 'compact'
+        },
+        {
+          file: '07_alpha_e.png', title: 'αₑ — Internal Heat Gains',
+          equation: '$$\\alpha_e = \\frac{Q_{bg} + f_c q^{occ}_{sens} N}{C_s}$$', group: 'compact'
+        },
+        {
+          file: '08_beta_o.png', title: 'βₒ — Infiltration CO₂',
+          equation: '$$\\beta_o = \\frac{m_{inf}}{M}$$', group: 'compact'
+        },
+        {
+          file: '09_beta_s.png', title: 'βₛ — Air Capacity (1/M)',
+          equation: '$$\\beta_s = \\frac{1}{M}$$', group: 'compact'
+        },
+        {
+          file: '10_gamma_e.png', title: 'γₑ — CO₂ Source Rate',
+          equation: '$$\\gamma_e = \\frac{g^{occ}_{CO_2} N}{M}$$', group: 'compact'
+        },
+        { file: '11_thermal_cap.png', title: 'Cₛ — Thermal Capacitance', group: 'physical' },
+        { file: '12_UA.png', title: 'UA — Heat Transfer Coefficient', group: 'physical' },
       ]
     };
 
     const ROBOD_CONFIG = {
       plots: [
-        { file: '01_zone_temp.png', title: 'Zone Temperature (Measured vs EKF)' },
-        { file: '02_zone_humidity.png', title: 'Zone Humidity Ratio (Measured vs EKF)' },
-        { file: '03_zone_co2.png', title: 'Zone CO\u2082 (Measured vs EKF)' },
-        { file: '04_occupancy.png', title: 'Occupancy N (Recovered vs Truth)' },
-        { file: '05_outdoor_temp.png', title: 'Outdoor Temperature (Input)' },
-        { file: '06_alpha_o.png', title: '\u03B1\u2092 \u2014 Heat Leak + Infiltration' },
-        { file: '07_alpha_s.png', title: '\u03B1\u209B \u2014 Airflow Effect on Temp' },
-        { file: '08_alpha_e.png', title: '\u03B1\u2091 \u2014 Internal Heat Gains' },
-        { file: '09_beta_o.png', title: '\u03B2\u2092 \u2014 Infiltration Moisture/CO\u2082' },
-        { file: '10_beta_s.png', title: '\u03B2\u209B \u2014 Air Capacity' },
-        { file: '11_beta_e.png', title: '\u03B2\u2091 \u2014 Internal Moisture Gains' },
-        { file: '12_gamma_e.png', title: '\u03B3\u2091 \u2014 CO\u2082 Source Rate' },
-        { file: '13_thermal_cap.png', title: 'C\u209B \u2014 Thermal Capacitance' },
-        { file: '14_UA.png', title: 'UA \u2014 Heat Transfer Coefficient' },
+        { file: '01_zone_temp.png', title: 'Zone Temperature (Measured vs EKF)', group: 'states' },
+        { file: '02_zone_humidity.png', title: 'Zone Humidity Ratio (Measured vs EKF)', group: 'states' },
+        { file: '03_zone_co2.png', title: 'Zone CO₂ (Measured vs EKF)', group: 'states' },
+        { file: '04_occupancy.png', title: 'Occupancy N (Recovered vs Truth)', group: 'states' },
+        { file: '05_outdoor_temp.png', title: 'Outdoor Temperature (Input)', group: 'states' },
+        {
+          file: '06_alpha_o.png', title: 'αₒ — Heat Leak + Infiltration',
+          equation: '$$\\alpha_o = \\frac{UA + c_{pa} m_{inf}}{C_s}$$', group: 'compact'
+        },
+        {
+          file: '07_alpha_s.png', title: 'αₛ — Airflow Effect on Temp',
+          equation: '$$\\alpha_s = \\frac{c_{pa}}{C_s}$$', group: 'compact'
+        },
+        {
+          file: '08_alpha_e.png', title: 'αₑ — Internal Heat Gains',
+          equation: '$$\\alpha_e = \\frac{Q_{bg} + f_c q^{occ}_{sens} N}{C_s}$$', group: 'compact'
+        },
+        {
+          file: '09_beta_o.png', title: 'βₒ — Infiltration Moisture/CO₂',
+          equation: '$$\\beta_o = \\frac{m_{inf}}{M}$$', group: 'compact'
+        },
+        {
+          file: '10_beta_s.png', title: 'βₛ — Air Capacity (1/M)',
+          equation: '$$\\beta_s = \\frac{1}{M}$$', group: 'compact'
+        },
+        {
+          file: '11_beta_e.png', title: 'βₑ — Internal Moisture Gains',
+          equation: '$$\\beta_e = \\frac{G_{bg} + g^{occ}_\\omega N}{M}$$', group: 'compact'
+        },
+        {
+          file: '12_gamma_e.png', title: 'γₑ — CO₂ Source Rate',
+          equation: '$$\\gamma_e = \\frac{g^{occ}_{CO_2} N}{M}$$', group: 'compact'
+        },
+        { file: '13_thermal_cap.png', title: 'Cₛ — Thermal Capacitance', group: 'physical' },
+        { file: '14_UA.png', title: 'UA — Heat Transfer Coefficient', group: 'physical' },
       ]
     };
 
@@ -416,19 +599,49 @@
 
     // ---- Build grid on load ----
     function buildGrid() {
-      const grid = document.getElementById('ekfGrid');
-      grid.innerHTML = '';
+      const gridStates = document.getElementById('gridStates');
+      const gridCompact = document.getElementById('gridCompact');
+      const gridPhysical = document.getElementById('gridPhysical');
+
+      gridStates.innerHTML = '';
+      gridCompact.innerHTML = '';
+      gridPhysical.innerHTML = '';
+
+      document.getElementById('sectionStates').style.display = 'none';
+      document.getElementById('sectionCompact').style.display = 'none';
+      document.getElementById('sectionPhysical').style.display = 'none';
+
       currentConfig.plots.forEach((p, i) => {
         const card = document.createElement('div');
         card.className = 'ekf-plot-card';
+        const eqHtml = p.equation
+          ? `<div class="plot-equation">${p.equation}</div>`
+          : '';
         card.innerHTML = `
           <h4>${p.title}</h4>
+          ${eqHtml}
+          <div id="plotly_${i}" class="plotly-container" style="display:none;"></div>
           <div class="placeholder" id="ph_${i}">No results yet. Run EKF first.</div>
           <img id="img_${i}" style="display:none;" alt="${p.title}"
                onclick="window.open(this.src, '_blank')" title="Click to enlarge">
         `;
-        grid.appendChild(card);
+
+        if (p.group === 'states') {
+          gridStates.appendChild(card);
+          document.getElementById('sectionStates').style.display = 'block';
+        } else if (p.group === 'compact') {
+          gridCompact.appendChild(card);
+          document.getElementById('sectionCompact').style.display = 'block';
+        } else if (p.group === 'physical') {
+          gridPhysical.appendChild(card);
+          document.getElementById('sectionPhysical').style.display = 'block';
+        }
       });
+
+      // Typeset MathJax equations dynamically
+      if (window.MathJax && typeof window.MathJax.typesetPromise === 'function') {
+        window.MathJax.typesetPromise();
+      }
     }
 
     // ---- Load plots ----
@@ -437,6 +650,39 @@
       status.textContent = 'Loading...';
       status.className = 'ekf-status status-idle';
 
+      // Hide all plotly containers on new load
+      currentConfig.plots.forEach((p, i) => {
+        const plt = document.getElementById(`plotly_${i}`);
+        if (plt) plt.style.display = 'none';
+      });
+
+      if (lastRunResult && lastRunResult.csv_url) {
+        const csvUrl = getBackendUrl() + lastRunResult.csv_url;
+        fetch(csvUrl, { headers: { 'ngrok-skip-browser-warning': 'true' } })
+          .then(res => {
+            if (!res.ok) throw new Error(`HTTP error ${res.status}`);
+            return res.text();
+          })
+          .then(csvText => {
+            const success = renderPlotlyEKF(csvText);
+            if (success) {
+              status.textContent = 'Done (Interactive)';
+              status.className = 'ekf-status status-done';
+            } else {
+              throw new Error("Render failed");
+            }
+          })
+          .catch(err => {
+            console.warn("Plotly rendering failed, falling back to static images:", err);
+            loadStaticPlotsFallback();
+          });
+      } else {
+        loadStaticPlotsFallback();
+      }
+    }
+
+    function loadStaticPlotsFallback() {
+      const status = document.getElementById('ekfStatus');
       let loaded = 0;
       let failed = 0;
       const totalPlots = currentConfig.plots.length;
@@ -444,27 +690,33 @@
       currentConfig.plots.forEach((p, i) => {
         const img = document.getElementById(`img_${i}`);
         const ph = document.getElementById(`ph_${i}`);
+        const plt = document.getElementById(`plotly_${i}`);
+        
+        if (plt) plt.style.display = 'none';
 
         let url;
         if (lastRunResult && lastRunResult.files && lastRunResult.files[p.file]) {
           url = getBackendUrl() + lastRunResult.files[p.file] + `?t=${Date.now()}`;
         } else {
-          url = `${currentConfig.resultsBase}/${p.file}?t=${Date.now()}`; // cache bust
+          url = `${currentConfig.resultsBase}/${p.file}?t=${Date.now()}`;
         }
 
-        // Test if image exists by loading it
         const testImg = new Image();
         testImg.onload = () => {
-          img.src = url;
-          img.style.display = 'block';
-          ph.style.display = 'none';
+          if (img) {
+            img.src = url;
+            img.style.display = 'block';
+          }
+          if (ph) ph.style.display = 'none';
           loaded++;
           checkDone();
         };
         testImg.onerror = () => {
-          img.style.display = 'none';
-          ph.style.display = 'flex';
-          ph.textContent = 'Plot not found. Run EKF first.';
+          if (img) img.style.display = 'none';
+          if (ph) {
+            ph.style.display = 'flex';
+            ph.textContent = 'Plot not found. Run EKF first.';
+          }
           failed++;
           checkDone();
         };
@@ -485,6 +737,147 @@
           }
         }
       }
+    }
+
+    // ---- Render interactive Plotly charts ----
+    function renderPlotlyEKF(csvText) {
+      if (!window.Papa || !window.Plotly) {
+        console.warn("Plotly or PapaParse not loaded.");
+        return false;
+      }
+      
+      const parsed = Papa.parse(csvText, { header: true, dynamicTyping: true });
+      if (!parsed.data || parsed.data.length === 0) {
+        console.warn("CSV data is empty.");
+        return false;
+      }
+      
+      const cleanData = parsed.data.filter(row => row.time_hrs !== null && row.time_hrs !== undefined);
+      const time_hrs = cleanData.map(row => row.time_hrs);
+      
+      const colMap = {
+        'T_z_measured': cleanData.map(row => row.T_z_measured),
+        'T_z_ekf': cleanData.map(row => row.T_z_ekf),
+        'w_z_measured': cleanData.map(row => row.w_z_measured),
+        'w_z_ekf': cleanData.map(row => row.w_z_ekf),
+        'c_z_measured': cleanData.map(row => row.c_z_measured),
+        'c_z_ekf': cleanData.map(row => row.c_z_ekf),
+        'N_true': cleanData.map(row => row.N_true),
+        'N_ekf': cleanData.map(row => row.N_ekf),
+        'T_o': cleanData.map(row => row.T_o),
+        'alpha_o': cleanData.map(row => row.alpha_o),
+        'alpha_s': cleanData.map(row => row.alpha_s),
+        'alpha_e': cleanData.map(row => row.alpha_e),
+        'beta_o': cleanData.map(row => row.beta_o),
+        'beta_s': cleanData.map(row => row.beta_s),
+        'beta_e': cleanData.map(row => row.beta_e),
+        'gamma_e': cleanData.map(row => row.gamma_e),
+        'C_s': cleanData.map(row => row.C_s),
+        'UA': cleanData.map(row => row.UA)
+      };
+
+      currentConfig.plots.forEach((p, i) => {
+        const divId = `plotly_${i}`;
+        const container = document.getElementById(divId);
+        if (!container) return;
+        
+        container.style.display = 'block';
+        
+        let traces = [];
+        let yaxisLabel = '';
+        
+        const fname = p.file.toLowerCase();
+        
+        if (fname.includes('zone_temp')) {
+          traces = [
+            { x: time_hrs, y: colMap['T_z_measured'], name: 'Measured', mode: 'markers', marker: { color: '#2ca02c', size: 3 } },
+            { x: time_hrs, y: colMap['T_z_ekf'], name: 'EKF', mode: 'lines', line: { color: '#ff7f0e', width: 1.5 } }
+          ];
+          yaxisLabel = 'Temperature (°C)';
+        } else if (fname.includes('humidity')) {
+          traces = [
+            { x: time_hrs, y: colMap['w_z_measured'], name: 'Measured', mode: 'markers', marker: { color: '#2ca02c', size: 3 } },
+            { x: time_hrs, y: colMap['w_z_ekf'], name: 'EKF', mode: 'lines', line: { color: '#ff7f0e', width: 1.5 } }
+          ];
+          yaxisLabel = 'Humidity Ratio (kg_w/kg_da)';
+        } else if (fname.includes('co2')) {
+          traces = [
+            { x: time_hrs, y: colMap['c_z_measured'], name: 'Measured', mode: 'markers', marker: { color: '#2ca02c', size: 3 } },
+            { x: time_hrs, y: colMap['c_z_ekf'], name: 'EKF', mode: 'lines', line: { color: '#ff7f0e', width: 1.5 } }
+          ];
+          yaxisLabel = 'CO2 Concentration (ppm)';
+        } else if (fname.includes('occupancy')) {
+          traces = [
+            { x: time_hrs, y: colMap['N_true'], name: 'True N', mode: 'markers', marker: { color: '#2ca02c', size: 3 } },
+            { x: time_hrs, y: colMap['N_ekf'], name: 'EKF N', mode: 'lines', line: { color: '#ff7f0e', width: 1.5 } }
+          ];
+          yaxisLabel = 'Occupants (persons)';
+        } else if (fname.includes('outdoor_temp')) {
+          traces = [
+            { x: time_hrs, y: colMap['T_o'], name: 'Outdoor Temp', mode: 'lines', line: { color: '#1f77b4', width: 1.5 } }
+          ];
+          yaxisLabel = 'Temperature (°C)';
+        } else if (fname.includes('alpha_o')) {
+          traces = [
+            { x: time_hrs, y: colMap['alpha_o'], name: 'α_o', mode: 'lines', line: { color: '#1f77b4', width: 1.5 } }
+          ];
+          yaxisLabel = 'Leak Rate (1/s)';
+        } else if (fname.includes('alpha_s')) {
+          traces = [
+            { x: time_hrs, y: colMap['alpha_s'], name: 'α_s', mode: 'lines', line: { color: '#1f77b4', width: 1.5 } }
+          ];
+          yaxisLabel = 'Air Coupling (1/(kg*s))';
+        } else if (fname.includes('alpha_e')) {
+          traces = [
+            { x: time_hrs, y: colMap['alpha_e'], name: 'α_e', mode: 'lines', line: { color: '#1f77b4', width: 1.5 } }
+          ];
+          yaxisLabel = 'Heat Gains (°C/s)';
+        } else if (fname.includes('beta_o')) {
+          traces = [
+            { x: time_hrs, y: colMap['beta_o'], name: 'β_o', mode: 'lines', line: { color: '#1f77b4', width: 1.5 } }
+          ];
+          yaxisLabel = 'Infiltration Rate (1/s)';
+        } else if (fname.includes('beta_s')) {
+          traces = [
+            { x: time_hrs, y: colMap['beta_s'], name: 'β_s', mode: 'lines', line: { color: '#1f77b4', width: 1.5 } }
+          ];
+          yaxisLabel = 'Capacity Term (1/kg)';
+        } else if (fname.includes('beta_e')) {
+          traces = [
+            { x: time_hrs, y: colMap['beta_e'], name: 'β_e', mode: 'lines', line: { color: '#1f77b4', width: 1.5 } }
+          ];
+          yaxisLabel = 'Moisture Gains (kg/kg/s)';
+        } else if (fname.includes('gamma_e')) {
+          traces = [
+            { x: time_hrs, y: colMap['gamma_e'], name: 'γ_e', mode: 'lines', line: { color: '#1f77b4', width: 1.5 } }
+          ];
+          yaxisLabel = 'CO2 Rate (ppm/s)';
+        } else if (fname.includes('thermal_cap')) {
+          traces = [
+            { x: time_hrs, y: colMap['C_s'], name: 'C_s', mode: 'lines', line: { color: '#1f77b4', width: 1.5 } }
+          ];
+          yaxisLabel = 'Thermal Cap (J/K)';
+        } else if (fname.includes('ua.png')) {
+          traces = [
+            { x: time_hrs, y: colMap['UA'], name: 'UA', mode: 'lines', line: { color: '#1f77b4', width: 1.5 } }
+          ];
+          yaxisLabel = 'UA Coefficient (W/K)';
+        }
+        
+        const layout = {
+          margin: { l: 65, r: 25, t: 15, b: 35 },
+          xaxis: { title: 'Time [hours]', gridcolor: '#f1f5f9' },
+          yaxis: { title: yaxisLabel, gridcolor: '#f1f5f9' },
+          plot_bgcolor: '#ffffff',
+          paper_bgcolor: 'transparent',
+          legend: { orientation: 'h', y: -0.2, x: 0.5, xanchor: 'center' },
+          showlegend: true
+        };
+        
+        const config = { responsive: true, displayModeBar: true };
+        Plotly.newPlot(container, traces, layout, config);
+      });
+      return true;
     }
 
     // ---- Run EKF ----
@@ -627,6 +1020,50 @@
         }
       }, 2000);
     }
+
+    // ---- EKF Sidebar Section Navigation ----
+    function scrollToEKFSection(id) {
+      const el = document.getElementById(id);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth' });
+      }
+    }
+
+    // Scroll spy logic to update active class in results-nav sidebar
+    window.addEventListener('scroll', () => {
+      const targets = document.querySelectorAll('.scroll-target');
+      const navItems = {
+        'sectionStates': document.getElementById('navItemStates'),
+        'sectionCompact': document.getElementById('navItemCompact'),
+        'sectionPhysical': document.getElementById('navItemPhysical')
+      };
+      
+      let activeSectionId = null;
+      let minDistance = Infinity;
+      
+      targets.forEach(target => {
+        const rect = target.getBoundingClientRect();
+        const dist = Math.abs(rect.top - 100);
+        if (rect.top < window.innerHeight / 2 && rect.bottom > 100) {
+          if (dist < minDistance) {
+            minDistance = dist;
+            activeSectionId = target.id;
+          }
+        }
+      });
+      
+      if (activeSectionId) {
+        Object.keys(navItems).forEach(key => {
+          if (navItems[key]) {
+            if (key === activeSectionId) {
+              navItems[key].classList.add('active');
+            } else {
+              navItems[key].classList.remove('active');
+            }
+          }
+        });
+      }
+    });
 
     // ---- Connection Testing ----
     function saveAndTestConnection() {
