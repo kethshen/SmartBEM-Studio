@@ -431,38 +431,38 @@
         { file: '03_occupancy.png', title: 'Occupancy N (Recovered vs Truth)', group: 'states' },
         { file: '04_outdoor_temp.png', title: 'Outdoor Temperature (Input)', group: 'states' },
         {
-          file: '05_alpha_o.png', title: 'αₒ — Heat Leak + Infiltration',
+          file: '05_alpha_o.png', title: 'αₒ',
           equation: '$$\\alpha_o = \\frac{UA + c_{pa} m_{inf}}{C_s}$$', group: 'compact'
         },
         {
-          file: '06_alpha_s.png', title: 'αₛ — Airflow Effect on Temp',
+          file: '06_alpha_s.png', title: 'αₛ',
           equation: '$$\\alpha_s = \\frac{c_{pa}}{C_s}$$', group: 'compact'
         },
         {
-          file: '07_alpha_e.png', title: 'αₑ — Internal Heat Gains',
+          file: '07_alpha_e.png', title: 'αₑ',
           equation: '$$\\alpha_e = \\frac{Q_{bg} + f_c q^{occ}_{sens} N}{C_s}$$', group: 'compact'
         },
         {
-          file: '08_beta_o.png', title: 'βₒ — Infiltration CO₂',
+          file: '08_beta_o.png', title: 'βₒ',
           equation: '$$\\beta_o = \\frac{m_{inf}}{M}$$', group: 'compact'
         },
         {
-          file: '09_beta_s.png', title: 'βₛ — Air Capacity (1/M)',
+          file: '09_beta_s.png', title: 'βₛ',
           equation: '$$\\beta_s = \\frac{1}{M}$$', group: 'compact'
         },
         {
-          file: '10_gamma_e.png', title: 'γₑ — CO₂ Source Rate',
+          file: '10_gamma_e.png', title: 'γₑ',
           equation: '$$\\gamma_e = \\frac{g^{occ}_{CO_2} N}{M}$$', group: 'compact'
         },
         {
           file: '11_thermal_cap.png', title: 'Cₛ — Thermal Capacitance',
           equation: '$$C_s = \\frac{c_{pa}}{\\alpha_s}$$', group: 'physical',
-          yaxisRange: [0, 8000000]
+          yaxisRange: [0, 25000000]
         },
         {
           file: '12_UA.png', title: 'UA — Heat Transfer Coefficient',
           equation: '$$UA = \\alpha_o C_s - c_{pa} m_{inf}$$', group: 'physical',
-          yaxisRange: [-20, 250]
+          yaxisRange: [-100, 600]
         },
       ]
     };
@@ -475,62 +475,62 @@
         { file: '04_occupancy.png', title: 'Occupancy N (Recovered vs Truth)', group: 'states' },
         { file: '05_outdoor_temp.png', title: 'Outdoor Temperature (Input)', group: 'states' },
         {
-          file: '06_alpha_o.png', title: 'αₒ — Heat Leak + Infiltration',
+          file: '06_alpha_o.png', title: 'αₒ',
           equation: '$$\\alpha_o = \\frac{UA + c_{pa} m_{inf}}{C_s}$$', group: 'compact'
         },
         {
-          file: '07_alpha_s.png', title: 'αₛ — Airflow Effect on Temp',
+          file: '07_alpha_s.png', title: 'αₛ',
           equation: '$$\\alpha_s = \\frac{c_{pa}}{C_s}$$', group: 'compact'
         },
         {
-          file: '08_alpha_e.png', title: 'αₑ — Internal Heat Gains',
+          file: '08_alpha_e.png', title: 'αₑ',
           equation: '$$\\alpha_e = \\frac{Q_{bg} + f_c q^{occ}_{sens} N}{C_s}$$', group: 'compact'
         },
         {
-          file: '09_beta_o.png', title: 'βₒ — Infiltration Moisture/CO₂',
+          file: '09_beta_o.png', title: 'βₒ',
           equation: '$$\\beta_o = \\frac{m_{inf}}{M}$$', group: 'compact'
         },
         {
-          file: '10_beta_s.png', title: 'βₛ — Air Capacity (1/M)',
+          file: '10_beta_s.png', title: 'βₛ',
           equation: '$$\\beta_s = \\frac{1}{M}$$', group: 'compact'
         },
         {
-          file: '11_beta_e.png', title: 'βₑ — Internal Moisture Gains',
+          file: '11_beta_e.png', title: 'βₑ',
           equation: '$$\\beta_e = \\frac{G_{bg} + g^{occ}_\\omega N}{M}$$', group: 'compact'
         },
         {
-          file: '12_gamma_e.png', title: 'γₑ — CO₂ Source Rate',
+          file: '12_gamma_e.png', title: 'γₑ',
           equation: '$$\\gamma_e = \\frac{g^{occ}_{CO_2} N}{M}$$', group: 'compact'
         },
         {
           file: '13_thermal_cap.png', title: 'Cₛ — Thermal Capacitance',
           equation: '$$C_s = \\frac{c_{pa}}{\\alpha_s}$$', group: 'physical',
-          yaxisRange: [0, 8000000]
+          yaxisRange: [0, 25000000]
         },
         {
           file: '14_UA.png', title: 'UA — Heat Transfer Coefficient',
           equation: '$$UA = \\alpha_o C_s - c_{pa} m_{inf}$$', group: 'physical',
-          yaxisRange: [-20, 250]
+          yaxisRange: [-100, 600]
         },
         {
           file: '15_dry_air_mass.png', title: 'M — Dry Air Mass',
           equation: '$$M = \\frac{1}{\\beta_s}$$', group: 'physical',
-          yaxisRange: [0, 1000]
+          yaxisRange: [0, 3000]
         },
         {
           file: '16_infiltration_flow.png', title: 'm_inf — Infiltration Mass Flow',
           equation: '$$m_{inf} = \\beta_o M$$', group: 'physical',
-          yaxisRange: [0, 0.2]
+          yaxisRange: [0, 0.8]
         },
         {
           file: '17_internal_heat.png', title: 'Q_internal — Internal Heat Gain',
           equation: '$$Q_{int} = \\alpha_e C_s$$', group: 'physical',
-          yaxisRange: [0, 3000]
+          yaxisRange: [0, 8000]
         },
         {
           file: '18_internal_moisture.png', title: 'G_internal — Internal Moisture Gain',
           equation: '$$G_{int} = \\beta_e M$$', group: 'physical',
-          yaxisRange: [0, 0.0005]
+          yaxisRange: [0, 0.002]
         },
       ]
     };
