@@ -52,26 +52,7 @@ Instead of manually creating local configuration files, we load credentials secu
 
 ---
 
-### Step 3 — Run the Backend Server
-
-> [!IMPORTANT]
-> **Follow the step-by-step instructions documented in [backend_server/main_backend.ipynb](backend_server/main_backend.ipynb).** 
-
-1. Select **Runtime → Run All** to run all cells.
-2. The notebook will automatically:
-   - Mount your Google Drive (to cache the large LLM weights)
-   - Install all required dependencies (FastAPI, PyNgrok, OpenStudio SDK, etc.)
-   - Download the `gemma3:12b` model to your Drive (**first run only**; takes ~8–10 mins, direct server-to-server download with zero personal internet data charges)
-   - Start the local Ollama service, FastAPI server, and Ngrok tunnel
-3. In **Section 12. Run FastAPI server and Ngrok**, wait for the live URL to print:
-   ```
-   ✅ SmartBEM Backend is LIVE at: https://xxxx-xx-xx.ngrok-free.app
-   ```
-4. **Copy that Ngrok URL.**
-
----
-
-### Step 4 — Clone the Repo & Start the Local Server
+### Step 3 — Clone the Repo & Start the Local Server
 
 1. Clone this repository to your local system.
 2. Open the repository folder in **VS Code**.
@@ -91,18 +72,37 @@ Instead of manually creating local configuration files, we load credentials secu
 
 ---
 
+### Step 4 — Run the Backend Server
+
+> [!IMPORTANT]
+> **Follow the step-by-step instructions documented in [backend_server/main_backend.ipynb](backend_server/main_backend.ipynb).** 
+
+1. Select **Runtime → Run All** to run all cells.
+2. The notebook will automatically:
+   - Mount your Google Drive (to cache the large LLM weights)
+   - Install all required dependencies (FastAPI, PyNgrok, OpenStudio SDK, etc.)
+   - Download the `gemma3:12b` model to your Drive (**first run only**; takes ~8–10 mins, direct server-to-server download with zero personal internet data charges)
+   - Start the local Ollama service, FastAPI server, and Ngrok tunnel
+3. In **Section 12. Run FastAPI server and Ngrok**, wait for the live URL to print:
+   ```
+   It will print a url similar to - https://xxxx-xxxx-xxxx.ngrok-free.app (example)
+   ```
+4. **Copy that Ngrok URL.**
+
+---
+
 ### Step 5 — Connect & Run Building Energy Simulation
 
 #### A. Simulation Setup Page
 1. Navigate to the **Simulation Setup** page in the dashboard.
-2. Paste the copied Ngrok URL (from Colab Section 12) into the frontend UI under **Step 1: Connect to ngrok Colab Server**, and click **Connect** (the status indicator turns green ✅).
+2. Paste the copied Ngrok URL (from Colab Section 12) into the frontend UI under **Step 1: Connect to ngrok Colab Server**, and click **Connect** (the status indicator turns green).
 3. Enter your building description in **Step 2: Add Building Description** (refer to the example description format in [user_description.md](user_description.md)).
    *Note: A **Material Catalogue** and **Object Catalogue** are also included on this page for your reference to give you an idea of what materials and parameters can be simulated.*
 4. Set your configurations (location, weather, dates) under **Step 3: Simulation Settings** and click **Queue Simulation**.
 
 #### B. Results Page
 1. Navigate to the **Results** page in the dashboard.
-2. Wait for the job row in the simulations table to change status from `Running...` to `Done` ✅.
+2. Wait for the job row in the simulations table to change status from `running...` to `done`.
 3. Click that row in the table, and the interactive results charts (temperatures, weather variables, electricity/gas loads) will load below.
 4. Use the tab menu items on the result card to explore the simulation outputs:
    - **View Full IDF Text** to inspect the raw EnergyPlus Input Data File generated.
