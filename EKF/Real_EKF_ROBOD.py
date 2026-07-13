@@ -101,7 +101,7 @@ def fan_speed_to_mass_flow(fan_hz):
 #  DATA LOADER
 # ═══════════════════════════════════════════════════════════════════════════════
 
-def load_robod(path):
+def load_robod(path, fcu_flow_scale=0.01, rho_a=1.2):
     """
     Load ROBOD CSV and extract all EKF inputs / measured states.
 
@@ -156,11 +156,11 @@ def load_robod(path):
         df['w_sa'] = df['w_o']
 
     if 'supply_air_flow [CMH]' in cols:
-        df['m_sa'] = (df['supply_air_flow [CMH]'].values / 3600.0 * 1.2).clip(min=0.001)
+        df['m_sa'] = (df['supply_air_flow [CMH]'].values / 3600.0 * rho_a).clip(min=0.001)
     elif 'fcu_fan_speed [Hz]' in cols:
-        df['m_sa'] = fan_speed_to_mass_flow(df['fcu_fan_speed [Hz]'].values)
+        df['m_sa'] = np.clip(df['fcu_fan_speed [Hz]'].values * fcu_flow_scale, 0.001, None)
     elif 'ahu_fan_speed [Hz]' in cols:
-        df['m_sa'] = fan_speed_to_mass_flow(df['ahu_fan_speed [Hz]'].values)
+        df['m_sa'] = np.clip(df['ahu_fan_speed [Hz]'].values * fcu_flow_scale, 0.001, None)
     else:
         print("    WARNING: No flow column — using constant m_sa = 0.3 kg/s")
         df['m_sa'] = 0.3
@@ -272,7 +272,9 @@ def jacobian_F(X_prev, inputs, dt):
 #  MAIN
 # ═══════════════════════════════════════════════════════════════════════════════
 
-def main(room_num=3, save_mode=False, results_dir=None, dataset_path=None):
+def main(room_num=3, save_mode=False, results_dir=None, dataset_path=None,
+         c_pa_override=None, M_room_override=None, g_co2_occ_override=None,
+         fcu_flow_scale_override=None, rho_a_override=None):
     if save_mode:
         import matplotlib
         matplotlib.use('Agg')
@@ -282,13 +284,21 @@ def main(room_num=3, save_mode=False, results_dir=None, dataset_path=None):
         results_dir = os.path.join(SCRIPT_DIR, f"results_robod_room{room_num}")
     robod_csv = dataset_path if dataset_path else os.path.join(ROBOD_DIR, f"combined_Room{room_num}.csv")
 
+    # Resolve overrides thread-safely (default to script globals/constants if not provided)
+    local_c_pa = c_pa_override if c_pa_override is not None else 1006.0
+    local_M_room = M_room_override if M_room_override is not None else 495.8
+    local_g_co2_occ = g_co2_occ_override if g_co2_occ_override is not None else 1.725
+    local_fcu_flow_scale = fcu_flow_scale_override if fcu_flow_scale_override is not None else 0.01
+    local_rho_a = rho_a_override if rho_a_override is not None else 1.2
+
     print("=" * 60)
     print(f"  SmartBEM — 10-State EKF  (ROBOD Room {room_num})")
+    print(f"  Params: M={local_M_room}kg, flow_scale={local_fcu_flow_scale}, g_CO2={local_g_co2_occ}, c_pa={local_c_pa}, rho_a={local_rho_a}")
     print("=" * 60)
 
     # ── Load data ─────────────────────────────────────────────────────────────
     print("\n[1] Loading ROBOD CSV ...")
-    df = load_robod(robod_csv)
+    df = load_robod(robod_csv, fcu_flow_scale=local_fcu_flow_scale, rho_a=local_rho_a)
     steps = len(df)
     print(f"    {steps} rows | "
           f"T_z {df['T_z'].min():.1f}-{df['T_z'].max():.1f} C | "
@@ -403,16 +413,15 @@ def main(room_num=3, save_mode=False, results_dir=None, dataset_path=None):
         # === STORE ===
         est_arr[k] = X_est
 
-        # Recover occupancy from gamma_e using FIXED room air mass M_ROOM.
+        # Recover occupancy from gamma_e using FIXED room air mass.
         # We do NOT use beta_s for this recovery because beta_s diverges in
         # this dataset (CO2 signal too weak to identify 1/M independently).
-        # M_ROOM is set from known room geometry — it is a measurable constant.
-        # N_est = gamma_e * M_ROOM / g_CO2_occ
+        # N_est = gamma_e * M / g_CO2_occ
         ge_est = X_est[I_ge]
         if k < N_WARMUP:
             N_est_arr[k] = 0.0
         else:
-            raw = (ge_est * M_ROOM) / g_CO2_occ
+            raw = (ge_est * local_M_room) / local_g_co2_occ
             N_est_arr[k] = np.clip(raw, 0.0, N_MAX)
 
         # === CARRY FORWARD ===
@@ -428,15 +437,15 @@ def main(room_num=3, save_mode=False, results_dir=None, dataset_path=None):
     N_est_arr = np.clip(N_est_arr, 0.0, N_MAX)   # re-apply clip after filter
 
     # ── Derived physical parameters ───────────────────────────────────────────
-    Cs_arr    = c_pa / np.where(np.abs(est_arr[:, I_as]) > 1e-12,
+    Cs_arr    = local_c_pa / np.where(np.abs(est_arr[:, I_as]) > 1e-12,
                                 est_arr[:, I_as], np.nan)
     # Since beta_s = 1/M diverges due to lack of excitation, we use the known
-    # physical room air mass M_ROOM = 240.0 kg to recover physical parameters.
-    M_arr     = np.full(steps, M_ROOM)
-    m_inf_arr = est_arr[:, I_bo] * M_ROOM
-    UA_arr    = est_arr[:, I_ao] * Cs_arr - c_pa * m_inf_arr
+    # physical room air mass to recover physical parameters.
+    M_arr     = np.full(steps, local_M_room)
+    m_inf_arr = est_arr[:, I_bo] * local_M_room
+    UA_arr    = est_arr[:, I_ao] * Cs_arr - local_c_pa * m_inf_arr
     Q_int_arr = est_arr[:, I_ae] * Cs_arr
-    G_int_arr = est_arr[:, I_be] * M_ROOM
+    G_int_arr = est_arr[:, I_be] * local_M_room
 
     # ── Time axis ─────────────────────────────────────────────────────────────
     t_hrs = elapsed / 3600.0

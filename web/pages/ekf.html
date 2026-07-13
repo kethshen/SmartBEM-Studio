@@ -326,6 +326,42 @@
           <span id="ekfStatus" class="ekf-status status-idle">Idle</span>
         </div>
 
+        <!-- Collapsible Parameters Section -->
+        <div style="margin-top: 1rem;">
+          <button type="button" class="btn btn-secondary" onclick="toggleParamsCollapse()" style="font-size: 0.85rem; padding: 0.35rem 0.75rem; display: flex; align-items: center; gap: 0.5rem;">
+            <span id="paramsToggleIcon">⚙️</span>
+            <span>Configure EKF Physical Parameters</span>
+          </button>
+          
+          <div id="ekfParamsCollapse" style="display: none; margin-top: 0.75rem; padding: 1.25rem; border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); background-color: var(--bg-app);">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.25rem;">
+              <div style="display: flex; flex-direction: column; gap: 0.35rem;">
+                <label for="paramMRoom" style="font-size: 0.8rem; font-weight: 600; color: var(--text-secondary);">Room Air Mass (<i>M<sub>room</sub></i>) [kg]</label>
+                <input type="number" id="paramMRoom" step="0.1" style="padding: 0.4rem; border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); background: var(--bg-card); color: var(--text-primary);" placeholder="495.8">
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 0.35rem;">
+                <label for="paramFcuFlowScale" style="font-size: 0.8rem; font-weight: 600; color: var(--text-secondary);">FCU Flow Scale [kg/(s·Hz)]</label>
+                <input type="number" id="paramFcuFlowScale" step="0.001" style="padding: 0.4rem; border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); background: var(--bg-card); color: var(--text-primary);" placeholder="0.01">
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 0.35rem;">
+                <label for="paramGCo2Occ" style="font-size: 0.8rem; font-weight: 600; color: var(--text-secondary);">CO₂ Occ Gen Rate [ppm·kg/(s·p)]</label>
+                <input type="number" id="paramGCo2Occ" step="0.001" style="padding: 0.4rem; border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); background: var(--bg-card); color: var(--text-primary);" placeholder="1.725">
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 0.35rem;">
+                <label for="paramCPa" style="font-size: 0.8rem; font-weight: 600; color: var(--text-secondary);">Specific Heat of Air (<i>c<sub>pa</sub></i>) [J/kg·K]</label>
+                <input type="number" id="paramCPa" step="0.1" style="padding: 0.4rem; border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); background: var(--bg-card); color: var(--text-primary);" placeholder="1006.0">
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 0.35rem;">
+                <label for="paramRhoA" style="font-size: 0.8rem; font-weight: 600; color: var(--text-secondary);">Air Density (&rho;<sub>a</sub>) [kg/m³]</label>
+                <input type="number" id="paramRhoA" step="0.01" style="padding: 0.4rem; border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); background: var(--bg-card); color: var(--text-primary);" placeholder="1.2">
+              </div>
+            </div>
+            <div style="margin-top: 0.75rem; text-align: right;">
+              <button type="button" class="btn btn-secondary" onclick="resetEKFParamsToDefault()" style="font-size: 0.75rem; padding: 0.25rem 0.5rem; background: var(--bg-card);">Reset to Defaults</button>
+            </div>
+          </div>
+        </div>
+
         <!-- Dataset details info box -->
         <div id="detailsCard"
           style="margin-top: 1rem; background-color: var(--bg-app); padding: 0.85rem; border-radius: var(--radius-sm); border-left: 4px solid var(--primary); color: var(--text-secondary); font-size: 0.9rem;">
@@ -573,6 +609,7 @@
       }
       uploadedOption.textContent = `Uploaded: ${file.name}`;
       uploadedOption.selected = true;
+      updateEKFParamsUI('uploaded_csv');
 
       // Manually trigger configuration update for uploaded dataset
       currentConfig = {
@@ -594,14 +631,55 @@
 
       // Clear last run result and rebuild grid
       lastRunResult = null;
+      // Clear last run result and rebuild grid
+      lastRunResult = null;
       buildGrid();
       loadPlots();
+    }
+
+    // ---- EKF Parameters Management ----
+    const ROOM_DEFAULTS = {
+      'robod1': { m_room: 583.4, fcu_flow_scale: 0.01, g_co2_occ: 1.725, c_pa: 1006.0, rho_a: 1.2 },
+      'robod2': { m_room: 264.2, fcu_flow_scale: 0.01, g_co2_occ: 1.725, c_pa: 1006.0, rho_a: 1.2 },
+      'robod3': { m_room: 495.8, fcu_flow_scale: 0.01, g_co2_occ: 1.725, c_pa: 1006.0, rho_a: 1.2 },
+      'robod4': { m_room: 698.0, fcu_flow_scale: 0.01, g_co2_occ: 1.725, c_pa: 1006.0, rho_a: 1.2 },
+      'robod5': { m_room: 1636.0, fcu_flow_scale: 0.01, g_co2_occ: 1.725, c_pa: 1006.0, rho_a: 1.2 },
+      'uploaded_csv': { m_room: 495.8, fcu_flow_scale: 0.01, g_co2_occ: 1.725, c_pa: 1006.0, rho_a: 1.2 },
+      'kaggle': { m_room: 240.0, fcu_flow_scale: 0.01, g_co2_occ: 1.725, c_pa: 1006.0, rho_a: 1.2 }
+    };
+
+    function updateEKFParamsUI(datasetVal) {
+      const defaults = ROOM_DEFAULTS[datasetVal] || ROOM_DEFAULTS['robod3'];
+      document.getElementById('paramMRoom').value = defaults.m_room;
+      document.getElementById('paramFcuFlowScale').value = defaults.fcu_flow_scale;
+      document.getElementById('paramGCo2Occ').value = defaults.g_co2_occ;
+      document.getElementById('paramCPa').value = defaults.c_pa;
+      document.getElementById('paramRhoA').value = defaults.rho_a;
+    }
+
+    function toggleParamsCollapse() {
+      const panel = document.getElementById('ekfParamsCollapse');
+      const icon = document.getElementById('paramsToggleIcon');
+      if (panel.style.display === 'none') {
+        panel.style.display = 'block';
+        icon.textContent = '▼';
+      } else {
+        panel.style.display = 'none';
+        icon.textContent = '⚙️';
+      }
+    }
+
+    function resetEKFParamsToDefault() {
+      const select = document.getElementById('datasetSelect');
+      updateEKFParamsUI(select.value);
     }
 
     // ---- Handle dataset selection change ----
     function onDatasetChange() {
       const select = document.getElementById('datasetSelect');
       const val = select.value;
+
+      updateEKFParamsUI(val);
 
       if (val === 'uploaded_csv') {
         if (uploadedFile) {
@@ -1031,6 +1109,13 @@
         }
       }
 
+      // Retrieve customized physical parameters
+      const mRoomVal = parseFloat(document.getElementById('paramMRoom').value);
+      const fcuFlowScaleVal = parseFloat(document.getElementById('paramFcuFlowScale').value);
+      const gCo2OccVal = parseFloat(document.getElementById('paramGCo2Occ').value);
+      const cPaVal = parseFloat(document.getElementById('paramCPa').value);
+      const rhoAVal = parseFloat(document.getElementById('paramRhoA').value);
+
       try {
         status.textContent = 'Running EKF...';
         const response = await fetch(`${backendUrl}/api/run_ekf`, {
@@ -1041,7 +1126,12 @@
           },
           body: JSON.stringify({
             room_num: roomNum,
-            dataset_path: datasetPath
+            dataset_path: datasetPath,
+            c_pa: isNaN(cPaVal) ? null : cPaVal,
+            m_room: isNaN(mRoomVal) ? null : mRoomVal,
+            g_co2_occ: isNaN(gCo2OccVal) ? null : gCo2OccVal,
+            fcu_flow_scale: isNaN(fcuFlowScaleVal) ? null : fcuFlowScaleVal,
+            rho_a: isNaN(rhoAVal) ? null : rhoAVal
           })
         });
 

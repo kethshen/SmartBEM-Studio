@@ -155,8 +155,15 @@ def run_simulation_pipeline(job_id: str, prompt: str, settings: dict):
 class RunEKFRequest(BaseModel):
     room_num: int = 3
     dataset_path: Optional[str] = None
+    c_pa: Optional[float] = None
+    m_room: Optional[float] = None
+    g_co2_occ: Optional[float] = None
+    fcu_flow_scale: Optional[float] = None
+    rho_a: Optional[float] = None
 
-def run_ekf_pipeline(job_id: str, room_num: int, dataset_path: str = None):
+def run_ekf_pipeline(job_id: str, room_num: int, dataset_path: str = None,
+                     c_pa: float = None, m_room: float = None, g_co2_occ: float = None,
+                     fcu_flow_scale: float = None, rho_a: float = None):
     """
     Background worker that runs the 10-state EKF algorithm on a room dataset.
     """
@@ -174,7 +181,17 @@ def run_ekf_pipeline(job_id: str, room_num: int, dataset_path: str = None):
         from EKF.Real_EKF_ROBOD import main as run_ekf_script
         
         print(f"[{job_id}] Starting EKF run for room {room_num}...")
-        run_ekf_script(room_num=room_num, save_mode=True, results_dir=target_dir, dataset_path=dataset_path)
+        run_ekf_script(
+            room_num=room_num, 
+            save_mode=True, 
+            results_dir=target_dir, 
+            dataset_path=dataset_path,
+            c_pa_override=c_pa,
+            M_room_override=m_room,
+            g_co2_occ_override=g_co2_occ,
+            fcu_flow_scale_override=fcu_flow_scale,
+            rho_a_override=rho_a
+        )
         
         # Get list of files generated
         generated_files = []
@@ -214,7 +231,19 @@ async def run_ekf(req: RunEKFRequest):
         "error_message": None
     }
     
-    thread = threading.Thread(target=run_ekf_pipeline, args=(job_id, req.room_num, req.dataset_path))
+    thread = threading.Thread(
+        target=run_ekf_pipeline, 
+        args=(
+            job_id, 
+            req.room_num, 
+            req.dataset_path, 
+            req.c_pa, 
+            req.m_room, 
+            req.g_co2_occ, 
+            req.fcu_flow_scale, 
+            req.rho_a
+        )
+    )
     thread.start()
     
     return {"job_id": job_id, "status": "queued"}
