@@ -300,6 +300,37 @@
           connected Colab backend. Results will appear below once the run completes.
         </label>
 
+        <!-- EKF Physical Parameters Configuration Panel (Always Visible, Above Controls) -->
+        <div id="ekfParamsConfig" style="margin-bottom: 1.25rem; padding: 1.25rem; border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); background-color: var(--bg-app);">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; border-bottom: 1px dashed var(--border-subtle); padding-bottom: 0.5rem;">
+            <span style="font-size: 0.85rem; font-weight: 700; color: var(--text-primary); display: flex; align-items: center; gap: 0.4rem;">⚙️ Configure EKF Physical Parameters</span>
+            <button type="button" class="btn btn-secondary" onclick="resetEKFParamsToDefault()" style="font-size: 0.75rem; padding: 0.25rem 0.5rem; background: var(--bg-card);">Reset to Defaults</button>
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem;">
+            <div style="display: flex; flex-direction: column; gap: 0.35rem;">
+              <label for="paramMRoom" style="font-size: 0.8rem; font-weight: 600; color: var(--text-secondary);">Room Air Mass (<i>M<sub>room</sub></i>) [kg]</label>
+              <input type="number" id="paramMRoom" step="0.1" style="padding: 0.4rem; border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); background: var(--bg-card); color: var(--text-primary);" placeholder="495.8">
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 0.35rem;">
+              <label for="paramFcuFlowScale" style="font-size: 0.8rem; font-weight: 600; color: var(--text-secondary);">FCU Flow Scale [kg/(s·Hz)]</label>
+              <input type="number" id="paramFcuFlowScale" step="0.001" style="padding: 0.4rem; border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); background: var(--bg-card); color: var(--text-primary);" placeholder="0.01">
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 0.35rem;">
+              <label for="paramGCo2Occ" style="font-size: 0.8rem; font-weight: 600; color: var(--text-secondary);">CO₂ Occ Gen Rate [ppm·kg/(s·p)]</label>
+              <input type="number" id="paramGCo2Occ" step="0.001" style="padding: 0.4rem; border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); background: var(--bg-card); color: var(--text-primary);" placeholder="1.725">
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 0.35rem;">
+              <label for="paramCPa" style="font-size: 0.8rem; font-weight: 600; color: var(--text-secondary);">Specific Heat of Air (<i>c<sub>pa</sub></i>) [J/kg·K]</label>
+              <input type="number" id="paramCPa" step="0.1" style="padding: 0.4rem; border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); background: var(--bg-card); color: var(--text-primary);" placeholder="1006.0">
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 0.35rem;">
+              <label for="paramRhoA" style="font-size: 0.8rem; font-weight: 600; color: var(--text-secondary);">Air Density (&rho;<sub>a</sub>) [kg/m³]</label>
+              <input type="number" id="paramRhoA" step="0.01" style="padding: 0.4rem; border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); background: var(--bg-card); color: var(--text-primary);" placeholder="1.2">
+            </div>
+          </div>
+        </div>
+
+        <!-- Controls Row -->
         <div
           style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; padding: 1rem; border: 1px solid var(--border-subtle); border-radius: var(--radius-sm);">
           <label for="datasetSelect"
@@ -324,42 +355,6 @@
             &#8635; Refresh Plots
           </button>
           <span id="ekfStatus" class="ekf-status status-idle">Idle</span>
-        </div>
-
-        <!-- Collapsible Parameters Section -->
-        <div style="margin-top: 1rem;">
-          <button type="button" class="btn btn-secondary" onclick="toggleParamsCollapse()" style="font-size: 0.85rem; padding: 0.35rem 0.75rem; display: flex; align-items: center; gap: 0.5rem;">
-            <span id="paramsToggleIcon">⚙️</span>
-            <span>Configure EKF Physical Parameters</span>
-          </button>
-          
-          <div id="ekfParamsCollapse" style="display: none; margin-top: 0.75rem; padding: 1.25rem; border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); background-color: var(--bg-app);">
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.25rem;">
-              <div style="display: flex; flex-direction: column; gap: 0.35rem;">
-                <label for="paramMRoom" style="font-size: 0.8rem; font-weight: 600; color: var(--text-secondary);">Room Air Mass (<i>M<sub>room</sub></i>) [kg]</label>
-                <input type="number" id="paramMRoom" step="0.1" style="padding: 0.4rem; border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); background: var(--bg-card); color: var(--text-primary);" placeholder="495.8">
-              </div>
-              <div style="display: flex; flex-direction: column; gap: 0.35rem;">
-                <label for="paramFcuFlowScale" style="font-size: 0.8rem; font-weight: 600; color: var(--text-secondary);">FCU Flow Scale [kg/(s·Hz)]</label>
-                <input type="number" id="paramFcuFlowScale" step="0.001" style="padding: 0.4rem; border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); background: var(--bg-card); color: var(--text-primary);" placeholder="0.01">
-              </div>
-              <div style="display: flex; flex-direction: column; gap: 0.35rem;">
-                <label for="paramGCo2Occ" style="font-size: 0.8rem; font-weight: 600; color: var(--text-secondary);">CO₂ Occ Gen Rate [ppm·kg/(s·p)]</label>
-                <input type="number" id="paramGCo2Occ" step="0.001" style="padding: 0.4rem; border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); background: var(--bg-card); color: var(--text-primary);" placeholder="1.725">
-              </div>
-              <div style="display: flex; flex-direction: column; gap: 0.35rem;">
-                <label for="paramCPa" style="font-size: 0.8rem; font-weight: 600; color: var(--text-secondary);">Specific Heat of Air (<i>c<sub>pa</sub></i>) [J/kg·K]</label>
-                <input type="number" id="paramCPa" step="0.1" style="padding: 0.4rem; border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); background: var(--bg-card); color: var(--text-primary);" placeholder="1006.0">
-              </div>
-              <div style="display: flex; flex-direction: column; gap: 0.35rem;">
-                <label for="paramRhoA" style="font-size: 0.8rem; font-weight: 600; color: var(--text-secondary);">Air Density (&rho;<sub>a</sub>) [kg/m³]</label>
-                <input type="number" id="paramRhoA" step="0.01" style="padding: 0.4rem; border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); background: var(--bg-card); color: var(--text-primary);" placeholder="1.2">
-              </div>
-            </div>
-            <div style="margin-top: 0.75rem; text-align: right;">
-              <button type="button" class="btn btn-secondary" onclick="resetEKFParamsToDefault()" style="font-size: 0.75rem; padding: 0.25rem 0.5rem; background: var(--bg-card);">Reset to Defaults</button>
-            </div>
-          </div>
         </div>
 
         <!-- Dataset details info box -->
