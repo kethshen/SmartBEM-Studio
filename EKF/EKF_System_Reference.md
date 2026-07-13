@@ -446,15 +446,15 @@ P_prev = P_est
 
 After the EKF converges, the estimated compact parameters ($\alpha, \beta, \gamma$) can be **mapped back** to physical quantities:
 
-| Hidden Parameter | How to Recover | Formula | Units |
+| Hidden Parameter (Advisor's exact terminology) | How to Recover | Formula | Units |
 |---|---|---|---|
-| **Thermal capacitance** $C_s$ | From $\alpha_s$ | $C_s = c_{pa} / \alpha_s$ | J/K |
-| **Dry air mass** $M$ | From $\beta_s$ | $M = 1 / \beta_s$ | kg |
-| **Infiltration flow** $m_{inf}$ | From $\beta_o$ and $M$ | $m_{inf} = \beta_o \times M = \beta_o / \beta_s$ | kg/s |
-| **Overall heat transfer** $UA$ | From $\alpha_o, C_s, m_{inf}$ | $UA = \alpha_o \times C_s − c_{pa} \times m_{inf}$ | W/K |
-| **Occupancy** $N$ | From $\gamma_e$ and $M$ | $N = (\gamma_e \times M) / g^{occ}_{CO_2} = \gamma_e / (\beta_s \times g^{occ}_{CO_2})$ | persons |
-| **Internal heat** $Q_{\text{internal}}$ | From $\alpha_e$ and $C_s$ | $Q_{\text{int}} = \alpha_e \times C_s$ | W |
-| **Internal moisture** $G_{\text{internal}}$ | From $\beta_e$ and $M$ | $G_{\text{int}} = \beta_e \times M = \beta_e / \beta_s$ | kg_w/s |
+| **Effective sensible thermal capacitance** ($C_s$) | From $\alpha_s$ | $C_s = c_{pa} / \alpha_s$ | J/K |
+| **Overall heat transfer conductance to ambient** ($UA$) | From $\alpha_o, C_s, m_{inf}$ | $UA = \alpha_o \times C_s − c_{pa} \times m_{inf}$ | W/K |
+| **Infiltration air mass flow rate** ($m_{inf}$) | From $\beta_o$ and $M$ | $m_{inf} = \beta_o \times M = \beta_o / \beta_s$ | kg/s |
+| **Zone occupancy** ($N$) | From $\gamma_e$ and $M$ | $N = (\gamma_e \times M) / g^{occ}_{CO_2} = \gamma_e / (\beta_s \times g^{occ}_{CO_2})$ | persons |
+| **Dry air mass** ($M$) | From $\beta_s$ | $M = 1 / \beta_s$ | kg |
+| **Internal heat gains** ($Q_{\text{internal}}$) | From $\alpha_e$ and $C_s$ | $Q_{\text{int}} = \alpha_e \times C_s$ | W |
+| **Internal moisture source** ($G_{\text{internal}}$) | From $\beta_e$ and $M$ | $G_{\text{int}} = \beta_e \times M = \beta_e / \beta_s$ | kg_w/s |
 
 Where:
 - $c_{pa} \approx 1006$ J/(kg·K)
@@ -462,6 +462,38 @@ Where:
 
 > [!CAUTION]
 > The value `g_CO2_occ = 0.17` in your `Real_EKF.py` may be in different units (e.g., L/min or ppm-related). Confirm with your advisor what units your CO₂ concentration $c_z$ uses (ppm vs kg/kg) and match $g^{occ}_{CO_2}$ accordingly.
+
+### Simple Explanations of Hidden Parameters
+
+To help explain these parameters to others, here is what they mean in simple terms, along with the physical reasons for their scientific names:
+
+#### 1. Effective Sensible Thermal Capacitance ($C_s$)
+* **Simple Explanation**: Think of this as the room's **"heat sponge"**. If you turn on a heater, how long does the room take to warm up? A concrete bunker has a massive heat sponge (high thermal capacitance) and takes days to warm up, while a metal tin shed has a tiny heat sponge (low thermal capacitance) and heats up instantly.
+* **Why the term "Effective"?**: In a real room, heat isn't just stored in the air. It is absorbed by the walls, the concrete floor, the furniture, and even the windows. The EKF doesn't measure all of these individually. Instead, it estimates a single "lumped" number that acts **effectively** as the combined thermal storage capacity of the entire room and its contents.
+
+#### 2. Overall Heat Transfer Conductance to Ambient ($UA$)
+* **Simple Explanation**: This is the room's **"heat leakiness"**. It measures how fast heat flows through the room's envelope (walls, roof, windows) when there is a temperature difference between the inside and outside. A lower value means the room is well-insulated, while a higher value means it leaks heat rapidly.
+* **Why the term "Overall"?**: A zone has four walls, a floor, a ceiling, and windows, all made of different materials (glass, concrete, insulation). Instead of calculating the heat lost through every individual window pane and wall brick separately, the EKF lumps them all into one **overall** conductance value representing the room's total thermal leakiness.
+
+#### 3. Infiltration air mass flow rate ($m_{inf}$)
+* **Simple Explanation**: This is the **"draftiness"** or **"unplanned leakage"** of the room. It is the rate at which fresh outside air leaks in through door cracks, window seals, and wall gaps.
+* **Why it matters**: Outdoor air carries its own heat, moisture, and CO₂. High infiltration means the AC must work harder to continuously cool and dehumidify this incoming warm outdoor air.
+
+#### 4. Dry air mass ($M$)
+* **Simple Explanation**: This is the **physical weight of the air** inside the room. Since air has weight (about $1.2 \text{ kg/m}^3$), a typical medium-sized room holds about $200–300 \text{ kg}$ of air.
+* **Why it matters**: It acts as the room's **chemical dilution tank**. If someone releases CO₂ or moisture into the room, how fast does the concentration rise? It depends on the dry air mass. If the room is large (huge air mass), it takes a long time for CO₂ to build up because there is a lot of air to dilute it.
+
+#### 5. Zone occupancy ($N$)
+* **Simple Explanation**: The number of **people** currently in the room.
+* **Why it matters**: Humans are continuous generators of heat, moisture, and CO₂. For an HVAC controller, people represent major thermal and chemical disturbances. Tracking this value allows the HVAC to dynamically adjust airflow and cooling setpoints.
+
+#### 6. Internal heat gains ($Q_{\text{internal}}$)
+* **Simple Explanation**: The rate of **sensible heat** generated inside the room by things other than people—such as computers, lights, servers, and solar radiation entering through the windows.
+* **Why it matters**: Identifying this baseline equipment heat load allows us to isolate and subtract it from the total heat load, leaving only the heat generated by the occupants.
+
+#### 7. Internal moisture source ($G_{\text{internal}}$)
+* **Simple Explanation**: The rate of **moisture (water vapor)** entering the room's air from non-human sources, such as open water tanks, wet floors, or indoor plants.
+* **Why it matters**: It helps the HVAC controller understand the room's baseline humidity generation so it can control latent loads and avoid mold growth.
 
 ---
 

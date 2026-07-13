@@ -45,11 +45,12 @@ ROBOD_DIR   = os.path.join(SCRIPT_DIR, "Datasets for EKF",
 # ── Physical constants ─────────────────────────────────────────────────────────
 c_pa       = 1006.0   # specific heat of air              [J/(kg*K)]
 
-# Room air mass — estimated from geometry (not from beta_s which diverges)
-# Room 3 SDE4 NUS: office space, typical ~200 m3 -> M = 200*1.2 = 240 kg
-# Diagnostic showed CO2 delta only ~23 ppm with ~4 people mean.
+# Room air mass — from official NUS ROBOD room_descriptions.png (room_descriptions.png in dataset folder)
+# Room 3 SDE4 NUS: office space, Floor Area=98.4 m², Ceiling Height=4.2 m, Room Volume=413.2 m³
+# M = 413.2 m³ × 1.2 kg/m³ = 495.8 kg
+# Previous value of 240 kg (200 m³ estimate) was wrong — almost half the real value.
 # This value is used ONLY for N recovery post-processing, not in the EKF ODEs.
-M_ROOM = 240.0         # air mass of room [kg]  (tune from room dimensions)
+M_ROOM = 495.8         # air mass of room [kg]  (from official NUS room specs)
 
 # CO2 generation rate per person [ppm*kg/(s*person)]
 # Calibrated from ROBOD Room 3 steady-state CO2 balance:
