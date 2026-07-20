@@ -92,8 +92,19 @@ function testBackendConnection(silent = false) {
       }
       const logsLink = document.getElementById("backendLogsLink");
       if (logsLink) {
-        logsLink.href = `${url}/results/backend.log`;
         logsLink.style.display = "inline";
+        logsLink.href = "#";
+        logsLink.onclick = (e) => {
+          e.preventDefault();
+          fetch(`${url}/results/backend.log`, { headers: { 'ngrok-skip-browser-warning': 'true' } })
+            .then(res => res.text())
+            .then(text => {
+              const w = window.open();
+              w.document.write(`<pre>${text.replace(/</g, "&lt;")}</pre>`);
+              w.document.close();
+            })
+            .catch(err => alert("Failed to load logs: " + err.message));
+        };
       }
     })
     .catch(err => {
@@ -470,17 +481,34 @@ function showJobDetails(jobId, data) {
       actionContainer.style.display = "flex";
       btnView.onclick = () => {
          if (data.result.files && data.result.files.idf) {
-             window.open(getBackendUrl() + data.result.files.idf, "_blank");
+             const url = getBackendUrl() + data.result.files.idf;
+             fetch(url, { headers: { 'ngrok-skip-browser-warning': 'true' } })
+                 .then(res => res.text())
+                 .then(text => {
+                     const w = window.open();
+                     w.document.write(`<pre>${text.replace(/</g, "&lt;")}</pre>`);
+                     w.document.close();
+                 })
+                 .catch(err => alert("Failed to load IDF: " + err.message));
          } else if (data.result.idf) {
              const w = window.open();
              w.document.write(`<pre>${data.result.idf.replace(/</g, "&lt;")}</pre>`);
+             w.document.close();
          } else {
              alert("IDF not available.");
          }
       };
       btnSummary.onclick = () => {
          if (data.result.files && data.result.files.summary) {
-             window.open(getBackendUrl() + data.result.files.summary, "_blank");
+             const url = getBackendUrl() + data.result.files.summary;
+             fetch(url, { headers: { 'ngrok-skip-browser-warning': 'true' } })
+                 .then(res => res.text())
+                 .then(text => {
+                     const w = window.open();
+                     w.document.write(`<pre>${text.replace(/</g, "&lt;")}</pre>`);
+                     w.document.close();
+                 })
+                 .catch(err => alert("Failed to load summary: " + err.message));
          } else {
              alert("Summary not available.");
          }

@@ -1,20 +1,10 @@
-Simulate a building with three zones: an office, a meeting room, a lobby
+Simulate a building with two zones: Hanger and Chamber.
 
-The office is 6.00 meters long, 8.00 meters wide, and 4.00 meters high. The meeting room is attached to the North wall of the office.
+The Hanger is 80 meters long, 17 meters wide, and 12 meters high. The Hanger walls are made of 'M01 100mm brick' and the Hanger floor is made of 'M15 200mm heavyweight concrete'. The Hanger has a gable roof with asbestos sheets.
 
-The meeting room is 6.00 meters long, 4.00 meters wide, and 4.00 meters high. The lobby is attached to the East wall of the office.
+The Chamber is a nested room located inside the Hanger. The Chamber is 2 meters long, 2 meters wide, and 2 meters high. 
 
-The lobby is 5.00 meters long, 8.00 meters wide, and 4.00 meters high.
+All 6 surfaces of the Chamber (4 walls, roof, and floor) are interior surfaces whose outside boundary condition is the Hanger zone. The Chamber walls and ceiling are made of the custom material 'Chamber_PU_Foam'.
 
-For the office: place a 1.5x2m window on the South wall 2m from left edge, 1m from top edge. place a 0.8x1.5m window on the West wall 2m from left edge, 1.5m from top edge. place a 1x2.5m door on the West wall 5m from left edge, fix to ground. Make the South wall out of 'M01 100mm brick' and 'I02 50mm insulation board' and the other walls out of 'Medium Exterior Wall'. The office has a heavy concrete floor of 'M15 200mm heavyweight concrete'. The office uses a packaged AC unit (psz_ac). The office has a gable roof with the ridge running east-west (EW gable), gable height 3 meters. Place a 2.0x1.5m skylight on the office roof.
-
-For the meeting room: place a 1x1m window on the North wall 2m from left edge, 1.5m from top edge. place a 0.8x1.5m window on the West wall 1m from left edge, 1.5m from top edge. place a 1x2.5m door on the South wall 0.5m from left edge, fix to ground. Make the North wall out of 'M01 100mm brick' and 'I02 50mm insulation board' and the other walls out of 'Medium Exterior Wall'. The meeting room uses a split AC (split_ac). The meeting room has a gable roof with the ridge running north-south (NS gable), gable height 3 meters. Place a 2.0x1.5m skylight on the meeting room roof.
-
-For the lobby: place a 2x2.5m door on the East wall 3m from left edge, fix to ground. place a 1x2.5m door on the South wall 2m from left edge, fix to ground. place a 1x1.5m window on the South wall 4.5m from left edge, 1.5m from top edge. Make the South wall out of 'M01 100mm brick' and 'I02 50mm insulation board' and the other walls out of 'Medium Exterior Wall'. The lobby floor is 'Light Floor'. The lobby uses a split AC (split_ac). The lobby has a pyramid hip roof, gable height 3 meters.
-
-
-The occupancy rate is 30.00 m2/people, the lighting level is 6.00 W/m2, and the equipment power consumption is 45.80 W/m2.
-
-People are in the building from 9am to 5pm on weekdays and completely closed on weekends.
-
-The lights are on from 8am to 6pm, and the equipment runs 24/7.
+The Chamber is cooled by a split AC unit.
+The Hanger uses Ideal Loads.
