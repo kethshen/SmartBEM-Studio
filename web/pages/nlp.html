@@ -126,69 +126,137 @@
                     </div>
                 </section>
 
-                <!-- Right Column: Configuration -->
-                <section class="card">
-                    <div class="card-header">
-                        <h2 class="card-title card-title-pill">Step 3: Simulation Settings</h2>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="simType">Simulation Type</label>
-                        <select id="simType">
-                            <option value="design_day">Design Day Simulation (Fast)</option>
-                            <option value="annual">Annual Simulation (Slow)</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="weatherSearch">Weather Location</label>
-                        <input type="text" id="weatherSearch" list="weatherDatalist"
-                            placeholder="Search 3000+ locations (e.g. Tokyo, Colombo, Chicago...)" autocomplete="off"
-                            style="width: 100%; padding: 0.6rem; border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); background: var(--bg-app); color: var(--text-primary);">
-                        <datalist id="weatherDatalist"></datalist>
-                        <!-- Hidden field to store the selected EPW URL -->
-                        <input type="hidden" id="weatherEpwUrl" value="">
-
-                        <!-- Custom EPW Upload -->
-                        <div style="margin-top: 0.75rem;">
-                            <label for="epwUpload" class="btn"
-                                style="width: 100%; padding: 0.6rem; border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); background: var(--bg-app); color: var(--text-secondary); font-size: 0.95rem; font-weight: 400; text-align: left; cursor: pointer; display: block; box-sizing: border-box;">
-                                Or Upload Custom .epw file from your machine (Optional)
-                            </label>
-                            <input type="file" id="epwUpload" accept=".epw" style="display: none;"
-                                onchange="handleEpwUpload(this)">
-                            <span id="epwUploadStatus"
-                                style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem; display: block; text-align: center;"></span>
+                <!-- Right Column: Configuration & Tuning -->
+                <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+                    <section class="card">
+                        <div class="card-header">
+                            <h2 class="card-title card-title-pill">Step 3: Simulation Settings</h2>
                         </div>
-                    </div>
 
-
-
-                    <div class="form-group">
-                        <label for="aiModel">AI Model</label>
-                        <select id="aiModel">
-                            <option value="ollama">Local Ollama (Gemma 3 : 12b)</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="generatorType">Geometry & HVAC Engine</label>
-                        <select id="generatorType">
-                            <option value="openstudio" selected>OpenStudio SDK Engine (Default)</option>
-                            <option value="custom">SmartBEM Custom Engine (Experimental - Single Zone Only)</option>
-                        </select>
-                    </div>
-
-                    <div class="mt-4">
-                        <button onclick="submitDescription()" class="btn btn-primary btn-block">
-                            Queue Simulation Job
-                        </button>
-                        <div id="loadingIndicator"
-                            style="display: none; text-align: center; margin-top: 10px; color: var(--text-secondary);">
-                            <small>Queuing...</small>
+                        <div class="form-group">
+                            <label for="simType">Simulation Type</label>
+                            <select id="simType">
+                                <option value="design_day">Design Day Simulation (Fast)</option>
+                                <option value="annual">Annual Simulation (Slow)</option>
+                            </select>
                         </div>
-                    </div>
-                </section>
+
+                        <div class="form-group">
+                            <label for="weatherSearch">Weather Location</label>
+                            <input type="text" id="weatherSearch" list="weatherDatalist"
+                                placeholder="Search 3000+ locations (e.g. Tokyo, Colombo, Chicago...)" autocomplete="off"
+                                style="width: 100%; padding: 0.6rem; border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); background: var(--bg-app); color: var(--text-primary);">
+                            <datalist id="weatherDatalist"></datalist>
+                            <!-- Hidden field to store the selected EPW URL -->
+                            <input type="hidden" id="weatherEpwUrl" value="">
+
+                            <!-- Custom EPW Upload -->
+                            <div style="margin-top: 0.75rem;">
+                                <label for="epwUpload" class="btn"
+                                    style="width: 100%; padding: 0.6rem; border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); background: var(--bg-app); color: var(--text-secondary); font-size: 0.95rem; font-weight: 400; text-align: left; cursor: pointer; display: block; box-sizing: border-box;">
+                                    Or Upload Custom .epw file from your machine (Optional)
+                                </label>
+                                <input type="file" id="epwUpload" accept=".epw" style="display: none;"
+                                    onchange="handleEpwUpload(this)">
+                                <span id="epwUploadStatus"
+                                    style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem; display: block; text-align: center;"></span>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="aiModel">AI Model</label>
+                            <select id="aiModel">
+                                <option value="ollama">Local Ollama (Gemma 3 : 12b)</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="generatorType">Geometry & HVAC Engine</label>
+                            <select id="generatorType">
+                                <option value="openstudio" selected>OpenStudio SDK Engine (Default)</option>
+                                <option value="custom">SmartBEM Custom Engine (Experimental - Single Zone Only)</option>
+                            </select>
+                        </div>
+
+                        <div class="mt-4">
+                            <button onclick="submitDescription()" class="btn btn-primary btn-block">
+                                Queue Simulation Job
+                            </button>
+                            <div id="loadingIndicator"
+                                style="display: none; text-align: center; margin-top: 10px; color: var(--text-secondary);">
+                                <small>Queuing...</small>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Step 3b: Model Calibration Controls -->
+                    <section class="card">
+                        <div class="card-header">
+                            <h2 class="card-title card-title-pill">⚙️ Model Calibration Controls</h2>
+                        </div>
+                        <label style="margin-bottom: 0.75rem; font-size: 0.8rem; color: var(--text-secondary); line-height: 1.4;">
+                            Adjust parameters to calibrate the simulation's heat and mass transfer.
+                        </label>
+                        <div class="form-group">
+                            <label for="calibChamberInfil" style="font-weight: 500;">Chamber Infiltration (ACH)</label>
+                            <input type="number" id="calibChamberInfil" value="0.10" step="0.01" min="0" style="width: 100%; padding: 0.6rem; border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); background: var(--bg-app); color: var(--text-primary);">
+                        </div>
+                        <div class="form-group">
+                            <label for="calibHangerInfil" style="font-weight: 500;">Hanger Infiltration (ACH)</label>
+                            <input type="number" id="calibHangerInfil" value="0.50" step="0.01" min="0" style="width: 100%; padding: 0.6rem; border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); background: var(--bg-app); color: var(--text-primary);">
+                        </div>
+                        <div class="form-group">
+                            <label for="calibEquipGains" style="font-weight: 500;">Chamber Equipment Heat Gains (W)</label>
+                            <input type="number" id="calibEquipGains" value="0.0" step="0.1" min="0" style="width: 100%; padding: 0.6rem; border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); background: var(--bg-app); color: var(--text-primary);">
+                        </div>
+                        <div class="form-group">
+                            <label for="calibGroundHG" style="font-weight: 500;">Slab Ground Coupling (h_g) [W/m²-K]</label>
+                            <input type="number" id="calibGroundHG" value="1.5" step="0.1" min="0" style="width: 100%; padding: 0.6rem; border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); background: var(--bg-app); color: var(--text-primary);">
+                        </div>
+                    </section>
+
+                    <!-- Step 3c: Custom Material Builder -->
+                    <section class="card">
+                        <div class="card-header">
+                            <h2 class="card-title card-title-pill">🧱 Custom Material Builder</h2>
+                        </div>
+                        <label style="margin-bottom: 0.75rem; font-size: 0.8rem; color: var(--text-secondary); line-height: 1.4;">
+                            Define custom thermal materials to override building defaults.
+                        </label>
+                        <div class="form-group">
+                            <label for="matName" style="font-weight: 500;">Material Name</label>
+                            <input type="text" id="matName" value="Chamber_PU_Foam" style="width: 100%; padding: 0.6rem; border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); background: var(--bg-app); color: var(--text-primary);">
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 0.75rem;">
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label for="matThickness" style="font-size: 0.8rem; font-weight: 500;">Thickness (m)</label>
+                                <input type="number" id="matThickness" value="0.10" step="0.01" min="0.001" style="width: 100%; padding: 0.6rem; border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); background: var(--bg-app); color: var(--text-primary);">
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label for="matConductivity" style="font-size: 0.8rem; font-weight: 500;">Conductivity (W/m-K)</label>
+                                <input type="number" id="matConductivity" value="0.022" step="0.001" min="0.001" style="width: 100%; padding: 0.6rem; border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); background: var(--bg-app); color: var(--text-primary);">
+                            </div>
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 0.75rem;">
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label for="matDensity" style="font-size: 0.8rem; font-weight: 500;">Density (kg/m³)</label>
+                                <input type="number" id="matDensity" value="32.0" step="0.1" min="1.0" style="width: 100%; padding: 0.6rem; border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); background: var(--bg-app); color: var(--text-primary);">
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label for="matSpecificHeat" style="font-size: 0.8rem; font-weight: 500;">Spec Heat (J/kg-K)</label>
+                                <input type="number" id="matSpecificHeat" value="1500.0" step="10.0" min="100.0" style="width: 100%; padding: 0.6rem; border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); background: var(--bg-app); color: var(--text-primary);">
+                            </div>
+                        </div>
+                        <button type="button" onclick="addCustomMaterialUI()" class="btn btn-secondary" style="width: 100%; padding: 0.6rem; font-size: 0.9rem; font-weight: 600; margin-top: 0.5rem; background: var(--bg-app); border: 1px solid var(--border-subtle);">Add Custom Material</button>
+                        
+                        <div style="margin-top: 1rem;">
+                            <h4 style="font-size: 0.8rem; font-weight: bold; color: var(--text-secondary); margin-bottom: 0.5rem;">Active Custom Materials:</h4>
+                            <ul id="customMaterialsList" style="list-style: none; padding: 0; display: flex; flex-direction: column; gap: 0.5rem;">
+                                <li style="font-size: 0.8rem; color: var(--text-muted); text-align: center; border: 1px dashed var(--border-subtle); padding: 0.5rem; border-radius: var(--radius-sm);">No custom materials added yet.</li>
+                            </ul>
+                        </div>
+                    </section>
+                </div>
             </div>
 
             <!-- Row 2: NLP Guide and Placeholder (Swapped horizontally) -->

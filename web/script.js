@@ -240,7 +240,14 @@ function submitDescription() {
       weather_file: "USA_IL_Chicago-OHare.Intl.AP.725300_TMY3.epw", 
       epw_url: document.getElementById("weatherEpwUrl") ? document.getElementById("weatherEpwUrl").value : "",
       model_type: document.getElementById("aiModel") ? document.getElementById("aiModel").value : "ollama",
-      generator_type: document.getElementById("generatorType") ? document.getElementById("generatorType").value : "custom"
+      generator_type: document.getElementById("generatorType") ? document.getElementById("generatorType").value : "custom",
+      custom_materials: window.customMaterials || [],
+      calibration_overrides: {
+        chamber_inf_ach: document.getElementById("calibChamberInfil") ? parseFloat(document.getElementById("calibChamberInfil").value) : 0.1,
+        hanger_inf_ach: document.getElementById("calibHangerInfil") ? parseFloat(document.getElementById("calibHangerInfil").value) : 0.5,
+        equipment_watts: document.getElementById("calibEquipGains") ? parseFloat(document.getElementById("calibEquipGains").value) : 0.0,
+        ground_h_g: document.getElementById("calibGroundHG") ? parseFloat(document.getElementById("calibGroundHG").value) : 1.5
+      }
     }
   };
 
@@ -1177,3 +1184,75 @@ window.loadRuns = loadJobs;
 window.toggleSidebar = toggleSidebar;
 window.testBackendConnection = testBackendConnection;
 window.setBackendUrl = setBackendUrl;
+
+// ----------------------------
+// Custom Materials Management
+// ----------------------------
+window.customMaterials = [];
+
+window.addCustomMaterialUI = function() {
+  const nameInput = document.getElementById("matName");
+  const thickInput = document.getElementById("matThickness");
+  const condInput = document.getElementById("matConductivity");
+  const densInput = document.getElementById("matDensity");
+  const shInput = document.getElementById("matSpecificHeat");
+  
+  if (!nameInput || !thickInput || !condInput || !densInput || !shInput) return;
+  
+  const name = nameInput.value.trim().replace(/\s+/g, "_");
+  const thickness = parseFloat(thickInput.value);
+  const conductivity = parseFloat(condInput.value);
+  const density = parseFloat(densInput.value);
+  const specificHeat = parseFloat(shInput.value);
+  
+  if (!name) {
+    alert("Please enter a valid material name.");
+    return;
+  }
+  if (isNaN(thickness) || thickness <= 0 ||
+      isNaN(conductivity) || conductivity <= 0 ||
+      isNaN(density) || density <= 0 ||
+      isNaN(specificHeat) || specificHeat <= 0) {
+    alert("Please enter valid positive values for properties.");
+    return;
+  }
+  
+  // Check if name already exists
+  if (window.customMaterials.some(m => m.name.toLowerCase() === name.toLowerCase())) {
+    alert("A material with this name already exists.");
+    return;
+  }
+  
+  const material = { name, thickness, conductivity, density, specificHeat };
+  window.customMaterials.push(material);
+  renderCustomMaterialsList();
+  
+  // Clear name input for next entry
+  nameInput.value = "";
+};
+
+window.removeCustomMaterialUI = function(index) {
+  window.customMaterials.splice(index, 1);
+  renderCustomMaterialsList();
+};
+
+function renderCustomMaterialsList() {
+  const container = document.getElementById("customMaterialsList");
+  if (!container) return;
+  
+  if (window.customMaterials.length === 0) {
+    container.innerHTML = `<li style="font-size: 0.8rem; color: var(--text-muted); text-align: center; border: 1px dashed var(--border-subtle); padding: 0.5rem; border-radius: var(--radius-sm);">No custom materials added yet.</li>`;
+    return;
+  }
+  
+  container.innerHTML = window.customMaterials.map((m, idx) => `
+    <li style="display: flex; justify-content: space-between; align-items: center; background: var(--bg-card); border: 1px solid var(--border-subtle); padding: 0.5rem; border-radius: var(--radius-sm); font-size: 0.8rem;">
+      <div style="display: flex; flex-direction: column; gap: 0.15rem;">
+        <span style="font-weight: 600; color: var(--text-primary);">${m.name}</span>
+        <span style="font-size: 0.72rem; color: var(--text-secondary);">${m.thickness}m | ${m.conductivity}W/m-K | ${m.density}kg/m³ | ${m.specificHeat}J/kg-K</span>
+      </div>
+      <button type="button" onclick="removeCustomMaterialUI(${idx})" style="background: none; border: none; color: var(--error, #dc2626); font-size: 1.1rem; cursor: pointer; padding: 0 0.25rem;">&times;</button>
+    </li>
+  `).join("");
+}
+

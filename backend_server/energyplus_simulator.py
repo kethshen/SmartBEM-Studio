@@ -49,6 +49,223 @@ def run_simulation_job(job_id, idf_path, epw_path, config=None, output_dir_base=
 
     _idf_text = _pl.Path(idf_path).read_text(encoding="utf-8", errors="ignore")
 
+    # [NEW] Inject Custom Materials if provided in config
+    custom_materials = config.get("custom_materials", [])
+    if custom_materials:
+        print(f"[{job_id}] Injecting {len(custom_materials)} custom materials into IDF...")
+        material_blocks = "\n"
+        for mat in custom_materials:
+            name = mat.get("name", "CustomMaterial")
+            thickness = mat.get("thickness", 0.1)
+            conductivity = mat.get("conductivity", 0.022)
+            density = mat.get("density", 32.0)
+            specific_heat = mat.get("specific_heat", 1500.0)
+            
+            material_blocks += f"""
+  Material,
+    {name},                   !- Name
+    Smooth,                  !- Roughness
+    {thickness:.4f},             !- Thickness {{m}}
+    {conductivity:.4f},            !- Thermal Conductivity {{W/m-K}}
+    {density:.2f},             !- Density {{kg/m3}}
+    {specific_heat:.2f},           !- Specific Heat {{J/kg-K}}
+    0.9000,                  !- Thermal Absorptance
+    0.7000,                  !- Solar Absorptance
+    0.7000;                  !- Visible Absorptance
+"""
+        _idf_text = _idf_text.rstrip() + material_blocks
+
+    # [NEW] Apply Calibration Overrides if provided in config
+    calibration = config.get("calibration_overrides", {})
+    if calibration:
+        print(f"[{job_id}] Applying calibration overrides: {calibration}")
+        
+        # Helper: Patch Infiltration DesignFlowRate
+        def patch_infiltration(text, zone_keyword, ach):
+            pattern = _re.compile(r'(?is)ZoneInfiltration\s*:\s*DesignFlowRate\s*,([^;]+);')
+            modified_flag = [False]
+            
+            def repl(match):
+                content = match.group(1)
+                lines = content.split('\n')
+                fields_raw = []
+                for line in lines:
+                    part = line.split('!')[0].strip()
+                    if part:
+                        fields_raw.extend([f.strip() for f in part.split(',') if f.strip() != ''])
+                if len(fields_raw) > 1:
+                    zone_name = fields_raw[1].replace("'", "").replace('"', "").strip()
+                    if zone_keyword.lower() in zone_name.lower():
+                        new_lines = []
+                        replaced_ach = False
+                        comma_count = 0
+                        for line in lines:
+                            comment_part = ""
+                            if '!' in line:
+                                code_part, comment_part = line.split('!', 1)
+                                comment_part = '!' + comment_part
+                            else:
+                                code_part = line
+                            
+                            commas_in_line = code_part.count(',')
+                            if comma_count <= 7 and comma_count + commas_in_line > 7:
+                                parts = code_part.split(',')
+                                target_idx = 7 - comma_count
+                                parts[target_idx] = f" {ach:.4f}"
+                                code_part = ','.join(parts)
+                                replaced_ach = True
+                            
+                            comma_count += commas_in_line
+                            new_lines.append(code_part + comment_part)
+                        if replaced_ach:
+                            modified_flag[0] = True
+                            return "ZoneInfiltration:DesignFlowRate,\n" + '\n'.join(new_lines) + ";"
+                return match.group(0)
+            
+            new_text = pattern.sub(repl, text)
+            if not modified_flag[0]:
+                exact_zone_name = None
+                for z_match in _re.finditer(r'(?is)Zone\s*,\s*([^,;]+)', new_text):
+                    z_name = z_match.group(1).strip()
+                    if zone_keyword.lower() in z_name.lower():
+                        exact_zone_name = z_name
+                        break
+                if exact_zone_name:
+                    new_text += f"""
+  ZoneInfiltration:DesignFlowRate,
+    {exact_zone_name} Infiltration, !- Name
+    {exact_zone_name},              !- Zone or ZoneList Name
+    AlwaysOn,                !- Schedule Name
+    AirChangesPerHour,       !- Design Flow Rate Calculation Method
+    ,                        !- Design Flow Rate {{m3/s}}
+    ,                        !- Flow Rate per Zone Floor Area {{m3/s-m2}}
+    ,                        !- Flow Rate per Exterior Surface Area {{m3/s-m2}}
+    {ach:.4f},               !- Air Changes per Hour {{ACH}}
+    1.0,                     !- Constant Term Coefficient
+    0.0,                     !- Temperature Term Coefficient
+    0.0,                     !- Velocity Term Coefficient
+    0.0;                     !- Velocity Squared Term Coefficient
+"""
+            return new_text
+
+        # Helper: Patch Equipment Watts
+        def patch_equipment(text, zone_keyword, watts):
+            pattern = _re.compile(r'(?is)ElectricEquipment\s*,\s*([^;]+);')
+            modified_flag = [False]
+            
+            def repl(match):
+                content = match.group(1)
+                lines = content.split('\n')
+                fields_raw = []
+                for line in lines:
+                    part = line.split('!')[0].strip()
+                    if part:
+                        fields_raw.extend([f.strip() for f in part.split(',') if f.strip() != ''])
+                if len(fields_raw) > 1:
+                    zone_name = fields_raw[1].replace("'", "").replace('"', "").strip()
+                    if zone_keyword.lower() in zone_name.lower():
+                        new_lines = []
+                        replaced_watts = False
+                        comma_count = 0
+                        for line in lines:
+                            comment_part = ""
+                            if '!' in line:
+                                code_part, comment_part = line.split('!', 1)
+                                comment_part = '!' + comment_part
+                            else:
+                                code_part = line
+                            commas_in_line = code_part.count(',')
+                            if comma_count <= 4 and comma_count + commas_in_line > 4:
+                                parts = code_part.split(',')
+                                target_idx = 4 - comma_count
+                                parts[target_idx] = f" {watts:.2f}"
+                                code_part = ','.join(parts)
+                                replaced_watts = True
+                            comma_count += commas_in_line
+                            new_lines.append(code_part + comment_part)
+                        if replaced_watts:
+                            modified_flag[0] = True
+                            return "ElectricEquipment,\n" + '\n'.join(new_lines) + ";"
+                return match.group(0)
+            
+            new_text = pattern.sub(repl, text)
+            if not modified_flag[0] and watts > 0:
+                exact_zone_name = None
+                for z_match in _re.finditer(r'(?is)Zone\s*,\s*([^,;]+)', new_text):
+                    z_name = z_match.group(1).strip()
+                    if zone_keyword.lower() in z_name.lower():
+                        exact_zone_name = z_name
+                        break
+                if exact_zone_name:
+                    new_text += f"""
+  ElectricEquipment,
+    {exact_zone_name} Equipment,    !- Name
+    {exact_zone_name},              !- Zone Name
+    AlwaysOn,                !- Schedule Name
+    EquipmentLevel,          !- Design Level Calculation Method
+    {watts:.2f},             !- Design Level {{W}}
+    ,                        !- Watts per Zone Floor Area {{W/m2}}
+    ,                        !- Watts per Person {{W/person}}
+    0.0,                     !- Fraction Latent
+    0.3,                     !- Fraction Radiant
+    0.0;                     !- Fraction Lost
+"""
+            return new_text
+
+        # Helper: Patch Ground Coupling floor material conductivity
+        def patch_ground_coupling(text, h_g):
+            pattern = _re.compile(r'(?is)Material\s*,\s*([^;]+);')
+            
+            def repl(match):
+                content = match.group(1)
+                lines = content.split('\n')
+                first_line = [l.split('!')[0].strip() for l in lines if l.split('!')[0].strip() != '']
+                if first_line:
+                    mat_name = first_line[0].replace(",", "").strip()
+                    if any(kw in mat_name.lower() for kw in ["concrete", "floor", "slab"]):
+                        new_lines = []
+                        comma_count = 0
+                        replaced = False
+                        for line in lines:
+                            comment_part = ""
+                            if '!' in line:
+                                code_part, comment_part = line.split('!', 1)
+                                comment_part = '!' + comment_part
+                            else:
+                                code_part = line
+                            commas_in_line = code_part.count(',')
+                            if comma_count <= 3 and comma_count + commas_in_line > 3:
+                                parts = code_part.split(',')
+                                target_idx = 3 - comma_count
+                                # Scale default conductivity (1.3) by ground_h_g factor
+                                parts[target_idx] = f" {1.3 * (h_g / 1.5):.4f}"
+                                code_part = ','.join(parts)
+                                replaced = True
+                            comma_count += commas_in_line
+                            new_lines.append(code_part + comment_part)
+                        if replaced:
+                            return "Material,\n" + '\n'.join(new_lines) + ";"
+                return match.group(0)
+            
+            return pattern.sub(repl, text)
+
+        # Apply Infiltration patches (Chamber and Hanger)
+        if "chamber_inf_ach" in calibration:
+            _idf_text = patch_infiltration(_idf_text, "chamber", calibration["chamber_inf_ach"])
+            _idf_text = patch_infiltration(_idf_text, "coolroom", calibration["chamber_inf_ach"])
+        if "hanger_inf_ach" in calibration:
+            _idf_text = patch_infiltration(_idf_text, "hanger", calibration["hanger_inf_ach"])
+            _idf_text = patch_infiltration(_idf_text, "mechbuilding", calibration["hanger_inf_ach"])
+            
+        # Apply Equipment gains patch
+        if "equipment_watts" in calibration:
+            _idf_text = patch_equipment(_idf_text, "chamber", calibration["equipment_watts"])
+            _idf_text = patch_equipment(_idf_text, "coolroom", calibration["equipment_watts"])
+            
+        # Apply Ground Coupling patch
+        if "ground_h_g" in calibration:
+            _idf_text = patch_ground_coupling(_idf_text, calibration["ground_h_g"])
+
     # Strip any existing Output:Variable and Output:SQLite blocks (deduplicate)
     _idf_text = _re.sub(r'(?is)^\s*Output\s*:\s*Variable\s*,.*?;[ \t]*\r?\n?', '', _idf_text, flags=_re.MULTILINE)
     _idf_text = _re.sub(r'(?is)^\s*Output\s*:\s*SQLite\s*,.*?;[ \t]*\r?\n?', '', _idf_text, flags=_re.MULTILINE)
