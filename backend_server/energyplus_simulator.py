@@ -53,14 +53,87 @@ def run_simulation_job(job_id, idf_path, epw_path, config=None, output_dir_base=
     custom_materials = config.get("custom_materials", [])
     if custom_materials:
         print(f"[{job_id}] Injecting {len(custom_materials)} custom materials into IDF...")
+
+        # Helper: replace construction assignment on matching BuildingSurface:Detailed objects
+        def patch_surface_construction(text, zone_name, new_construction, surface_type_filter=None):
+            """Rewire the Construction Name field (field index 2) on every
+            BuildingSurface:Detailed that belongs to zone_name (case-insensitive
+            substring match).  surface_type_filter can be 'roof', 'floor' or 'wall'
+            to limit which surface types are updated."""
+            pattern = _re.compile(r'(?is)(BuildingSurface\s*:\s*Detailed\s*,\s*[^;]+);')
+
+            def repl(match):
+                block = match.group(1)
+                block_lower = block.lower()
+
+                # Quick zone membership check — the zone name must appear in the block
+                if zone_name.lower() not in block_lower:
+                    return match.group(0)
+
+                # Parse lines, stripping comments, to get positional fields
+                lines = block.split('\n')
+                all_fields = []  # (line_idx, char_start_in_line, field_value)
+                for line in lines:
+                    code = line.split('!')[0].strip().rstrip(',')
+                    if code:
+                        all_fields.append(code)
+
+                # Field positions after "BuildingSurface:Detailed,":
+                #   0=Name, 1=SurfaceType, 2=ConstructionName, 3=ZoneName, ...
+                # Because our regex includes the "BuildingSurface:Detailed," in group(1),
+                # the first token after the object type counts as field 0.
+                # We skip it (index 0) and index into the real fields:
+                if len(all_fields) < 4:
+                    return match.group(0)
+
+                # Index 0 is "BuildingSurface:Detailed" itself → real fields start at 1
+                surf_type = all_fields[1].lower() if len(all_fields) > 1 else ""
+                if surface_type_filter:
+                    if surface_type_filter == "roof" and surf_type not in ("roof", "ceiling"):
+                        return match.group(0)
+                    elif surface_type_filter == "floor" and surf_type != "floor":
+                        return match.group(0)
+                    elif surface_type_filter == "wall" and surf_type != "wall":
+                        return match.group(0)
+
+                # Now rewrite the block, replacing the Construction Name field (comma position 3)
+                new_lines = []
+                comma_count = 0
+                replaced = False
+                for line in lines:
+                    comment_part = ""
+                    if '!' in line:
+                        code_part, comment_part = line.split('!', 1)
+                        comment_part = '!' + comment_part
+                    else:
+                        code_part = line
+                    commas_in_line = code_part.count(',')
+                    if not replaced and comma_count <= 3 and comma_count + commas_in_line > 3:
+                        parts = code_part.split(',')
+                        target_idx = 3 - comma_count
+                        parts[target_idx] = f" {new_construction}"
+                        code_part = ','.join(parts)
+                        replaced = True
+                    comma_count += commas_in_line
+                    new_lines.append(code_part + comment_part)
+
+                if replaced:
+                    print(f"[Calibration] Patched surface construction → {new_construction}")
+                    return '\n'.join(new_lines) + ";"
+                return match.group(0)
+
+            return pattern.sub(repl, text)
+
         material_blocks = "\n"
         for mat in custom_materials:
-            name = mat.get("name", "CustomMaterial")
-            thickness = mat.get("thickness", 0.1)
+            name        = mat.get("name", "CustomMaterial")
+            thickness   = mat.get("thickness", 0.1)
             conductivity = mat.get("conductivity", 0.022)
-            density = mat.get("density", 32.0)
+            density     = mat.get("density", 32.0)
             specific_heat = mat.get("specific_heat", 1500.0)
-            
+            const_name  = f"Const_{name}"
+
+            # --- 1. Material block ---
             material_blocks += f"""
   Material,
     {name},                   !- Name
@@ -72,8 +145,50 @@ def run_simulation_job(job_id, idf_path, epw_path, config=None, output_dir_base=
     0.9000,                  !- Thermal Absorptance
     0.7000,                  !- Solar Absorptance
     0.7000;                  !- Visible Absorptance
+
+  Construction,
+    {const_name},             !- Name
+    {name};                   !- Outside Layer
 """
         _idf_text = _idf_text.rstrip() + material_blocks
+
+        # --- 2. Patch BuildingSurface:Detailed construction assignments ---
+        for mat in custom_materials:
+            name       = mat.get("name", "CustomMaterial")
+            const_name = f"Const_{name}"
+            name_lower = name.lower().replace("-", "_").replace(" ", "_")
+
+            # Determine surface-type filter from material name keywords
+            surf_filter = None
+            if "roof" in name_lower:
+                surf_filter = "roof"
+            elif "floor" in name_lower:
+                surf_filter = "floor"
+            elif "wall" in name_lower:
+                surf_filter = "wall"
+            # (no keyword → update all surface types in matching zones)
+
+            # Collect all zone names from the IDF and check which ones
+            # are hinted at by tokens in the material name
+            name_tokens = [t for t in _re.split(r'[_\s\-]+', name_lower) if len(t) > 2]
+            matched_zones = set()
+            for z_match in _re.finditer(r'(?is)^Zone\s*,\s*([^\r\n,;]+)', _idf_text, flags=_re.MULTILINE):
+                z_name = z_match.group(1).strip()
+                z_clean = z_name.lower().replace("_thermalzone", "").replace("_zone", "")
+                for token in name_tokens:
+                    if token in z_clean:
+                        matched_zones.add(z_name)
+                        break
+
+            print(f"[{job_id}] Material '{name}' → Construction '{const_name}' "
+                  f"will patch zones: {matched_zones} (filter: {surf_filter or 'all'})")
+
+            for zone_name in matched_zones:
+                _idf_text = patch_surface_construction(
+                    _idf_text, zone_name, const_name, surf_filter
+                )
+
+
 
     # [NEW] Apply Calibration Overrides if provided in config
     calibration = config.get("calibration_overrides", {})
