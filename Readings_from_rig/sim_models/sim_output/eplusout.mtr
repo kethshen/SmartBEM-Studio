@@ -1,1 +1,109 @@
-Program Version,EnergyPlus, Version 25.2.0-cf7368216c, YMD=2026.07.27 00:34
+Program Version,EnergyPlus, Version 25.2.0-cf7368216c, YMD=2026.07.27 23:53
+1,5,Environment Title[],Latitude[deg],Longitude[deg],Time Zone[],Elevation[m]
+2,8,Day of Simulation[],Month[],Day of Month[],DST Indicator[1=yes 0=no],Hour[],StartMinute[],EndMinute[],DayType
+3,5,Cumulative Day of Simulation[],Month[],Day of Month[],DST Indicator[1=yes 0=no],DayType  ! When Daily Meters Requested
+4,2,Cumulative Days of Simulation[],Month[]  ! When Monthly Meters Requested
+5,1,Cumulative Days of Simulation[] ! When Run Period Meters Requested
+6,1,Calendar Year of Simulation[] ! When Annual Meters Requested
+47,1,Electricity:Facility [J] !Hourly
+End of Data Dictionary
+1,CHICAGO_IL_USA COOLING .4% CONDITIONS DB=>MWB,   6.90,  79.86,   6.00,  14.00
+2,1, 7,21, 0, 1, 0.00,60.00,SummerDesignDay
+47,49251803.939719245
+2,1, 7,21, 0, 2, 0.00,60.00,SummerDesignDay
+47,49232995.481133215
+2,1, 7,21, 0, 3, 0.00,60.00,SummerDesignDay
+47,49219120.171907894
+2,1, 7,21, 0, 4, 0.00,60.00,SummerDesignDay
+47,49208611.48108874
+2,1, 7,21, 0, 5, 0.00,60.00,SummerDesignDay
+47,49200574.530511804
+2,1, 7,21, 0, 6, 0.00,60.00,SummerDesignDay
+47,49194669.92776229
+2,1, 7,21, 0, 7, 0.00,60.00,SummerDesignDay
+47,49190895.90740156
+2,1, 7,21, 0, 8, 0.00,60.00,SummerDesignDay
+47,49190896.59732255
+2,1, 7,21, 0, 9, 0.00,60.00,SummerDesignDay
+47,88568609.58836375
+2,1, 7,21, 0,10, 0.00,60.00,SummerDesignDay
+47,88631735.90399154
+2,1, 7,21, 0,11, 0.00,60.00,SummerDesignDay
+47,88718749.67520502
+2,1, 7,21, 0,12, 0.00,60.00,SummerDesignDay
+47,88804675.50509697
+2,1, 7,21, 0,13, 0.00,60.00,SummerDesignDay
+47,88873391.81593125
+2,1, 7,21, 0,14, 0.00,60.00,SummerDesignDay
+47,88918772.0380223
+2,1, 7,21, 0,15, 0.00,60.00,SummerDesignDay
+47,88945246.37414701
+2,1, 7,21, 0,16, 0.00,60.00,SummerDesignDay
+47,88962372.78734289
+2,1, 7,21, 0,17, 0.00,60.00,SummerDesignDay
+47,88970512.06878507
+2,1, 7,21, 0,18, 0.00,60.00,SummerDesignDay
+47,88965153.18747579
+2,1, 7,21, 0,19, 0.00,60.00,SummerDesignDay
+47,49579804.04157402
+2,1, 7,21, 0,20, 0.00,60.00,SummerDesignDay
+47,49519199.52656608
+2,1, 7,21, 0,21, 0.00,60.00,SummerDesignDay
+47,49439505.489887625
+2,1, 7,21, 0,22, 0.00,60.00,SummerDesignDay
+47,49367733.95126246
+2,1, 7,21, 0,23, 0.00,60.00,SummerDesignDay
+47,49314930.68478129
+2,1, 7,21, 0,24, 0.00,60.00,SummerDesignDay
+47,49277945.93381213
+1,CHICAGO_IL_USA HEATING 99.6% CONDITIONS,   6.90,  79.86,   6.00,  14.00
+2,1, 1,21, 0, 1, 0.00,60.00,WinterDesignDay
+47,49899261.2521255
+2,1, 1,21, 0, 2, 0.00,60.00,WinterDesignDay
+47,49899530.26082434
+2,1, 1,21, 0, 3, 0.00,60.00,WinterDesignDay
+47,49899692.09595394
+2,1, 1,21, 0, 4, 0.00,60.00,WinterDesignDay
+47,49899789.44297579
+2,1, 1,21, 0, 5, 0.00,60.00,WinterDesignDay
+47,49899847.99559449
+2,1, 1,21, 0, 6, 0.00,60.00,WinterDesignDay
+47,49899883.2130234
+2,1, 1,21, 0, 7, 0.00,60.00,WinterDesignDay
+47,49899904.394836694
+2,1, 1,21, 0, 8, 0.00,60.00,WinterDesignDay
+47,49899917.13473219
+2,1, 1,21, 0, 9, 0.00,60.00,WinterDesignDay
+47,88980973.1063138
+2,1, 1,21, 0,10, 0.00,60.00,WinterDesignDay
+47,88972404.28622928
+2,1, 1,21, 0,11, 0.00,60.00,WinterDesignDay
+47,88968301.42438664
+2,1, 1,21, 0,12, 0.00,60.00,WinterDesignDay
+47,88966227.48655619
+2,1, 1,21, 0,13, 0.00,60.00,WinterDesignDay
+47,88964995.90415123
+2,1, 1,21, 0,14, 0.00,60.00,WinterDesignDay
+47,88964250.23242736
+2,1, 1,21, 0,15, 0.00,60.00,WinterDesignDay
+47,88963800.09820493
+2,1, 1,21, 0,16, 0.00,60.00,WinterDesignDay
+47,88963528.53669545
+2,1, 1,21, 0,17, 0.00,60.00,WinterDesignDay
+47,88963364.7386917
+2,1, 1,21, 0,18, 0.00,60.00,WinterDesignDay
+47,88963265.94767483
+2,1, 1,21, 0,19, 0.00,60.00,WinterDesignDay
+47,49882118.7352291
+2,1, 1,21, 0,20, 0.00,60.00,WinterDesignDay
+47,49890669.871199265
+2,1, 1,21, 0,21, 0.00,60.00,WinterDesignDay
+47,49894771.49867124
+2,1, 1,21, 0,22, 0.00,60.00,WinterDesignDay
+47,49896843.47865627
+2,1, 1,21, 0,23, 0.00,60.00,WinterDesignDay
+47,49898071.96461326
+2,1, 1,21, 0,24, 0.00,60.00,WinterDesignDay
+47,49898814.22712307
+End of Data
+ Number of Records Written=          48

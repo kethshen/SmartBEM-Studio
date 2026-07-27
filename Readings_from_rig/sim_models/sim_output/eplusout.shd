@@ -77,3 +77,8 @@ Surface=HANGER_ROOF_SOUTH is used as Receiving Surface in calculations and is co
 Number of general casting surfaces=0
 Number of back surfaces=0
 Number of receiving sub surfaces=0
+==================================
+Surface=HANGER_INTERNAL_PARTITION_WALLS is not used as Receiving Surface in calculations.
+Number of general casting surfaces=0
+Number of back surfaces=0
+Number of receiving sub surfaces=0

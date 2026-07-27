@@ -1270,14 +1270,14 @@ ZoneHVAC:EquipmentList,
   ;                                       !- Zone Equipment Sequential Heating Fraction Schedule Name 1                                       !- Maximum Number of HVAC Sizing Simulation Passes                                   !- Cooling Sizing Factor
 
 RunPeriod,
-  Run Period 1,                           !- Name
-  1,                                      !- Begin Month
-  1,                                      !- Begin Day of Month
-  2009,                                   !- Begin Year
-  12,                                     !- End Month
-  31,                                     !- End Day of Month
-  2009,                                   !- End Year
-  Thursday,                               !- Day of Week for Start Day
+  Test_Day_July21,                        !- Name
+  7,                                      !- Begin Month
+  21,                                     !- Begin Day of Month
+  2026,                                   !- Begin Year
+  7,                                      !- End Month
+  21,                                     !- End Day of Month
+  2026,                                   !- End Year
+  Tuesday,                                !- Day of Week for Start Day
   No,                                     !- Use Weather File Holidays and Special Days
   No,                                     !- Use Weather File Daylight Saving Period
   No,                                     !- Apply Weekend Holiday Rule
@@ -1575,13 +1575,13 @@ GlobalGeometryRules,
   Output:SQLite,
     SimpleAndTabular;         !- Output Type
 
-  Output:Variable,*,Zone Air Temperature,Hourly;
-  Output:Variable,*,Zone Mean Air Temperature,Hourly;
-  Output:Variable,*,Site Outdoor Air Drybulb Temperature,Hourly;
-  Output:Variable,*,Zone Air System Sensible Cooling Energy,Hourly;
-  Output:Variable,*,Zone Air System Sensible Heating Energy,Hourly;
-  Output:Variable,*,System Node Mass Flow Rate,Hourly;
-  Output:Variable,*,Zone Mechanical Ventilation Mass Flow Rate,Hourly;
+  Output:Variable,*,Zone Air Temperature,Timestep;
+  Output:Variable,*,Zone Mean Air Temperature,Timestep;
+  Output:Variable,*,Site Outdoor Air Drybulb Temperature,Timestep;
+  Output:Variable,*,Zone Air System Sensible Cooling Energy,Timestep;
+  Output:Variable,*,Zone Air System Sensible Heating Energy,Timestep;
+  Output:Variable,*,System Node Mass Flow Rate,Timestep;
+  Output:Variable,*,Zone Mechanical Ventilation Mass Flow Rate,Timestep;
   Output:Meter,Electricity:Facility,Hourly;
   Output:Meter,NaturalGas:Facility,Hourly;
 
@@ -1655,7 +1655,7 @@ GlobalGeometryRules,
     Hanger_Internal_Partition_Walls,    !- Name
     Hanger_Partition_Wall_125mm,        !- Construction Name
     Hanger_ThermalZone,                 !- Zone or ZoneList Name
-    Space,                              !- Space Name
+    ,                                   !- Space Name
     350.0;                              !- Surface Area {m2} (Staff Rooms + TO Room + Seminar Room + Lab)
 
 ! ======================================================================
