@@ -1,4 +1,4 @@
-Program Version,EnergyPlus, Version 25.2.0-cf7368216c, YMD=2026.07.28 01:39,
+Program Version,EnergyPlus, Version 25.2.0-cf7368216c, YMD=2026.07.28 01:38,
    ** Warning ** ProcessScheduleInput: DecodeHHMMField, Invalid "until" field value is not a multiple of the minutes for each timestep: UNTIL: 07:44
    **   ~~~   ** Other errors may result. Occurred in Day Schedule=COOLING_SETPOINT_SCH_dy_1
    ************* Beginning Zone Sizing Calculations
@@ -36,4 +36,4 @@ Program Version,EnergyPlus, Version 25.2.0-cf7368216c, YMD=2026.07.28 01:39,
    *************
    ************* EnergyPlus Warmup Error Summary. During Warmup: 0 Warning; 0 Severe Errors.
    ************* EnergyPlus Sizing Error Summary. During Sizing: 3 Warning; 0 Severe Errors.
-   ************* EnergyPlus Completed Successfully-- 5 Warning; 1 Severe Errors; Elapsed Time=00hr 00min  0.29sec
+   ************* EnergyPlus Completed Successfully-- 5 Warning; 1 Severe Errors; Elapsed Time=00hr 00min  0.19sec
