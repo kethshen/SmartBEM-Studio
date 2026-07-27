@@ -46,7 +46,7 @@ if result.returncode != 0:
 
 print("EnergyPlus Simulation execution successful!")
 
-# 4. Parse High-Resolution 1-Minute Timesteps directly from eplusout.eso
+# 4. Parse High-Resolution Timesteps directly from eplusout.eso
 eso_path = os.path.join(OUT_DIR, "eplusout.eso")
 target_id = None
 
@@ -59,21 +59,27 @@ with open(eso_path, "r", encoding="utf-8", errors="ignore") as f:
             target_id = parts[0]
             print(f"Extracted Target Variable ID: {target_id} -> {parts[3]}")
 
-sim_temps = []
+sim_temps_24h = []
 with open(eso_path, "r", encoding="utf-8", errors="ignore") as f:
     for line in f:
         parts = line.strip().split(",")
         if len(parts) == 2 and parts[0] == target_id:
-            sim_temps.append(float(parts[1]))
+            sim_temps_24h.append(float(parts[1]))
 
-T_sim = np.array(sim_temps)
+sim_temps_24h = np.array(sim_temps_24h)
+
+# 5. Extract Exact Rig Test Window (07:44 AM to 10:34 AM UTC)
+# 288 timesteps for 24 hours -> 12 steps/hr (5-min per step)
+start_hour = 7.733  # 07:44 AM
+start_idx = int(start_hour * 12)  # Step 92
+end_idx = start_idx + int(170.1 / 5) # Step 126
+
+T_sim = sim_temps_24h[start_idx:end_idx]
 n_sim = len(T_sim)
-print(f"Extracted {n_sim} 1-minute resolution simulated Chamber temperature steps!")
+print(f"Extracted {n_sim} timesteps for the exact 170.1-minute rig test window (07:44 AM - 10:34 AM)!")
 
-# 5. Load Cleaned Sensor Dataset (3-Sensor Weighted Tz)
+# 6. Load Cleaned Sensor Dataset (3-Sensor Weighted Tz)
 df_cleaned = pd.read_csv(CSV_SENSOR_CLEANED_PATH)
-
-# Use Tz_weighted (0.50 S1 + 0.30 S2 + 0.20 S3)
 Tz_sensor = df_cleaned["Tz_weighted"].values
 
 # Time alignment across 170.1 minutes
@@ -82,7 +88,7 @@ sensor_times_min = np.linspace(0, 170.1, len(df_cleaned))
 
 Tz_sensor_interp = np.interp(sim_times_min, sensor_times_min, Tz_sensor)
 
-# 6. Compute Statistical Metrics
+# 7. Compute Statistical Metrics
 rmse = np.sqrt(np.mean((T_sim - Tz_sensor_interp)**2))
 mae = np.mean(np.abs(T_sim - Tz_sensor_interp))
 r2 = 1.0 - (np.sum((Tz_sensor_interp - T_sim)**2) / np.sum((Tz_sensor_interp - np.mean(Tz_sensor_interp))**2))
@@ -92,12 +98,12 @@ print(f"• RMSE: {rmse:.2f} °C")
 print(f"• MAE:  {mae:.2f} °C")
 print(f"• R²:   {r2:.4f}")
 
-# 7. Generate High-Resolution Overlay Comparison Plot
+# 8. Generate High-Resolution Overlay Comparison Plot
 plt.figure(figsize=(12, 6), dpi=300)
 plt.plot(sim_times_min, Tz_sensor_interp, label="Cleaned Real Sensor Zone Temp $T_z$ (0.50 S1 + 0.30 S2 + 0.20 S3)", color="#2ca02c", linewidth=2.5)
-plt.plot(sim_times_min, T_sim, label="EnergyPlus Baseline $T_{sim}$ (1-Min Timesteps)", color="#d62728", linewidth=2.2, linestyle="--")
+plt.plot(sim_times_min, T_sim, label="EnergyPlus Baseline $T_{sim}$ (5-Min Timesteps)", color="#d62728", linewidth=2.2, linestyle="--")
 
-plt.title("Stage 1 Baseline Simulation vs. Cleaned Rig Sensor Data (1-Minute Timesteps)", fontsize=14, fontweight="bold", pad=15)
+plt.title("Stage 1 Baseline Simulation vs. Cleaned Rig Sensor Data (Exact Rig Match)", fontsize=14, fontweight="bold", pad=15)
 plt.xlabel("Elapsed Time (Minutes)", fontsize=12)
 plt.ylabel("Chamber Zone Air Temperature (°C)", fontsize=12)
 plt.grid(True, linestyle=":", alpha=0.6)

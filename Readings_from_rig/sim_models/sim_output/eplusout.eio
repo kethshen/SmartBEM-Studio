@@ -1,4 +1,4 @@
-Program Version,EnergyPlus, Version 25.2.0-cf7368216c, YMD=2026.07.28 00:33
+Program Version,EnergyPlus, Version 25.2.0-cf7368216c, YMD=2026.07.28 01:07
 ! <Version>, Version ID
  Version, 25.2
 ! <Timesteps per Hour>, #TimeSteps, Minutes per TimeStep {minutes}
@@ -102,27 +102,14 @@ Zone Volume Capacitance Multiplier,   1.000 ,   1.000,   1.000,   1.000
  Cooling Sizing Factor Information, Zone CHAMBER_THERMALZONE,          1.2
  Cooling Sizing Factor Information, Zone HANGER_THERMALZONE,          1.2
 ! <Zone Sizing Information>, Zone Name, Load Type, Calc Des Load {W}, User Des Load {W}, Calc Des Air Flow Rate {m3/s}, User Des Air Flow Rate {m3/s}, Design Day Name, Date/Time of Peak, Temperature at Peak {C}, Humidity Ratio at Peak {kgWater/kgDryAir}, Floor Area {m2}, # Occupants, Calc Outdoor Air Flow Rate {m3/s}, Calc DOAS Heat Addition Rate {W}
- Zone Sizing Information, CHAMBER_THERMALZONE, Cooling, 394.52805, 473.43366, 6.43656E-002, 7.72387E-002, CHICAGO_IL_USA COOLING .4% CONDITIONS DB=>MWB, 7/21 17:50:00, 30.36567, 1.50054E-002, 4.00000, 0.26667, 0.00000, 0.00000
- Zone Sizing Information, CHAMBER_THERMALZONE, Heating, 221.22723, 265.47268, 4.51090E-003, 5.41308E-003, CHICAGO_IL_USA HEATING 99.6% CONDITIONS, 1/21 08:00:00, -21.20000, 5.78027E-004, 4.00000, 0.26667, 0.00000, 0.00000
- Zone Sizing Information, HANGER_THERMALZONE, Cooling, 484831.31343, 581797.57612, 79.25761, 95.10914, CHICAGO_IL_USA COOLING .4% CONDITIONS DB=>MWB, 7/21 15:50:00, 32.25500, 1.50089E-002, 1360.00000, 90.66667, 0.00000, 0.00000
- Zone Sizing Information, HANGER_THERMALZONE, Heating, 889444.83356, 1067333.80028, 18.10972, 21.73167, CHICAGO_IL_USA HEATING 99.6% CONDITIONS, 1/21 08:00:00, -21.20000, 5.78027E-004, 1360.00000, 90.66667, 0.00000, 0.00000
+ Zone Sizing Information, CHAMBER_THERMALZONE, Cooling, 361.44550, 433.73460, 3.68562E-002, 4.42275E-002, CHICAGO_IL_USA COOLING .4% CONDITIONS DB=>MWB, 7/21 17:50:00, 30.36567, 1.50054E-002, 4.00000, 0.26667, 0.00000, 0.00000
+ Zone Sizing Information, HANGER_THERMALZONE, Cooling, 398686.04787, 478423.25744, 40.72416, 48.86900, CHICAGO_IL_USA COOLING .4% CONDITIONS DB=>MWB, 7/21 15:40:00, 32.36400, 1.50091E-002, 1360.00000, 90.66667, 0.00000, 0.00000
+ Zone Sizing Information, HANGER_THERMALZONE, Heating, 889446.10923, 1067335.33108, 18.10975, 21.73170, CHICAGO_IL_USA HEATING 99.6% CONDITIONS, 1/21 08:00:00, -21.20000, 5.78027E-004, 1360.00000, 90.66667, 0.00000, 0.00000
 ! <Component Sizing Information>, Component Type, Component Name, Input Field Description, Value
- Component Sizing Information, ZoneHVAC:PackagedTerminalAirConditioner, CHAMBER_SPLITAC, Design Size Cooling Supply Air Flow Rate [m3/s], 7.72387E-002
- Component Sizing Information, ZoneHVAC:PackagedTerminalAirConditioner, CHAMBER_SPLITAC, Design Size Heating Supply Air Flow Rate [m3/s], 7.72387E-002
- Component Sizing Information, ZoneHVAC:PackagedTerminalAirConditioner, CHAMBER_SPLITAC, Design Size No Load Supply Air Flow Rate [m3/s], 7.72387E-002
- Component Sizing Information, ZoneHVAC:PackagedTerminalAirConditioner, CHAMBER_SPLITAC, Design Size Outdoor Air Flow Rate During Cooling Operation [m3/s], 0.00000
- Component Sizing Information, ZoneHVAC:PackagedTerminalAirConditioner, CHAMBER_SPLITAC, Design Size Outdoor Air Flow Rate During Heating Operation [m3/s], 0.00000
- Component Sizing Information, ZoneHVAC:PackagedTerminalAirConditioner, CHAMBER_SPLITAC, Design Size Outdoor Air Flow Rate When No Cooling or Heating is Needed [m3/s], 0.00000
- Component Sizing Information, Coil:Cooling:DX:SingleSpeed, COIL COOLING DX SINGLE SPEED 1, Design Size Rated Air Flow Rate [m3/s], 7.72387E-002
- Component Sizing Information, Coil:Cooling:DX:SingleSpeed, COIL COOLING DX SINGLE SPEED 1, Design Size Gross Rated Total Cooling Capacity [W], 1278.57553
- Component Sizing Information, Coil:Cooling:DX:SingleSpeed, COIL COOLING DX SINGLE SPEED 1, Design Size Gross Rated Sensible Heat Ratio, 0.85985
-! <DX Cooling Coil Standard Rating Information>, Component Type, Component Name, Standard Rating (Net) Cooling Capacity {W}, Standard Rating Net COP {W/W}, EER {Btu/W-h}, SEER User {Btu/W-h}, SEER Standard {Btu/W-h}, IEER {Btu/W-h}
- DX Cooling Coil Standard Rating Information, Coil:Cooling:DX:SingleSpeed, COIL COOLING DX SINGLE SPEED 1, 1218.6, 2.51, 8.56, 9.08, 8.59, 8.7
-! <DX Cooling Coil AHRI 2023 Standard Rating Information>, Component Type, Component Name, Standard Rating (Net) Cooling Capacity {W}, Standard Rating Net COP2 {W/W}, EER2 {Btu/W-h}, SEER2 User {Btu/W-h}, SEER2 Standard {Btu/W-h}, IEER 2022 {Btu/W-h}
- DX Cooling Coil AHRI 2023 Standard Rating Information, Coil:Cooling:DX:SingleSpeed, COIL COOLING DX SINGLE SPEED 1, 1206.2, 2.42, 8.26, 8.75, 8.52, 8.3
- Component Sizing Information, Coil:Heating:Electric, COIL HEATING ELECTRIC 1, Design Size Nominal Capacity [W], 265.47268
- Component Sizing Information, Fan:OnOff, FAN ON OFF 1, Design Size Maximum Flow Rate [m3/s], 7.72387E-002
- Component Sizing Information, Fan:OnOff, FAN ON OFF 1, Design Electric Power Consumption [W], 38.61937
+ Component Sizing Information, ZoneHVAC:IdealLoadsAirSystem, CHAMBER_IDEALLOADS, User-Specified Maximum Heating Air Flow Rate [m3/s], 0.00000
+ Component Sizing Information, ZoneHVAC:IdealLoadsAirSystem, CHAMBER_IDEALLOADS, User-Specified Maximum Cooling Air Flow Rate [m3/s], 0.00000
+ Component Sizing Information, ZoneHVAC:IdealLoadsAirSystem, CHAMBER_IDEALLOADS, Design Size Maximum Total Cooling Capacity [W], 400.00000
+ Component Sizing Information, ZoneHVAC:IdealLoadsAirSystem, CHAMBER_IDEALLOADS, User-Specified Maximum Total Cooling Capacity [W], 400.00000
  Component Sizing Information, ZoneHVAC:IdealLoadsAirSystem, HANGER_IDEALLOADS, User-Specified Maximum Heating Air Flow Rate [m3/s], 0.00000
  Component Sizing Information, ZoneHVAC:IdealLoadsAirSystem, HANGER_IDEALLOADS, User-Specified Maximum Cooling Air Flow Rate [m3/s], 0.00000
 ! <Environment>,Environment Name,Environment Type, Start Date, End Date, Start DayOfWeek, Duration {#days}, Source:Start DayOfWeek,  Use Daylight Saving, Use Holidays, Apply Weekend Holiday Rule,  Use Rain Values, Use Snow Values, Sky Temperature Model
@@ -139,15 +126,15 @@ Environment:WarmupDays,  3
 ! <Tabular Report>,Style,Unit Conversion, Format Reals
 Tabular Report,HTML,None,Yes
 ! <Warmup Convergence Information>,Zone Name,Environment Type/Name,Average Warmup Temperature Difference {deltaC},Std Dev Warmup Temperature Difference {deltaC},Max Temperature Pass/Fail Convergence,Min Temperature Pass/Fail Convergence,Average Warmup Load Difference {W},Std Dev Warmup Load Difference {W},Heating Load Pass/Fail Convergence,Cooling Load Pass/Fail Convergence
- Warmup Convergence Information,CHAMBER_THERMALZONE,SizingPeriod: CHICAGO_IL_USA COOLING .4% CONDITIONS DB=>MWB,4.8852378375E-007,1.4724911594E-006,Pass,Pass,2.5105762728E-002,3.9658968390E-002,Pass,Pass
- Warmup Convergence Information,HANGER_THERMALZONE,SizingPeriod: CHICAGO_IL_USA COOLING .4% CONDITIONS DB=>MWB,1.3322676296E-015,1.7199501140E-015,Pass,Pass,1.6176397915E-002,1.2195621042E-002,Pass,Pass
+ Warmup Convergence Information,CHAMBER_THERMALZONE,SizingPeriod: CHICAGO_IL_USA COOLING .4% CONDITIONS DB=>MWB,4.7452459675E-002,0.2818314370,Pass,Pass,2.4620234065E-002,8.1662783717E-002,Pass,Pass
+ Warmup Convergence Information,HANGER_THERMALZONE,SizingPeriod: CHICAGO_IL_USA COOLING .4% CONDITIONS DB=>MWB,0.1504095868,9.4659797291E-002,Pass,Pass,0.0000000000,0.0000000000,Pass,Pass
 Environment,CHICAGO_IL_USA HEATING 99.6% CONDITIONS,SizingPeriod:DesignDay,01/21,01/21,WinterDesignDay,1,N/A,N/A,N/A,N/A,N/A,N/A,Clark and Allen
 Environment:Daylight Saving,No,SizingPeriod:DesignDay
 Environment:Design Day Data,-21.20,0.00,DefaultMultipliers,Wetbulb,-21.20,{C},99063,270,4.6,0.00,No,No
 Environment:Design Day Misc, 21,1229.0,0.1415,5.7310E-002,1.0,-11.15,-20.1,ASHRAEClearSky
-Environment:WarmupDays,  3
- Warmup Convergence Information,CHAMBER_THERMALZONE,SizingPeriod: CHICAGO_IL_USA HEATING 99.6% CONDITIONS,9.4985747662E-016,1.0237237099E-015,Pass,Pass,4.5311353471E-003,3.4238019587E-002,Pass,Pass
- Warmup Convergence Information,HANGER_THERMALZONE,SizingPeriod: CHICAGO_IL_USA HEATING 99.6% CONDITIONS,1.4679615548E-015,1.3128804176E-015,Pass,Pass,3.0988345643E-004,2.4555877185E-003,Pass,Pass
+Environment:WarmupDays,  4
+ Warmup Convergence Information,CHAMBER_THERMALZONE,SizingPeriod: CHICAGO_IL_USA HEATING 99.6% CONDITIONS,5.0309309967E-002,8.8885716314E-002,Pass,Pass,0.0000000000,0.0000000000,Pass,Pass
+ Warmup Convergence Information,HANGER_THERMALZONE,SizingPeriod: CHICAGO_IL_USA HEATING 99.6% CONDITIONS,7.2648286936E-003,2.5631896045E-002,Pass,Pass,0.0000000000,0.0000000000,Pass,Pass
 ! <Program Control Information:Threads/Parallel Sims>, Threading Supported,Maximum Number of Threads, Env Set Threads (OMP_NUM_THREADS), EP Env Set Threads (EP_OMP_NUM_THREADS), IDF Set Threads, Number of Threads Used (Interior Radiant Exchange), Number Nominal Surfaces, Number Parallel Sims
 Program Control Information:Threads/Parallel Sims, No,1, N/A, N/A, N/A, N/A, N/A, N/A
 End of Data

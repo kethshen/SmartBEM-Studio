@@ -1,4 +1,4 @@
-Program Version,EnergyPlus, Version 25.2.0-cf7368216c, YMD=2026.07.28 00:33
+Program Version,EnergyPlus, Version 25.2.0-cf7368216c, YMD=2026.07.28 01:07
 ! This file shows details about the branches, nodes, and other
 ! elements of the flow connections.
 ! This file is intended for use in "debugging" potential problems
@@ -8,29 +8,26 @@ Program Version,EnergyPlus, Version 25.2.0-cf7368216c, YMD=2026.07.28 00:33
 ! schematic diagram of the HVAC system.
 ! ===============================================================
 ! #Nodes,<Number of Unique Nodes>
- #Nodes,13
+ #Nodes,10
 ! <Node>,<NodeNumber>,<Node Name>,<Node Fluid Type>,<# Times Node Referenced After Definition>
- Node,1,NODE 6,Air,3
- Node,2,NODE 5,Air,3
+ Node,1,NODE 6,Air,2
+ Node,2,NODE 5,Air,2
  Node,3,NODE 4,Air,2
  Node,4,NODE 3,Air,2
  Node,5,NODE 2,Air,0
- Node,6,CHAMBER_SPLITAC COOLING COIL OUTLET NODE,Air,1
- Node,7,CHAMBER_SPLITAC HEATING COIL OUTLET NODE,Air,1
- Node,8,CHAMBER_SPLITAC MIXED AIR NODE,Air,1
- Node,9,CHAMBER_SPLITAC OA NODE,Air,1
- Node,10,CHAMBER_SPLITAC RELIEF AIR NODE,Air,0
- Node,11,NODE 1,Air,0
- Node,12,MODEL OUTDOOR AIR NODE,Air,0
- Node,13,HANGER_IDEALLOADS OUTDOOR AIR INLET NODE,Air,1
+ Node,6,NODE 1,Air,0
+ Node,7,CHAMBER_SPLITAC OA NODE,Air,0
+ Node,8,MODEL OUTDOOR AIR NODE,Air,0
+ Node,9,CHAMBER_IDEALLOADS OUTDOOR AIR INLET NODE,Air,1
+ Node,10,HANGER_IDEALLOADS OUTDOOR AIR INLET NODE,Air,1
 ! ===============================================================
 ! Suspicious nodes have 0 references.  It is normal for some nodes, however.
 ! Listing nodes with 0 references (culled from previous list):
 ! <Suspicious Node>,<NodeNumber>,<Node Name>,<Node Fluid Type>,<# Times Node Referenced After Definition>
  Suspicious Node,5,NODE 2,Air,0
- Suspicious Node,10,CHAMBER_SPLITAC RELIEF AIR NODE,Air,0
- Suspicious Node,11,NODE 1,Air,0
- Suspicious Node,12,MODEL OUTDOOR AIR NODE,Air,0
+ Suspicious Node,6,NODE 1,Air,0
+ Suspicious Node,7,CHAMBER_SPLITAC OA NODE,Air,0
+ Suspicious Node,8,MODEL OUTDOOR AIR NODE,Air,0
 ! ===============================================================
 ! <#Branch Lists>,<Number of Branch Lists>
  #Branch Lists,0
@@ -54,19 +51,16 @@ Program Version,EnergyPlus, Version 25.2.0-cf7368216c, YMD=2026.07.28 00:33
 ! <Return Air Path Component Nodes>,<Node Count>,<Component Type>,<Component Name>,<Inlet Node Name>,<Outlet Node Name>,<AirLoopHVAC Name>
 ! ===============================================================
 ! #Outdoor Air Nodes,<Number of Outdoor Air Nodes>
- #Outdoor Air Nodes,3
+ #Outdoor Air Nodes,4
 ! <Outdoor Air Node>,<NodeNumber>,<Node Name>
- Outdoor Air Node,9,CHAMBER_SPLITAC OA NODE
- Outdoor Air Node,12,MODEL OUTDOOR AIR NODE
- Outdoor Air Node,13,HANGER_IDEALLOADS OUTDOOR AIR INLET NODE
+ Outdoor Air Node,7,CHAMBER_SPLITAC OA NODE
+ Outdoor Air Node,8,MODEL OUTDOOR AIR NODE
+ Outdoor Air Node,9,CHAMBER_IDEALLOADS OUTDOOR AIR INLET NODE
+ Outdoor Air Node,10,HANGER_IDEALLOADS OUTDOOR AIR INLET NODE
 ! ===============================================================
 ! <#Component Sets>,<Number of Component Sets>
- #Component Sets,4
+ #Component Sets,0
 ! <Component Set>,<Component Set Count>,<Parent Object Type>,<Parent Object Name>,<Component Type>,<Component Name>,<Inlet Node ID>,<Outlet Node ID>,<Description>
- Component Set,1,ZONEHVAC:PACKAGEDTERMINALAIRCONDITIONER,CHAMBER_SPLITAC,COIL:HEATING:ELECTRIC,COIL HEATING ELECTRIC 1,CHAMBER_SPLITAC COOLING COIL OUTLET NODE,CHAMBER_SPLITAC HEATING COIL OUTLET NODE,Air Nodes
- Component Set,2,ZONEHVAC:PACKAGEDTERMINALAIRCONDITIONER,CHAMBER_SPLITAC,OUTDOORAIR:MIXER,CHAMBER_SPLITAC OA MIXER,CHAMBER_SPLITAC OA NODE,CHAMBER_SPLITAC MIXED AIR NODE,Air Nodes
- Component Set,3,ZONEHVAC:PACKAGEDTERMINALAIRCONDITIONER,CHAMBER_SPLITAC,FAN:ONOFF,FAN ON OFF 1,CHAMBER_SPLITAC HEATING COIL OUTLET NODE,NODE 6,Air Nodes
- Component Set,4,ZONEHVAC:PACKAGEDTERMINALAIRCONDITIONER,CHAMBER_SPLITAC,COIL:COOLING:DX:SINGLESPEED,COIL COOLING DX SINGLE SPEED 1,CHAMBER_SPLITAC MIXED AIR NODE,CHAMBER_SPLITAC COOLING COIL OUTLET NODE,Air Nodes
 ! ===============================================================
 ! <# Plant Loops>,<Number of Plant Loops>
  #Plant Loops,0
@@ -103,7 +97,7 @@ Program Version,EnergyPlus, Version 25.2.0-cf7368216c, YMD=2026.07.28 00:33
 ! <Zone Equipment List>,<Zone Equipment List Count>,<Zone Equipment List Name>,<Zone Name>,<Number of Components>
 ! <Zone Equipment Component>,<Component Count>,<Component Type>,<Component Name>,<Zone Name>,<Heating Priority>,<Cooling Priority>
  Zone Equipment List,1,CHAMBER_THERMALZONE EQUIPMENT LIST,CHAMBER_THERMALZONE,1
-   Zone Equipment Component,1,ZONEHVAC:PACKAGEDTERMINALAIRCONDITIONER,CHAMBER_SPLITAC,CHAMBER_THERMALZONE,1,1
+   Zone Equipment Component,1,ZONEHVAC:IDEALLOADSAIRSYSTEM,CHAMBER_IDEALLOADS,CHAMBER_THERMALZONE,1,1
  Zone Equipment List,2,HANGER_THERMALZONE EQUIPMENT LIST,HANGER_THERMALZONE,1
    Zone Equipment Component,1,ZONEHVAC:IDEALLOADSAIRSYSTEM,HANGER_IDEALLOADS,HANGER_THERMALZONE,1,1
 ! ===============================================================
@@ -120,21 +114,13 @@ Program Version,EnergyPlus, Version 25.2.0-cf7368216c, YMD=2026.07.28 00:33
 ! <AirLoopHVAC Connector Nodes>,<Connector Node Count>,<Connector Type>,<Connector Name>,<Inlet Node>,<Outlet Node>,<Loop Name>,<Loop Type>
 ! ===============================================================
 ! <#Parent Node Connections>,<Number of Parent Node Connections>
- #Parent Node Connections,2
+ #Parent Node Connections,0
 ! <Parent Node Connection>,<Node Name>,<Node ObjectType>,<Node ObjectName>,<Node ConnectionType>,<Node FluidStream>
- Parent Node Connection,NODE 5,ZONEHVAC:PACKAGEDTERMINALAIRCONDITIONER,CHAMBER_SPLITAC,Inlet,1
- Parent Node Connection,NODE 6,ZONEHVAC:PACKAGEDTERMINALAIRCONDITIONER,CHAMBER_SPLITAC,Outlet,1
 ! ===============================================================
 ! <#Non-Parent Node Connections>,<Number of Non-Parent Node Connections>
- #Non-Parent Node Connections,22
+ #Non-Parent Node Connections,16
 ! <Non-Parent Node Connection>,<Node Name>,<Node ObjectType>,<Node ObjectName>,<Node ConnectionType>,<Node FluidStream>
  Non-Parent Node Connection,NODE 2,ZONEHVAC:EQUIPMENTCONNECTIONS,CHAMBER_THERMALZONE,ZoneNode,1
- Non-Parent Node Connection,CHAMBER_SPLITAC COOLING COIL OUTLET NODE,COIL:HEATING:ELECTRIC,COIL HEATING ELECTRIC 1,Inlet,1
- Non-Parent Node Connection,CHAMBER_SPLITAC HEATING COIL OUTLET NODE,COIL:HEATING:ELECTRIC,COIL HEATING ELECTRIC 1,Outlet,1
- Non-Parent Node Connection,CHAMBER_SPLITAC MIXED AIR NODE,OUTDOORAIR:MIXER,CHAMBER_SPLITAC OA MIXER,Outlet,1
- Non-Parent Node Connection,CHAMBER_SPLITAC OA NODE,OUTDOORAIR:MIXER,CHAMBER_SPLITAC OA MIXER,Inlet,1
- Non-Parent Node Connection,CHAMBER_SPLITAC RELIEF AIR NODE,OUTDOORAIR:MIXER,CHAMBER_SPLITAC OA MIXER,ReliefAir,1
- Non-Parent Node Connection,NODE 5,OUTDOORAIR:MIXER,CHAMBER_SPLITAC OA MIXER,Inlet,1
  Non-Parent Node Connection,NODE 6,ZONEHVAC:EQUIPMENTCONNECTIONS,CHAMBER_THERMALZONE,ZoneInlet,1
  Non-Parent Node Connection,NODE 5,ZONEHVAC:EQUIPMENTCONNECTIONS,CHAMBER_THERMALZONE,ZoneExhaust,1
  Non-Parent Node Connection,NODE 1,ZONEHVAC:EQUIPMENTCONNECTIONS,HANGER_THERMALZONE,ZoneNode,1
@@ -142,11 +128,11 @@ Program Version,EnergyPlus, Version 25.2.0-cf7368216c, YMD=2026.07.28 00:33
  Non-Parent Node Connection,NODE 3,ZONEHVAC:EQUIPMENTCONNECTIONS,HANGER_THERMALZONE,ZoneExhaust,1
  Non-Parent Node Connection,CHAMBER_SPLITAC OA NODE,OUTDOORAIR:NODELIST,OutdoorAir:NodeList,OutdoorAir,1
  Non-Parent Node Connection,MODEL OUTDOOR AIR NODE,OUTDOORAIR:NODE,OutdoorAir:Node,OutdoorAir,2
- Non-Parent Node Connection,CHAMBER_SPLITAC HEATING COIL OUTLET NODE,FAN:ONOFF,FAN ON OFF 1,Inlet,1
- Non-Parent Node Connection,NODE 6,FAN:ONOFF,FAN ON OFF 1,Outlet,1
- Non-Parent Node Connection,CHAMBER_SPLITAC MIXED AIR NODE,COIL:COOLING:DX:SINGLESPEED,COIL COOLING DX SINGLE SPEED 1,Inlet,1
- Non-Parent Node Connection,CHAMBER_SPLITAC COOLING COIL OUTLET NODE,COIL:COOLING:DX:SINGLESPEED,COIL COOLING DX SINGLE SPEED 1,Outlet,1
+ Non-Parent Node Connection,NODE 6,ZONEHVAC:IDEALLOADSAIRSYSTEM,CHAMBER_IDEALLOADS,Outlet,1
+ Non-Parent Node Connection,NODE 5,ZONEHVAC:IDEALLOADSAIRSYSTEM,CHAMBER_IDEALLOADS,Inlet,1
+ Non-Parent Node Connection,CHAMBER_IDEALLOADS OUTDOOR AIR INLET NODE,ZONEHVAC:IDEALLOADSAIRSYSTEM,CHAMBER_IDEALLOADS,Outlet,1
+ Non-Parent Node Connection,CHAMBER_IDEALLOADS OUTDOOR AIR INLET NODE,OUTDOORAIR:NODE,OutdoorAir:Node,OutdoorAir,3
  Non-Parent Node Connection,NODE 4,ZONEHVAC:IDEALLOADSAIRSYSTEM,HANGER_IDEALLOADS,Outlet,1
  Non-Parent Node Connection,NODE 3,ZONEHVAC:IDEALLOADSAIRSYSTEM,HANGER_IDEALLOADS,Inlet,1
  Non-Parent Node Connection,HANGER_IDEALLOADS OUTDOOR AIR INLET NODE,ZONEHVAC:IDEALLOADSAIRSYSTEM,HANGER_IDEALLOADS,Outlet,1
- Non-Parent Node Connection,HANGER_IDEALLOADS OUTDOOR AIR INLET NODE,OUTDOORAIR:NODE,OutdoorAir:Node,OutdoorAir,3
+ Non-Parent Node Connection,HANGER_IDEALLOADS OUTDOOR AIR INLET NODE,OUTDOORAIR:NODE,OutdoorAir:Node,OutdoorAir,4

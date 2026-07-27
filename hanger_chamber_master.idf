@@ -585,8 +585,8 @@ ZoneControl:Thermostat,
   Chamber_ThermalZone Thermostat,         !- Name
   Chamber_ThermalZone,                    !- Zone or ZoneList Name
   Chamber_ThermalZone Thermostat Schedule, !- Control Type Schedule Name
-  ThermostatSetpoint:DualSetpoint,        !- Control 1 Object Type
-  Thermostat Setpoint Dual Setpoint 2,    !- Control 1 Name
+  ThermostatSetpoint:SingleCooling,       !- Control 1 Object Type
+  Thermostat Setpoint Single Cooling 2,   !- Control 1 Name
   ,                                       !- Control 2 Object Type
   ,                                       !- Control 2 Name
   ,                                       !- Control 3 Object Type
@@ -601,7 +601,7 @@ Schedule:Compact,
   Through: 12/31,                         !- Field 1
   For: AllDays,                           !- Field 2
   Until: 24:00,                           !- Field 3
-  4;                                      !- Field 4
+  2;                                      !- Field 4 (Single Cooling)
 
 ScheduleTypeLimits,
   Chamber_ThermalZone Thermostat Schedule Type Limits, !- Name
@@ -609,9 +609,8 @@ ScheduleTypeLimits,
   4,                                      !- Upper Limit Value {BasedOnField A3}
   DISCRETE;                               !- Numeric Type
 
-ThermostatSetpoint:DualSetpoint,
-  Thermostat Setpoint Dual Setpoint 2,    !- Name
-  HEATING_SETPOINT_SCH,                   !- Heating Setpoint Temperature Schedule Name
+ThermostatSetpoint:SingleCooling,
+  Thermostat Setpoint Single Cooling 2,   !- Name
   COOLING_SETPOINT_SCH;                   !- Cooling Setpoint Temperature Schedule Name
 
 ScheduleTypeLimits,
@@ -621,129 +620,23 @@ ScheduleTypeLimits,
   Continuous,                             !- Numeric Type
   temperature;                            !- Unit Type
 
-Schedule:Day:Interval,
-  HEATING_SETPOINT_SCH_DefaultDay,        !- Name
-  Temperature,                            !- Schedule Type Limits Name
-  No,                                     !- Interpolate to Timestep
-  08:00,                                  !- Time 1 {hh:mm}
-  10,                                     !- Value Until Time 1
-  18:00,                                  !- Time 2 {hh:mm}
-  10,                                     !- Value Until Time 2
-  24:00,                                  !- Time 3 {hh:mm}
-  10;                                     !- Value Until Time 3
-
-Schedule:Day:Interval,
-  HEATING_SETPOINT_SCH_WeekendDay,        !- Name
-  Temperature,                            !- Schedule Type Limits Name
-  No,                                     !- Interpolate to Timestep
-  24:00,                                  !- Time 1 {hh:mm}
-  15;                                     !- Value Until Time 1
-
-Schedule:Week:Daily,
-  HEATING_SETPOINT_SCH Week Rule - Jan1-Jan3, !- Name
-  HEATING_SETPOINT_SCH_DefaultDay,        !- Sunday Schedule:Day Name
-  HEATING_SETPOINT_SCH_DefaultDay,        !- Monday Schedule:Day Name
-  HEATING_SETPOINT_SCH_DefaultDay,        !- Tuesday Schedule:Day Name
-  HEATING_SETPOINT_SCH_DefaultDay,        !- Wednesday Schedule:Day Name
-  HEATING_SETPOINT_SCH_DefaultDay,        !- Thursday Schedule:Day Name
-  HEATING_SETPOINT_SCH_DefaultDay,        !- Friday Schedule:Day Name
-  HEATING_SETPOINT_SCH_WeekendDay,        !- Saturday Schedule:Day Name
-  HEATING_SETPOINT_SCH_DefaultDay,        !- Holiday Schedule:Day Name
-  HEATING_SETPOINT_SCH_DefaultDay,        !- SummerDesignDay Schedule:Day Name
-  HEATING_SETPOINT_SCH_DefaultDay,        !- WinterDesignDay Schedule:Day Name
-  HEATING_SETPOINT_SCH_DefaultDay,        !- CustomDay1 Schedule:Day Name
-  HEATING_SETPOINT_SCH_DefaultDay;        !- CustomDay2 Schedule:Day Name
-
-Schedule:Week:Daily,
-  HEATING_SETPOINT_SCH Week Rule - Jan4-Dec31, !- Name
-  HEATING_SETPOINT_SCH_WeekendDay,        !- Sunday Schedule:Day Name
-  HEATING_SETPOINT_SCH_DefaultDay,        !- Monday Schedule:Day Name
-  HEATING_SETPOINT_SCH_DefaultDay,        !- Tuesday Schedule:Day Name
-  HEATING_SETPOINT_SCH_DefaultDay,        !- Wednesday Schedule:Day Name
-  HEATING_SETPOINT_SCH_DefaultDay,        !- Thursday Schedule:Day Name
-  HEATING_SETPOINT_SCH_DefaultDay,        !- Friday Schedule:Day Name
-  HEATING_SETPOINT_SCH_WeekendDay,        !- Saturday Schedule:Day Name
-  HEATING_SETPOINT_SCH_DefaultDay,        !- Holiday Schedule:Day Name
-  HEATING_SETPOINT_SCH_DefaultDay,        !- SummerDesignDay Schedule:Day Name
-  HEATING_SETPOINT_SCH_DefaultDay,        !- WinterDesignDay Schedule:Day Name
-  HEATING_SETPOINT_SCH_DefaultDay,        !- CustomDay1 Schedule:Day Name
-  HEATING_SETPOINT_SCH_DefaultDay;        !- CustomDay2 Schedule:Day Name
-
-Schedule:Year,
+Schedule:Compact,
   HEATING_SETPOINT_SCH,                   !- Name
   Temperature,                            !- Schedule Type Limits Name
-  HEATING_SETPOINT_SCH Week Rule - Jan1-Jan3, !- Schedule:Week Name 1
-  1,                                      !- Start Month 1
-  1,                                      !- Start Day 1
-  1,                                      !- End Month 1
-  3,                                      !- End Day 1
-  HEATING_SETPOINT_SCH Week Rule - Jan4-Dec31, !- Schedule:Week Name 2
-  1,                                      !- Start Month 2
-  4,                                      !- Start Day 2
-  12,                                     !- End Month 2
-  31;                                     !- End Day 2
+  Through: 12/31,                         !- Field 1
+  For: AllDays,                           !- Field 2
+  Until: 24:00,                           !- Field 3
+  10.0;                                   !- Constant Heating Setpoint 10.0 C
 
-Schedule:Day:Interval,
-  COOLING_SETPOINT_SCH_DefaultDay,        !- Name
-  Temperature,                            !- Schedule Type Limits Name
-  No,                                     !- Interpolate to Timestep
-  08:00,                                  !- Time 1 {hh:mm}
-  17,                                     !- Value Until Time 1
-  18:00,                                  !- Time 2 {hh:mm}
-  17,                                     !- Value Until Time 2
-  24:00,                                  !- Time 3 {hh:mm}
-  17;                                     !- Value Until Time 3
-
-Schedule:Day:Interval,
-  COOLING_SETPOINT_SCH_WeekendDay,        !- Name
-  Temperature,                            !- Schedule Type Limits Name
-  No,                                     !- Interpolate to Timestep
-  24:00,                                  !- Time 1 {hh:mm}
-  28;                                     !- Value Until Time 1
-
-Schedule:Week:Daily,
-  COOLING_SETPOINT_SCH Week Rule - Jan1-Jan3, !- Name
-  COOLING_SETPOINT_SCH_DefaultDay,        !- Sunday Schedule:Day Name
-  COOLING_SETPOINT_SCH_DefaultDay,        !- Monday Schedule:Day Name
-  COOLING_SETPOINT_SCH_DefaultDay,        !- Tuesday Schedule:Day Name
-  COOLING_SETPOINT_SCH_DefaultDay,        !- Wednesday Schedule:Day Name
-  COOLING_SETPOINT_SCH_DefaultDay,        !- Thursday Schedule:Day Name
-  COOLING_SETPOINT_SCH_DefaultDay,        !- Friday Schedule:Day Name
-  COOLING_SETPOINT_SCH_WeekendDay,        !- Saturday Schedule:Day Name
-  COOLING_SETPOINT_SCH_DefaultDay,        !- Holiday Schedule:Day Name
-  COOLING_SETPOINT_SCH_DefaultDay,        !- SummerDesignDay Schedule:Day Name
-  COOLING_SETPOINT_SCH_DefaultDay,        !- WinterDesignDay Schedule:Day Name
-  COOLING_SETPOINT_SCH_DefaultDay,        !- CustomDay1 Schedule:Day Name
-  COOLING_SETPOINT_SCH_DefaultDay;        !- CustomDay2 Schedule:Day Name
-
-Schedule:Week:Daily,
-  COOLING_SETPOINT_SCH Week Rule - Jan4-Dec31, !- Name
-  COOLING_SETPOINT_SCH_WeekendDay,        !- Sunday Schedule:Day Name
-  COOLING_SETPOINT_SCH_DefaultDay,        !- Monday Schedule:Day Name
-  COOLING_SETPOINT_SCH_DefaultDay,        !- Tuesday Schedule:Day Name
-  COOLING_SETPOINT_SCH_DefaultDay,        !- Wednesday Schedule:Day Name
-  COOLING_SETPOINT_SCH_DefaultDay,        !- Thursday Schedule:Day Name
-  COOLING_SETPOINT_SCH_DefaultDay,        !- Friday Schedule:Day Name
-  COOLING_SETPOINT_SCH_WeekendDay,        !- Saturday Schedule:Day Name
-  COOLING_SETPOINT_SCH_DefaultDay,        !- Holiday Schedule:Day Name
-  COOLING_SETPOINT_SCH_DefaultDay,        !- SummerDesignDay Schedule:Day Name
-  COOLING_SETPOINT_SCH_DefaultDay,        !- WinterDesignDay Schedule:Day Name
-  COOLING_SETPOINT_SCH_DefaultDay,        !- CustomDay1 Schedule:Day Name
-  COOLING_SETPOINT_SCH_DefaultDay;        !- CustomDay2 Schedule:Day Name
-
-Schedule:Year,
+Schedule:Compact,
   COOLING_SETPOINT_SCH,                   !- Name
   Temperature,                            !- Schedule Type Limits Name
-  COOLING_SETPOINT_SCH Week Rule - Jan1-Jan3, !- Schedule:Week Name 1
-  1,                                      !- Start Month 1
-  1,                                      !- Start Day 1
-  1,                                      !- End Month 1
-  3,                                      !- End Day 1
-  COOLING_SETPOINT_SCH Week Rule - Jan4-Dec31, !- Schedule:Week Name 2
-  1,                                      !- Start Month 2
-  4,                                      !- Start Day 2
-  12,                                     !- End Month 2
-  31;                                     !- End Day 2
+  Through: 12/31,                         !- Field 1
+  For: AllDays,                           !- Field 2
+  Until: 07:44,                           !- Time 1
+  29.6,                                   !- Warm Pre-test Room Temp 29.6 C
+  Until: 24:00,                           !- Time 2
+  20.0;                                   !- Cooling Setpoint 20.0 C
 
 ZoneHVAC:EquipmentConnections,
   Chamber_ThermalZone,                    !- Zone Name
@@ -767,13 +660,13 @@ ZoneHVAC:PackagedTerminalAirConditioner,
   Node 6,                                 !- Air Outlet Node Name
   OutdoorAir:Mixer,                       !- Outdoor Air Mixer Object Type
   Chamber_SplitAC OA Mixer,               !- Outdoor Air Mixer Name
-  Autosize,                               !- Cooling Supply Air Flow Rate {m3/s}
-  Autosize,                               !- Heating Supply Air Flow Rate {m3/s}
-  Autosize,                               !- No Load Supply Air Flow Rate {m3/s}
+  0.05,                                   !- Cooling Supply Air Flow Rate {m3/s} (~100 CFM)
+  0.05,                                   !- Heating Supply Air Flow Rate {m3/s}
+  0.05,                                   !- No Load Supply Air Flow Rate {m3/s}
   Yes,                                    !- No Load Supply Air Flow Rate Control Set To Low Speed
-  Autosize,                               !- Cooling Outdoor Air Flow Rate {m3/s}
-  Autosize,                               !- Heating Outdoor Air Flow Rate {m3/s}
-  Autosize,                               !- No Load Outdoor Air Flow Rate {m3/s}
+  0.01,                                   !- Cooling Outdoor Air Flow Rate {m3/s} (~20 CFM)
+  0.01,                                   !- Heating Outdoor Air Flow Rate {m3/s}
+  0.01,                                   !- No Load Outdoor Air Flow Rate {m3/s}
   Fan:OnOff,                              !- Supply Air Fan Object Type
   Fan On Off 1,                           !- Supply Air Fan Name
   Coil:Heating:Electric,                  !- Heating Coil Object Type
@@ -781,7 +674,7 @@ ZoneHVAC:PackagedTerminalAirConditioner,
   Coil:Cooling:DX:SingleSpeed,            !- Cooling Coil Object Type
   Coil Cooling DX Single Speed 1,         !- Cooling Coil Name
   DrawThrough,                            !- Fan Placement
-  Always Off Discrete;                    !- Supply Air Fan Operating Mode Schedule Name
+  Always Off Discrete;                    !- Supply Air Fan Operating Mode Schedule Name (Cycling Fan & Compressor with Thermostat Cutout)
 
 Schedule:Constant,
   Always On Discrete,                     !- Name
@@ -803,7 +696,7 @@ Fan:OnOff,
   Always On Discrete,                     !- Availability Schedule Name
   0.6,                                    !- Fan Total Efficiency
   300,                                    !- Pressure Rise {Pa}
-  Autosize,                               !- Maximum Flow Rate {m3/s}
+  0.05,                                   !- Maximum Flow Rate {m3/s} (Matched to Split AC flow rate)
   0.8,                                    !- Motor Efficiency
   1,                                      !- Motor In Airstream Fraction
   Chamber_SplitAC Heating Coil Outlet Node, !- Air Inlet Node Name
@@ -831,9 +724,9 @@ Curve:Cubic,
 
 Coil:Heating:Electric,
   Coil Heating Electric 1,                !- Name
-  Always On Discrete,                     !- Availability Schedule Name
+  Always Off Discrete,                    !- Availability Schedule Name
   1,                                      !- Efficiency
-  Autosize,                               !- Nominal Capacity {W}
+  0,                                      !- Nominal Capacity {W} (Disabled - Real Rig Heater is OFF)
   Chamber_SplitAC Cooling Coil Outlet Node, !- Air Inlet Node Name
   Chamber_SplitAC Heating Coil Outlet Node; !- Air Outlet Node Name
 
@@ -890,10 +783,10 @@ Curve:Quadratic,
 Coil:Cooling:DX:SingleSpeed,
   Coil Cooling DX Single Speed 1,         !- Name
   Always On Discrete,                     !- Availability Schedule Name
-  Autosize,                               !- Gross Rated Total Cooling Capacity {W}
-  Autosize,                               !- Gross Rated Sensible Heat Ratio
-  3,                                      !- Gross Rated Cooling COP {W/W}
-  Autosize,                               !- Rated Air Flow Rate {m3/s}
+  400,                                    !- Gross Rated Total Cooling Capacity {W} (Matched to Chamber pulldown rate)
+  0.90,                                   !- Gross Rated Sensible Heat Ratio
+  3.2,                                    !- Gross Rated Cooling COP {W/W}
+  0.04,                                   !- Rated Air Flow Rate {m3/s}
   773.3,                                  !- Rated Evaporator Fan Power Per Volume Flow Rate 2017 {W/(m3/s)}
   934.4,                                  !- Rated Evaporator Fan Power Per Volume Flow Rate 2023 {W/(m3/s)}
   Chamber_SplitAC Mixed Air Node,         !- Air Inlet Node Name
@@ -926,15 +819,36 @@ Schedule:Constant,
   OnOff 1,                                !- Schedule Type Limits Name
   0;                                      !- Hourly Value
 
+ZoneHVAC:IdealLoadsAirSystem,
+  Chamber_IdealLoads,                     !- Name
+  Always On Discrete,                     !- Availability Schedule Name
+  Node 6,                                 !- Zone Supply Air Node Name
+  Node 5,                                 !- Zone Exhaust Air Node Name
+  ,                                       !- System Inlet Air Node Name
+  ,                                       !- Maximum Heating Supply Air Temperature {C}
+  12,                                     !- Minimum Cooling Supply Air Temperature {C}
+  ,                                       !- Maximum Heating Supply Air Humidity Ratio
+  ,                                       !- Minimum Cooling Supply Air Humidity Ratio
+  LimitCapacity,                          !- Heating Limit
+  ,                                       !- Maximum Heating Air Flow Rate {m3/s}
+  0,                                      !- Maximum Sensible Heating Capacity {W} (Heater OFF)
+  LimitCapacity,                          !- Cooling Limit
+  ,                                       !- Maximum Cooling Air Flow Rate {m3/s}
+  400,                                    !- Maximum Total Cooling Capacity {W} (400 W sensible cooling)
+  ,                                       !- Heating Availability Schedule Name
+  ,                                       !- Cooling Availability Schedule Name
+  None,                                   !- Dehumidification Control Type
+  0.85,                                   !- Cooling Sensible Heat Ratio
+  None,                                   !- Humidification Control Type
+  Chamber_OutdoorAir;                     !- Design Specification Outdoor Air Object Name
+
 ZoneHVAC:EquipmentList,
   Chamber_ThermalZone Equipment List,     !- Name
   SequentialLoad,                         !- Load Distribution Scheme
-  ZoneHVAC:PackagedTerminalAirConditioner, !- Zone Equipment Object Type 1
-  Chamber_SplitAC,                        !- Zone Equipment Name 1
+  ZoneHVAC:IdealLoadsAirSystem,           !- Zone Equipment Object Type 1
+  Chamber_IdealLoads,                     !- Zone Equipment Name 1
   1,                                      !- Zone Equipment Cooling Sequence 1
-  1,                                      !- Zone Equipment Heating or No-Load Sequence 1
-  ,                                       !- Zone Equipment Sequential Cooling Fraction Schedule Name 1
-  ;                                       !- Zone Equipment Sequential Heating Fraction Schedule Name 1
+  1;                                      !- Zone Equipment Heating or No-Load Sequence 1
 
 DesignSpecification:OutdoorAir,
   Chamber_OutdoorAir,                     !- Name
@@ -1223,7 +1137,7 @@ NodeList,
 
 ZoneHVAC:IdealLoadsAirSystem,
   Hanger_IdealLoads,                      !- Name
-  ,                                       !- Availability Schedule Name
+  Always Off Discrete,                    !- Availability Schedule Name (Disabled - Hanger is unconditioned ambient space)
   Node 4,                                 !- Zone Supply Air Node Name
   Node 3,                                 !- Zone Exhaust Air Node Name
   ,                                       !- System Inlet Air Node Name
