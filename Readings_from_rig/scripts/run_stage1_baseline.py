@@ -2,7 +2,6 @@ import os
 import sys
 import shutil
 import subprocess
-import glob
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -12,7 +11,7 @@ STUDIO_DIR = r"d:\UNI\Sem 7\ME420 Mech Eng Research Project\SmartBEM-Studio"
 RIG_DIR = os.path.join(STUDIO_DIR, "Readings_from_rig")
 IDF_PATH = os.path.join(STUDIO_DIR, "hanger_chamber_master.idf")
 EPW_PATH = os.path.join(RIG_DIR, "experimental_data", "test_day_weather.epw")
-CSV_SENSOR_PATH = os.path.join(RIG_DIR, "experimental_data", "Idel_test_2026_07_21.csv")
+CSV_SENSOR_CLEANED_PATH = os.path.join(RIG_DIR, "experimental_data", "cleaned", "Idel_test_2026_07_21_cleaned.csv")
 OUT_DIR = os.path.join(RIG_DIR, "sim_models", "sim_output")
 PLOT_PATH = os.path.join(RIG_DIR, "plots", "sim_vs_sensors_exact_rig_match.png")
 
@@ -27,6 +26,7 @@ if not os.path.exists(ENERGYPLUS_EXE):
 print(f"Using EnergyPlus: {ENERGYPLUS_EXE}")
 print(f"IDF Path: {IDF_PATH}")
 print(f"EPW Path: {EPW_PATH}")
+print(f"Cleaned CSV Path: {CSV_SENSOR_CLEANED_PATH}")
 
 # 3. Run EnergyPlus Simulation
 cmd = [
@@ -70,39 +70,34 @@ T_sim = np.array(sim_temps)
 n_sim = len(T_sim)
 print(f"Extracted {n_sim} 1-minute resolution simulated Chamber temperature steps!")
 
-# 5. Load and Clean Real Sensor Data
-df_sensor = pd.read_csv(CSV_SENSOR_PATH)
-df_sensor.columns = [c.strip() for c in df_sensor.columns]
+# 5. Load Cleaned Sensor Dataset (3-Sensor Weighted Tz)
+df_cleaned = pd.read_csv(CSV_SENSOR_CLEANED_PATH)
 
-# Clean outliers (< 5°C or > 50°C)
-s1 = df_sensor["room_1_t"].apply(lambda x: x if 5.0 <= x <= 50.0 else np.nan)
-s2 = df_sensor["room_2_t"].apply(lambda x: x if 5.0 <= x <= 50.0 else np.nan)
-
-# Weighted Zone Temperature (0.6 S1 Bosch + 0.4 S2)
-df_sensor["Tz_weighted"] = 0.6 * s1 + 0.4 * s2
+# Use Tz_weighted (0.50 S1 + 0.30 S2 + 0.20 S3)
+Tz_sensor = df_cleaned["Tz_weighted"].values
 
 # Time alignment across 170.1 minutes
 sim_times_min = np.linspace(0, 170.1, n_sim)
-sensor_times_min = np.linspace(0, 170.1, len(df_sensor))
+sensor_times_min = np.linspace(0, 170.1, len(df_cleaned))
 
-Tz_sensor_interp = np.interp(sim_times_min, sensor_times_min, df_sensor["Tz_weighted"].ffill().bfill())
+Tz_sensor_interp = np.interp(sim_times_min, sensor_times_min, Tz_sensor)
 
 # 6. Compute Statistical Metrics
 rmse = np.sqrt(np.mean((T_sim - Tz_sensor_interp)**2))
 mae = np.mean(np.abs(T_sim - Tz_sensor_interp))
 r2 = 1.0 - (np.sum((Tz_sensor_interp - T_sim)**2) / np.sum((Tz_sensor_interp - np.mean(Tz_sensor_interp))**2))
 
-print(f"Statistical Summary:")
+print(f"\nStatistical Summary against Cleaned 3-Sensor Tz:")
 print(f"• RMSE: {rmse:.2f} °C")
 print(f"• MAE:  {mae:.2f} °C")
 print(f"• R²:   {r2:.4f}")
 
 # 7. Generate High-Resolution Overlay Comparison Plot
 plt.figure(figsize=(12, 6), dpi=300)
-plt.plot(sim_times_min, Tz_sensor_interp, label="Real Sensor Zone Temp $T_z$ (Weighted 0.6 S1 + 0.4 S2)", color="#2ca02c", linewidth=2.5)
+plt.plot(sim_times_min, Tz_sensor_interp, label="Cleaned Real Sensor Zone Temp $T_z$ (0.50 S1 + 0.30 S2 + 0.20 S3)", color="#2ca02c", linewidth=2.5)
 plt.plot(sim_times_min, T_sim, label="EnergyPlus Baseline $T_{sim}$ (1-Min Timesteps)", color="#d62728", linewidth=2.2, linestyle="--")
 
-plt.title("Stage 1 Baseline Simulation vs. Real Rig Sensor Data (1-Minute Timesteps)", fontsize=14, fontweight="bold", pad=15)
+plt.title("Stage 1 Baseline Simulation vs. Cleaned Rig Sensor Data (1-Minute Timesteps)", fontsize=14, fontweight="bold", pad=15)
 plt.xlabel("Elapsed Time (Minutes)", fontsize=12)
 plt.ylabel("Chamber Zone Air Temperature (°C)", fontsize=12)
 plt.grid(True, linestyle=":", alpha=0.6)
@@ -117,4 +112,4 @@ plt.tight_layout()
 plt.savefig(PLOT_PATH)
 plt.close()
 
-print(f"High-resolution baseline plot saved to: {PLOT_PATH}")
+print(f"Updated Stage 1 baseline plot saved to: {PLOT_PATH}")
