@@ -10,7 +10,7 @@ import numpy as np
 import os
 
 # ── 1. Load ──────────────────────────────────────────────────────────────────
-CSV_PATH = r"d:\UNI\Sem 7\ME420 Mech Eng Research Project\SmartBEM-Studio\Readings_from_rig\Idel_test_2026_07_21.csv"
+CSV_PATH = r"d:\UNI\Sem 7\ME420 Mech Eng Research Project\SmartBEM-Studio\Readings_from_rig\experimental_data\Idel_test_2026_07_21.csv"
 OUT_DIR  = r"d:\UNI\Sem 7\ME420 Mech Eng Research Project\SmartBEM-Studio\Readings_from_rig\plots"
 os.makedirs(OUT_DIR, exist_ok=True)
 

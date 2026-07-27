@@ -3,7 +3,7 @@ import sys
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 STUDIO_DIR = os.path.dirname(BASE_DIR)
-IDF_PATH = os.path.join(STUDIO_DIR, "generated_idf.idf")
+IDF_PATH = os.path.join(STUDIO_DIR, "hanger_chamber_master.idf")
 ARTIFACT_OUT = r"C:\Users\ASUS\.gemini\antigravity-ide\brain\30f9feb6-f7e5-40c7-a4be-f148a0753aa8\idf_parameter_audit.md"
 
 def parse_idf(idf_path):
@@ -69,7 +69,7 @@ def generate_audit_artifact():
     
     md_lines = [
         "# Complete EnergyPlus IDF Parameter Audit & Verification Table",
-        "**Master Base File:** [`generated_idf.idf`](file:///d:/UNI/Sem%207/ME420%20Mech%20Eng%20Research%20Project/SmartBEM-Studio/generated_idf.idf)\n",
+        "**Master Base File:** [`hanger_chamber_master.idf`](file:///d:/UNI/Sem%207/ME420%20Mech%20Eng%20Research%20Project/SmartBEM-Studio/hanger_chamber_master.idf)\n",
         "This artifact contains the **complete, line-by-line parameter audit** of every object in the base IDF file. Please review the current values and add comments/corrections so we can calibrate every single parameter to match your real physical rig before running the parameter tuning loops.\n",
         "---",
         "## Summary of Extracted IDF Objects\n",

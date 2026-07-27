@@ -23,7 +23,7 @@ FILE_SPECS = [
     {"part": "Part 2", "filename": "Full day 1 part 2_2026-07-23.csv"},
     {"part": "Part 5", "filename": "Full Day 1 part 5_2026-07-23.csv"},
     {"part": "Part 6", "filename": "Full Day 1 part 6_2026-07-23.csv"},
-    {"part": "Idle Test", "filename": "Idel_test_2026_07_21.csv"},
+    {"part": "Idle Test", "filename": "experimental_data\Idel_test_2026_07_21.csv"},
 ]
 
 TEMP_COLS = ["outside_t", "room_1_t", "room_2_t", "room_3_t", "supply_t", "return_t"]

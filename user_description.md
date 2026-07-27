@@ -11,3 +11,15 @@ All 6 surfaces of the Chamber are constructed using the custom material 'Custom_
 The Chamber is conditioned by an Air Handling Unit (AHU) system consisting of a supply main blower fan, cooling coil, heating coil, humidifier, and mixing damper. The AHU operates with 100% recirculated return air from the Chamber (0% fresh air intake damper opening) and maintains a cooling setpoint of 16.0 degrees Celsius. The Chamber zone infiltration rate is set to 12.5 Air Changes per Hour (ACH).
 
 The Chamber has zero occupancy, zero internal lighting loads, and 1.0 Watt background equipment heat load (ESP32 micro-controller).
+
+
+
+here is the correct details of the hanger and chamber. hanger is 80m x 18m x 6m. the 6m height is wall height without roof pitch height. it wllas made of 220mm brick + out and inside cment plaster layer totalling a 250mm wall thickness, floor is 200mm concrete. roof is gable type a steel structure support with asbestoes roof panels (15mm thickness). there is a abbestoes 10mm thickness ceiling belof roof with 15cm air gap between roof layer and ceiling layer.
+
+its oriented at like this 
+
+its long side walls has window groups. one group think of it as a vertical column starting from the ground 1.2m wall then 1.1m widthx2.1m height window, then 35cm wall then another 1.1m x 1.4m window. then 35cm wall. so total added upto 5.4m. theen there is a free opening of 0.6m. so totoal wall height of hanger is 6m.
+
+long side wall has support concrte vertical columns of 60cmx60cm. between those 2 column that has 4 set of above windos group. those groups seperated at by 20cm. so its like 60cm column+ 20cm wall + 1.1m window group + 20cm wall + 1.1m window group  + 20cm wall + 1.1m window group +20cm wall + 1.1m window group + 20cm wall + 1.1m window group + 60cm column likvise it repeats upto lobbby area. in lobby are there aren't such windows, only walls.
+
+inside hanger as given in the rough draft the chamber is located inside the hanger with other rooms. (do we really need them or shall we remove them?) all the dimensions avaliable in this drawing. rough dimensions.

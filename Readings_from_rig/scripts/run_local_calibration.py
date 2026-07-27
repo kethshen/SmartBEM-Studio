@@ -17,9 +17,9 @@ ENERGYPLUS_EXE = r"C:\EnergyPlusV25-2-0\energyplus.exe"
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 STUDIO_DIR = os.path.dirname(BASE_DIR)
 
-TEMPLATE_IDF = os.path.join(STUDIO_DIR, "generated_idf.idf")
+TEMPLATE_IDF = os.path.join(STUDIO_DIR, "hanger_chamber_master.idf")
 CALIBRATED_IDF = os.path.join(BASE_DIR, "chamber_calibrated.idf")
-WEATHER_EPW = os.path.join(BASE_DIR, "test_day_weather.epw")
+WEATHER_EPW = os.path.join(BASE_DIR, "experimental_data\test_day_weather.epw")
 OUTPUT_DIR = os.path.join(BASE_DIR, "sim_output")
 
 STANDARD_EPW_SRC = r"C:\EnergyPlusV25-2-0\WeatherData\USA_FL_Tampa.Intl.AP.722110_TMY3.epw"
@@ -72,7 +72,7 @@ def create_test_day_epw(cleaned_csv_path, output_epw_path):
 
 def update_idf_template():
     """
-    Loads generated_idf.idf and deterministically updates the calibrated physical parameters:
+    Loads hanger_chamber_master.idf and deterministically updates the calibrated physical parameters:
     1. Version -> 25.2
     2. Material Chamber_PU_Foam -> k=0.08, rho=100, Cp=1543
     3. Material Brick_Core_220mm -> 0.220m (SLS 855)

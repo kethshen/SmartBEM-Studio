@@ -18,9 +18,9 @@ READVARS_EXE = r"C:\EnergyPlusV25-2-0\PostProcess\ReadVarsESO.exe"
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 STUDIO_DIR = os.path.dirname(BASE_DIR)
 
-TEMPLATE_IDF = os.path.join(STUDIO_DIR, "generated_idf.idf")
+TEMPLATE_IDF = os.path.join(STUDIO_DIR, "hanger_chamber_master.idf")
 CALIBRATED_IDF = os.path.join(BASE_DIR, "chamber_calibrated.idf")
-WEATHER_EPW = os.path.join(BASE_DIR, "test_day_weather.epw")
+WEATHER_EPW = os.path.join(BASE_DIR, "experimental_data\test_day_weather.epw")
 OUTPUT_DIR = os.path.join(BASE_DIR, "sim_output")
 SENSOR_CSV = os.path.join(BASE_DIR, "Full Day 1 part 6_2026-07-23.csv")
 PLOT_OUT = os.path.join(BASE_DIR, "plots", "cleaning_validation", "sim_vs_sensors_exact_rig_match.png")
@@ -28,14 +28,6 @@ PLOT_OUT = os.path.join(BASE_DIR, "plots", "cleaning_validation", "sim_vs_sensor
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 def update_idf_exact_conditions(ach_value=12.55, k_value=0.0800, rho_value=100.0, cp_value=1543.0):
-    """
-    Updates the master IDF template to match the EXACT physical rig conditions:
-    1. Cooling Setpoint = 17.0 °C (Constant for all hours)
-    2. Fan Operating Mode = Always On Discrete (Continuous Fan Operation)
-    3. Chamber Infiltration = 12.55 ACH (UA = 52.83 W/K target)
-    4. Custom PU Foam (k=0.08, rho=100, Cp=1543)
-    5. Hanger Composite Wall = 250mm (15mm plaster + 220mm SLS brick + 15mm plaster)
-    """
     if not os.path.exists(TEMPLATE_IDF):
         print(f"Error: Master template IDF not found at {TEMPLATE_IDF}")
         return False
@@ -66,33 +58,13 @@ def update_idf_exact_conditions(ach_value=12.55, k_value=0.0800, rho_value=100.0
     content = content.replace("32.00,             !- Density {kg/m3}", f"{rho_value:.2f},            !- Density {{kg/m3}}")
     content = content.replace("1500.00,           !- Specific Heat {J/kg-K}", f"{cp_value:.2f},           !- Specific Heat {{J/kg-K}}")
 
-    # 3. Force Continuous Fan Operation (Always On Discrete instead of Always Off Discrete)
-    content = content.replace("Supply Air Fan Operating Mode Schedule Name: Always Off Discrete", "Supply Air Fan Operating Mode Schedule Name: Always On Discrete")
+    # 3. Force Continuous Fan Operation in ZoneHVAC:PackagedTerminalAirConditioner
     content = content.replace("Always Off Discrete,             !- Supply Air Fan Operating Mode Schedule Name", "Always On Discrete,              !- Supply Air Fan Operating Mode Schedule Name")
 
     # 4. Overwrite Cooling Setpoint Day Intervals to Constant 17.0 °C
-    old_cooling_day_default = """Schedule:Day:Interval,
-  COOLING_SETPOINT_SCH_DefaultDay,        !- Name
-  Temperature,                            !- Schedule Type Limits Name
-  No,                                     !- Interpolate to Timestep
-  08:00,                                  !- Time 1 {hh:mm}
-  28,                                     !- Value Until Time 1
-  18:00,                                  !- Time 2 {hh:mm}
-  24,                                     !- Value Until Time 2
-  24:00,                                  !- Time 3 {hh:mm}
-  28;                                     !- Value Until Time 3"""
-
-    new_cooling_day_default = """Schedule:Day:Interval,
-  COOLING_SETPOINT_SCH_DefaultDay,        !- Name
-  Temperature,                            !- Schedule Type Limits Name
-  No,                                     !- Interpolate to Timestep
-  24:00,                                  !- Time 1 {hh:mm}
-  17;                                     !- Value Until Time 1"""
-
-    content = content.replace(old_cooling_day_default, new_cooling_day_default)
-    content = content.replace("Value Until Time 1\n  28", "Value Until Time 1\n  17")
-    content = content.replace("Value Until Time 2\n  24", "Value Until Time 2\n  17")
-    content = content.replace("Value Until Time 3\n  28", "Value Until Time 3\n  17")
+    content = content.replace("28,                                     !- Value Until Time 1", "17,                                     !- Value Until Time 1")
+    content = content.replace("24,                                     !- Value Until Time 2", "17,                                     !- Value Until Time 2")
+    content = content.replace("28;                                     !- Value Until Time 3", "17;                                     !- Value Until Time 3")
 
     # 5. Infiltration Object to hit UA_effective target (52.83 W/K)
     chamber_infiltration = f"""
