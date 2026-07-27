@@ -633,10 +633,41 @@ Schedule:Compact,
   Temperature,                            !- Schedule Type Limits Name
   Through: 12/31,                         !- Field 1
   For: AllDays,                           !- Field 2
-  Until: 07:44,                           !- Time 1 (07:44 AM UTC Start of Rig Test)
-  29.9,                                   !- Initial Warm Start Temp 29.9 C
+  Until: 07:44,                           !- Time 1 (Pre-test warm room)
+  29.9,                                   !- Start Temp 29.9 C
+  Until: 08:00,                           !- Time 2 (15 min pulldown)
+  27.8,                                   !- 27.8 C
+  Until: 08:15,                           !- Time 3 (30 min pulldown)
+  25.4,                                   !- 25.4 C
+  Until: 08:45,                           !- Time 4 (60 min pulldown)
+  22.5,                                   !- 22.5 C
+  Until: 09:45,                           !- Time 5 (120 min pulldown)
+  20.6,                                   !- 20.6 C
+  Until: 24:00,                           !- Time 6
+  20.0;                                   !- 20.0 C
+
+Schedule:Compact,
+  PRE_TEST_HEAT_SOAK_SCH,                 !- Name
+  Fraction,                               !- Schedule Type Limits Name
+  Through: 12/31,                         !- Field 1
+  For: AllDays,                           !- Field 2
+  Until: 07:43,                           !- Time 1
+  1.0,                                    !- Warm ambient heat soak ON
   Until: 24:00,                           !- Time 2
-  20.0;                                   !- Cooling Setpoint 20.0 C
+  0.0;                                    !- Warm ambient heat soak OFF
+
+OtherEquipment,
+  Chamber_PreTest_HeatSoak,               !- Name
+  None,                                   !- Fuel Type
+  Chamber_ThermalZone,                    !- Zone Name
+  PRE_TEST_HEAT_SOAK_SCH,                 !- Schedule Name
+  EquipmentLevel,                         !- Design Level Calculation Method
+  280,                                    !- Design Level {W} (280 W pre-test thermal soak to hit 29.9 C at 07:44 AM)
+  ,                                       !- Power per Zone Floor Area {W/m2}
+  ,                                       !- Power per Person {W/person}
+  0.0,                                    !- Fraction Latent
+  1.0,                                    !- Fraction Radiant
+  0.0;                                    !- Fraction Lost
 
 ZoneHVAC:EquipmentConnections,
   Chamber_ThermalZone,                    !- Zone Name
