@@ -68,7 +68,7 @@ Example IDF files/
 EP Launch results/
 
 # Weather files (downloaded at runtime by Colab)
-weather_files/
+# weather_files/
 
 # ==============================================================
 # 5. AUTO-GENERATED RUNTIME FILES (Colab)

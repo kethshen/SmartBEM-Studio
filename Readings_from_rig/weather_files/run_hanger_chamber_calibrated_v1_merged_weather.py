@@ -7,7 +7,27 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.optimize import minimize
 
-# Simple DTW implementation for trajectory shape matching
+# 1. Paths & Configuration
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+STUDIO_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, "..", ".."))
+RIG_DIR = os.path.join(STUDIO_DIR, "Readings_from_rig")
+CALIBRATED_V1_DIR = SCRIPT_DIR
+
+MASTER_IDF_PATH = os.path.join(CALIBRATED_V1_DIR, "hanger_chamber_base_template.idf")
+OFFICIAL_KANDY_EPW_PATH = os.path.join(CALIBRATED_V1_DIR, "LKA_CP_Kandy.434440_TMYx.2011-2025.epw")
+MERGED_EPW_PATH = os.path.join(CALIBRATED_V1_DIR, "test_day_weather_merged_1min.epw")
+CSV_CLEANED_PATH = os.path.join(CALIBRATED_V1_DIR, "Idel_test_2026_07_21_cleaned.csv")
+OUT_DIR = os.path.join(CALIBRATED_V1_DIR, "sim_output_merged_weather")
+FINAL_IDF_PATH = os.path.join(CALIBRATED_V1_DIR, "hanger_chamber_after_calibrated_v1_merged_weather.idf")
+PLOT_PATH = os.path.join(CALIBRATED_V1_DIR, "hanger_chamber_after_calibrated_v1_merged_weather.png")
+
+ENERGYPLUS_EXE = r"C:\EnergyPlusV25-2-0\energyplus.exe"
+if not os.path.exists(ENERGYPLUS_EXE):
+    ENERGYPLUS_EXE = shutil.which("energyplus")
+
+os.makedirs(OUT_DIR, exist_ok=True)
+
+# DTW distance function
 def compute_dtw_distance(s1, s2):
     n, m = len(s1), len(s2)
     dtw_matrix = np.zeros((n + 1, m + 1))
@@ -18,25 +38,6 @@ def compute_dtw_distance(s1, s2):
             cost = abs(s1[i - 1] - s2[j - 1])
             dtw_matrix[i, j] = cost + min(dtw_matrix[i - 1, j], dtw_matrix[i, j - 1], dtw_matrix[i - 1, j - 1])
     return dtw_matrix[n, m] / max(n, m)
-
-# 1. Paths & Configuration
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-STUDIO_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, "..", ".."))
-RIG_DIR = os.path.join(STUDIO_DIR, "Readings_from_rig")
-CALIBRATED_V1_DIR = SCRIPT_DIR
-
-MASTER_IDF_PATH = os.path.join(CALIBRATED_V1_DIR, "hanger_chamber_base_template.idf")
-EPW_PATH = os.path.join(CALIBRATED_V1_DIR, "test_day_weather.epw")
-CSV_CLEANED_PATH = os.path.join(CALIBRATED_V1_DIR, "Idel_test_2026_07_21_cleaned.csv")
-OUT_DIR = os.path.join(CALIBRATED_V1_DIR, "sim_output")
-FINAL_IDF_PATH = os.path.join(CALIBRATED_V1_DIR, "hanger_chamber_after_calibrated_v1.idf")
-PLOT_PATH = os.path.join(CALIBRATED_V1_DIR, "hanger_chamber_after_calibrated_v1.png")
-
-ENERGYPLUS_EXE = r"C:\EnergyPlusV25-2-0\energyplus.exe"
-if not os.path.exists(ENERGYPLUS_EXE):
-    ENERGYPLUS_EXE = shutil.which("energyplus")
-
-os.makedirs(OUT_DIR, exist_ok=True)
 
 # 2. 4-Stage Sensor Data Cleaning Function
 def clean_sensor_signal_4stage(series, min_val=5.0, max_val=50.0, rolling_window=12, ema_alpha=0.10):
@@ -50,36 +51,52 @@ def clean_sensor_signal_4stage(series, min_val=5.0, max_val=50.0, rolling_window
     s_ema = s_interp.ewm(alpha=ema_alpha, adjust=False).mean()
     return s_ema.values
 
-# 3. Load Sensor Reference Trajectory (170.1 min test window) & Clean Signals
+# 3. Load Sensor Data & Create Merged 1-Minute EPW Boundary File
 df_cleaned = pd.read_csv(CSV_CLEANED_PATH)
 Tz_raw = df_cleaned["Tz_weighted"].values
 Tz_ema = pd.Series(Tz_raw).ewm(alpha=0.10, adjust=False).mean().values
 N_sensor = len(Tz_ema)
 mean_Tz = np.mean(Tz_ema)
 
-if "outside_t" in df_cleaned.columns:
-    T_outdoor_cleaned = clean_sensor_signal_4stage(df_cleaned["outside_t"])
-    with open(EPW_PATH, "r", encoding="utf-8") as f:
-        epw_lines = f.readlines()
-    header = epw_lines[:8]
-    data_lines = epw_lines[8:]
-    new_data = []
-    for line in data_lines:
-        parts = line.strip().split(",")
-        if len(parts) > 6:
-            hour = int(parts[3])
-            if 13 <= hour <= 16:
-                idx = int(round((hour - 13) * (N_sensor / 4.0)))
-                idx = min(idx, N_sensor - 1)
-                parts[6] = f"{T_outdoor_cleaned[idx]:.2f}"
-            new_data.append(",".join(parts) + "\n")
-    with open(EPW_PATH, "w", encoding="utf-8") as f:
-        f.writelines(header + new_data)
-    print("Updated EPW Weather File with 4-Stage Cleaned Measured Outdoor Sensor Boundary Conditions.")
+# Perform 4-stage cleaning on outdoor sensor signals
+T_outdoor_cleaned = clean_sensor_signal_4stage(df_cleaned["outside_t"])
+RH_outdoor_cleaned = clean_sensor_signal_4stage(df_cleaned["humidity"], min_val=10.0, max_val=100.0) if "humidity" in df_cleaned.columns else np.full(N_sensor, 70.0)
+P_outdoor_cleaned = clean_sensor_signal_4stage(df_cleaned["pressure"], min_val=90000.0, max_val=105000.0) if "pressure" in df_cleaned.columns else np.full(N_sensor, 99063.0)
 
-# 3. Read Master IDF Content
+# Merge measured sensor 1-min data with official Kandy Solar & Wind data from EPW
+with open(OFFICIAL_KANDY_EPW_PATH, "r", encoding="utf-8") as f:
+    epw_lines = f.readlines()
+
+header_lines = epw_lines[:8]
+data_lines = epw_lines[8:]
+merged_data_lines = []
+
+for line in data_lines:
+    parts = line.strip().split(",")
+    if len(parts) > 20:
+        hour = int(parts[3])
+        # For afternoon test window (13:00 to 16:00), inject measured rig sensor values
+        if 13 <= hour <= 16:
+            idx = int(round((hour - 13) * (N_sensor / 4.0)))
+            idx = min(idx, N_sensor - 1)
+            parts[6] = f"{T_outdoor_cleaned[idx]:.2f}"      # Drybulb Temperature (C)
+            parts[8] = f"{RH_outdoor_cleaned[idx]:.1f}"     # Relative Humidity (%)
+            parts[9] = f"{P_outdoor_cleaned[idx]:.0f}"      # Atmospheric Pressure (Pa)
+            # Solar Radiation (fields 13 & 14) and Wind Speed (field 21) are retained from official Kandy EPW
+        merged_data_lines.append(",".join(parts) + "\n")
+
+with open(MERGED_EPW_PATH, "w", encoding="utf-8") as f:
+    f.writelines(header_lines + merged_data_lines)
+
+print(f"Created Merged EPW File with Official Kandy Solar/Wind + 1-Min Rig Sensors: {MERGED_EPW_PATH}")
+
+# 4. Read Base IDF Content & Ensure Timestep, 60;
 with open(MASTER_IDF_PATH, "r", encoding="utf-8") as f:
     master_idf_content = f.read()
+
+# Force Timestep, 60; (1-minute resolution)
+if "Timestep,\n  6;" in master_idf_content:
+    master_idf_content = master_idf_content.replace("Timestep,\n  6;", "Timestep,\n  60;")
 
 iteration_counter = 0
 best_loss = float("inf")
@@ -89,7 +106,7 @@ best_params = None
 best_Tsim = None
 
 print("=" * 95)
-print("  LAUNCHING STAGE 2 ASHRAE GUIDELINE 14 & DTW SHAPE-MATCHING CALIBRATION LOOP  ")
+print("  LAUNCHING MERGED 1-MIN KANDY EPW + SENSOR BOUNDARY CALIBRATION LOOP  ")
 print("=" * 95)
 print(f"{'Iter':<5} | {'k_foam':<8} | {'cp_foam':<7} | {'rho_foam':<8} | {'ACH':<6} | {'Qcool(W)':<8} | {'CV(RMSE)%':<10} | {'NMBE%':<8} | {'Loss':<8}")
 print("-" * 95)
@@ -142,7 +159,7 @@ def run_energyplus_iteration(params):
     new_ach = f"{ach:.4f},                                    !- Air Changes per Hour {{1/hr}}"
     idf_str = idf_str.replace(old_ach, new_ach)
 
-    # 3. Update Cooling Capacity Q_cool (Robust replacement)
+    # 3. Update Cooling Capacity Q_cool
     q_start = idf_str.find("Maximum Total Cooling Capacity")
     if q_start != -1:
         line_start = idf_str.rfind("\n", 0, q_start) + 1
@@ -150,12 +167,12 @@ def run_energyplus_iteration(params):
         idf_str = idf_str[:line_start] + f"  {q_cool:.1f},                                    !- Maximum Total Cooling Capacity {{W}}" + idf_str[line_end:]
 
     # Write temporary IDF file
-    temp_idf = os.path.join(OUT_DIR, "temp_calibration_ashrae.idf")
+    temp_idf = os.path.join(OUT_DIR, "temp_calibration_merged.idf")
     with open(temp_idf, "w", encoding="utf-8") as f:
-        f.writelines(idf_str)
+        f.write(idf_str)
 
     # Run EnergyPlus
-    cmd = [ENERGYPLUS_EXE, "-d", OUT_DIR, "-w", EPW_PATH, temp_idf]
+    cmd = [ENERGYPLUS_EXE, "-d", OUT_DIR, "-w", MERGED_EPW_PATH, temp_idf]
     proc = subprocess.run(cmd, capture_output=True, text=True)
     
     if proc.returncode != 0:
@@ -184,9 +201,13 @@ def run_energyplus_iteration(params):
 
     sim_temps = np.array(sim_temps)
     
-    # Rig test window at 1-min resolution (170 timesteps): Step 450 to 620
-    start_idx = 450
+    # 1-min resolution test window (13:26 PM start = Minute 806 to 976, 170 timesteps)
+    start_idx = 806
     end_idx = start_idx + 170
+    if len(sim_temps) <= end_idx:
+        start_idx = 450
+        end_idx = start_idx + 170
+
     T_sim_window = sim_temps[start_idx:end_idx]
     
     if len(T_sim_window) < 170:
@@ -199,11 +220,10 @@ def run_energyplus_iteration(params):
 
     # Calculate ASHRAE Guideline 14 Standard Metrics
     rmse = np.sqrt(np.mean((T_sim_interp - Tz_ema)**2))
-    cv_rmse = (rmse / mean_Tz) * 100.0  # CV(RMSE) %
-    nmbe = (np.mean(T_sim_interp - Tz_ema) / mean_Tz) * 100.0  # NMBE %
-    dtw_dist = compute_dtw_distance(T_sim_interp, Tz_ema)  # DTW Distance
+    cv_rmse = (rmse / mean_Tz) * 100.0
+    nmbe = (np.mean(T_sim_interp - Tz_ema) / mean_Tz) * 100.0
+    dtw_dist = compute_dtw_distance(T_sim_interp, Tz_ema)
     
-    # Composite ASHRAE + DTW Loss Function
     loss = cv_rmse + 0.5 * abs(nmbe) + 2.0 * dtw_dist
     
     print(f"{iteration_counter:<5d} | {k_foam:<8.4f} | {cp_foam:<7.0f} | {rho_foam:<8.1f} | {ach:<6.3f} | {q_cool:<8.1f} | {cv_rmse:<10.2f} | {nmbe:<8.2f} | {loss:<8.3f}")
@@ -219,87 +239,74 @@ def run_energyplus_iteration(params):
 
     return loss
 
-# 4. Initial Guesses & Bounds in Normalized Scale [0, 1]
-bounds_raw = np.array([
-    (0.015, 0.045),    # k_foam
-    (800.0, 1800.0),   # cp_foam
-    (20.0, 45.0),      # rho_foam
-    (0.01, 0.50),      # ACH
-    (300.0, 1200.0)    # Q_cool peak
-])
+# Initial parameter guesses
+init_params = [0.0249, 1400.0, 32.0, 0.098, 597.0]
 
-def denormalize_params(p_norm):
-    p_norm = np.clip(p_norm, 0.0, 1.0)
-    lowers = bounds_raw[:, 0]
-    uppers = bounds_raw[:, 1]
-    return lowers + p_norm * (uppers - lowers)
+bounds = [
+    (0.0150, 0.0450),  # k_foam (W/mK)
+    (800.0, 2000.0),   # cp_foam (J/kgK)
+    (20.0, 60.0),      # rho_foam (kg/m3)
+    (0.010, 0.500),    # ACH (1/hr)
+    (300.0, 1200.0)    # Q_cool (W)
+]
 
-def objective_normalized(p_norm):
-    p_real = denormalize_params(p_norm)
-    return run_energyplus_iteration(p_real)
-
-x0_norm = [0.33, 0.60, 0.48, 0.18, 0.33]  # Normalized initial guess
-
-# Execute Nelder-Mead Optimization on normalized parameters
 res = minimize(
-    objective_normalized,
-    x0_norm,
+    run_energyplus_iteration,
+    init_params,
     method="Nelder-Mead",
-    options={"maxiter": 300, "disp": True, "xatol": 1e-3, "fatol": 1e-2}
+    bounds=bounds,
+    options={"maxiter": 80, "xatol": 1e-3, "fatol": 1e-2}
 )
 
-print("\n" + "=" * 95)
-print("              STAGE 2 ASHRAE & DTW CALIBRATION COMPLETED SUCCESSFULLY!             ")
+best_k, best_cp, best_rho, best_ach, best_q = best_params
+
+print("=" * 95)
+print("              STAGE 2 MERGED EPW + SENSOR CALIBRATION COMPLETED SUCCESSFULLY!             ")
 print("=" * 95)
 print(f"Optimal Composite Loss: {best_loss:.3f}")
 print(f"Optimal ASHRAE CV(RMSE): {best_cv_rmse:.2f}% (Target <= 5.0%)")
 print(f"Optimal ASHRAE NMBE:     {best_nmbe:.2f}% (Target <= 2.0%)")
-
-k_opt, cp_opt, rho_opt, ach_opt, q_opt = best_params
 print(f"\nCalibrated Physical Parameters:")
-print(f"• Foam Conductivity k:   {k_opt:.5f} W/(m·K)")
-print(f"• Foam Specific Heat cp: {cp_opt:.1f} J/(kg·K)")
-print(f"• Foam Density rho:      {rho_opt:.1f} kg/m³")
-print(f"• Chamber Infiltration:  {ach_opt:.3f} ACH")
-print(f"• Peak AC Cooling Q:     {q_opt:.1f} W")
-print(f"Saved Calibrated IDF to: {FINAL_IDF_PATH}")
+print(f"• Foam Conductivity k:   {best_k:.5f} W/(m·K)")
+print(f"• Foam Specific Heat cp: {best_cp:.1f} J/(kg·K)")
+print(f"• Foam Density rho:      {best_rho:.1f} kg/m³")
+print(f"• Chamber Infiltration:  {best_ach:.3f} ACH")
+print(f"• Peak AC Cooling Q:     {best_q:.1f} W")
 
-# 5. Final Evaluation Metrics & High-Resolution Plot
-rmse_final = np.sqrt(np.mean((best_Tsim - Tz_ema)**2))
-mae_final = np.mean(np.abs(best_Tsim - Tz_ema))
-r2_final = 1.0 - (np.sum((Tz_ema - best_Tsim)**2) / np.sum((Tz_ema - np.mean(Tz_ema))**2))
+# Plot Final Calibrated Trajectory vs Sensors
+sensor_times = np.linspace(0, 170.1, N_sensor)
 
 plt.figure(figsize=(12, 6), dpi=300)
-sensor_times_min = np.linspace(0, 170.1, N_sensor)
-plt.plot(sensor_times_min, Tz_raw, label="Cleaned Raw Sensor $T_z$ (0.50 S1 + 0.30 S2 + 0.20 S3)", color="#a1d99b", alpha=0.4, linewidth=1.5)
-plt.plot(sensor_times_min, Tz_ema, label="EMA-Smoothed Target Sensor $T_z$", color="#2ca02c", linewidth=2.5)
-plt.plot(sensor_times_min, best_Tsim, label=f"Calibrated EnergyPlus $T_{{sim}}$ (ASHRAE CV={best_cv_rmse:.1f}%)", color="#d62728", linewidth=2.2, linestyle="--")
+plt.plot(sensor_times, Tz_raw, label="Cleaned Raw Sensor $T_z$ (0.50 S1 + 0.30 S2 + 0.20 S3)", color="#2ca02c", alpha=0.25, linewidth=1.5)
+plt.plot(sensor_times, Tz_ema, label="EMA-Smoothed Target Sensor $T_z$", color="#2ca02c", linewidth=2.5)
+plt.plot(sensor_times, best_Tsim, label=f"Calibrated EnergyPlus $T_{{sim}}$ (ASHRAE CV={best_cv_rmse:.1f}%)", color="#d62728", linestyle="--", linewidth=2.5)
 
-plt.title("Stage 2 ASHRAE Guideline 14 & DTW Calibrated EnergyPlus vs. Sensor Pulldown", fontsize=14, fontweight="bold", pad=15)
-plt.xlabel("Elapsed Time (Minutes)", fontsize=12)
-plt.ylabel("Chamber Zone Air Temperature (°C)", fontsize=12)
+plt.title("Stage 2 Merged Kandy EPW & 1-Min Sensor Calibrated EnergyPlus vs. Sensor Pulldown", fontsize=13, fontweight="bold", pad=12)
+plt.xlabel("Elapsed Time (Minutes)", fontsize=11)
+plt.ylabel("Chamber Zone Air Temperature (°C)", fontsize=11)
 plt.grid(True, linestyle=":", alpha=0.6)
-plt.legend(fontsize=11, loc="upper right")
+plt.legend(fontsize=10, loc="upper right")
 
 textstr = (
     f"Calibrated Parameters:\n"
-    f"• $k_{{foam}}$ = {k_opt:.4f} W/(m·K)\n"
-    f"• $c_{{p,foam}}$ = {cp_opt:.0f} J/(kg·K)\n"
-    f"• $\\rho_{{foam}}$ = {rho_opt:.1f} kg/m³\n"
-    f"• $\\text{{ACH}}$ = {ach_opt:.3f} hr⁻¹\n"
-    f"• $Q_{{cool}}$ = {q_opt:.0f} W\n\n"
+    f"• $k_{{foam}}$ = {best_k:.4f} W/(m·K)\n"
+    f"• $c_{{p,foam}}$ = {best_cp:.0f} J/(kg·K)\n"
+    f"• $\\rho_{{foam}}$ = {best_rho:.1f} kg/m³\n"
+    f"• ACH = {best_ach:.3f} hr⁻¹\n"
+    f"• $Q_{{cool}}$ = {best_q:.0f} W\n\n"
     f"ASHRAE Guideline 14 Metrics:\n"
     f"• CV(RMSE) = {best_cv_rmse:.2f}% (Target ≤ 5%)\n"
-    f"• NMBE     = {best_nmbe:.2f}% (Target ≤ 2%)\n"
-    f"• RMSE     = {rmse_final:.2f} °C\n"
-    f"• MAE      = {mae_final:.2f} °C\n"
-    f"• R²       = {r2_final:.4f}"
+    f"• NMBE       = {best_nmbe:.2f}% (Target ≤ 2%)\n"
+    f"• RMSE       = {np.sqrt(np.mean((best_Tsim - Tz_ema)**2)):.2f} °C\n"
+    f"• MAE        = {np.mean(np.abs(best_Tsim - Tz_ema)):.2f} °C\n"
+    f"• R²         = {1.0 - (np.sum((best_Tsim - Tz_ema)**2) / np.sum((Tz_ema - np.mean(Tz_ema))**2)):.4f}"
 )
-props = dict(boxstyle="round,pad=0.6", facecolor="white", alpha=0.9, edgecolor="#ccc")
-plt.gca().text(0.03, 0.08, textstr, transform=plt.gca().transAxes, fontsize=10, verticalalignment="bottom", bbox=props)
+props = dict(boxstyle="round,pad=0.5", facecolor="white", alpha=0.9, edgecolor="#ccc")
+plt.gca().text(0.03, 0.15, textstr, transform=plt.gca().transAxes, fontsize=9, bbox=props)
 
 plt.tight_layout()
 plt.savefig(PLOT_PATH)
 plt.close()
 
+print(f"Saved Calibrated IDF to: {FINAL_IDF_PATH}")
 print(f"Saved Calibrated Comparison Plot to: {PLOT_PATH}")
