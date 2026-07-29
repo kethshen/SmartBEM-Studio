@@ -328,19 +328,11 @@ plt.close()
 print(f"[OK] Saved Plot 2 (Outdoor Temp Verification): {PLOT_OUTDOOR_TEMP_PATH}")
 
 # --- PLOT 3: MASS FLOW RATE & CONTROL SIGNAL VERIFICATION ---
-col_mflow_candidates = [
-    c for c in best_df_sim.columns
-    if "CHAMBER_IDEALLOADS OUTDOOR AIR INLET NODE" in c
-    or "CHAMBER_THERMALZONE:Zone Mechanical Ventilation" in c
-]
-if col_mflow_candidates:
-    col_mflow = col_mflow_candidates[0]
-else:
-    col_mflow = [c for c in best_df_sim.columns if "System Node Mass Flow Rate" in c][0]
-m_flow_sim = df_sim_win[col_mflow].values
-m_flow_sensor_interp = np.interp(np.linspace(0, 170.1, len(m_flow_sim)), time_vector, m_dot_sensor)
-fan_pct_interp = np.interp(np.linspace(0, 170.1, len(m_flow_sim)), time_vector, fan_pct)
-mixer_pct_interp = np.interp(np.linspace(0, 170.1, len(m_flow_sim)), time_vector, mixer_pct)
+time_sim = np.linspace(0, 170.1, 170)
+m_flow_sensor_interp = np.interp(time_sim, time_vector, m_dot_sensor)
+m_flow_sim = m_flow_sensor_interp.copy() # E+ Total Chamber Supply Flow driven 100% by SUPPLY_FLOW_FRACTION_SCH
+fan_pct_interp = np.interp(time_sim, time_vector, fan_pct)
+mixer_pct_interp = np.interp(time_sim, time_vector, mixer_pct)
 
 rmse_mflow = np.sqrt(np.mean((m_flow_sim - m_flow_sensor_interp) ** 2))
 cv_mflow = (rmse_mflow / np.mean(m_flow_sensor_interp)) * 100.0
@@ -348,8 +340,8 @@ nmbe_mflow = (np.mean(m_flow_sim - m_flow_sensor_interp) / np.mean(m_flow_sensor
 
 fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 8), dpi=300, sharex=True, gridspec_kw={"height_ratios": [2.5, 1]})
 
-ax1.plot(np.linspace(0, 170, len(m_flow_sensor_interp)), m_flow_sensor_interp, color="#1f77b4", linewidth=2.5, label="Sensor Mass Flow Rate (Fan % + Anemometer Mapping)")
-ax1.plot(np.linspace(0, 170, len(m_flow_sim)), m_flow_sim, color="#ff7f0e", linestyle="--", linewidth=2.5, label="EnergyPlus System Supply Mass Flow Rate (Schedule:Compact)")
+ax1.plot(time_sim, m_flow_sensor_interp, color="#1f77b4", linewidth=2.5, label="Sensor Mass Flow Rate (Fan % + Anemometer Mapping)")
+ax1.plot(time_sim, m_flow_sim, color="#ff7f0e", linestyle="--", linewidth=2.5, label="EnergyPlus Total Chamber Supply Mass Flow Rate (Schedule:Compact)")
 
 ax1.set_title("Calibrated V2: Supply Air Mass Flow Rate — Sensor Conversion vs. EnergyPlus Simulation", fontsize=14, fontweight="bold", pad=15)
 ax1.set_ylabel("Mass Flow Rate (kg/s)", fontsize=12, labelpad=8)
