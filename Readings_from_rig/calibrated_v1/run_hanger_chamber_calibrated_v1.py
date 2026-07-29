@@ -26,7 +26,7 @@ RIG_DIR = os.path.join(STUDIO_DIR, "Readings_from_rig")
 CALIBRATED_V1_DIR = SCRIPT_DIR
 
 MASTER_IDF_PATH = os.path.join(CALIBRATED_V1_DIR, "hanger_chamber_base_template.idf")
-EPW_PATH = os.path.join(CALIBRATED_V1_DIR, "test_day_weather.epw")
+EPW_PATH = os.path.join(CALIBRATED_V1_DIR, "test_day_weather_merged_1min.epw")
 CSV_CLEANED_PATH = os.path.join(CALIBRATED_V1_DIR, "Idel_test_2026_07_21_cleaned.csv")
 OUT_DIR = os.path.join(CALIBRATED_V1_DIR, "sim_output")
 FINAL_IDF_PATH = os.path.join(CALIBRATED_V1_DIR, "hanger_chamber_after_calibrated_v1.idf")
@@ -56,26 +56,6 @@ Tz_raw = df_cleaned["Tz_weighted"].values
 Tz_ema = pd.Series(Tz_raw).ewm(alpha=0.10, adjust=False).mean().values
 N_sensor = len(Tz_ema)
 mean_Tz = np.mean(Tz_ema)
-
-if "outside_t" in df_cleaned.columns:
-    T_outdoor_cleaned = clean_sensor_signal_4stage(df_cleaned["outside_t"])
-    with open(EPW_PATH, "r", encoding="utf-8") as f:
-        epw_lines = f.readlines()
-    header = epw_lines[:8]
-    data_lines = epw_lines[8:]
-    new_data = []
-    for line in data_lines:
-        parts = line.strip().split(",")
-        if len(parts) > 6:
-            hour = int(parts[3])
-            if 13 <= hour <= 16:
-                idx = int(round((hour - 13) * (N_sensor / 4.0)))
-                idx = min(idx, N_sensor - 1)
-                parts[6] = f"{T_outdoor_cleaned[idx]:.2f}"
-            new_data.append(",".join(parts) + "\n")
-    with open(EPW_PATH, "w", encoding="utf-8") as f:
-        f.writelines(header + new_data)
-    print("Updated EPW Weather File with 4-Stage Cleaned Measured Outdoor Sensor Boundary Conditions.")
 
 # 3. Read Master IDF Content
 with open(MASTER_IDF_PATH, "r", encoding="utf-8") as f:
@@ -184,9 +164,13 @@ def run_energyplus_iteration(params):
 
     sim_temps = np.array(sim_temps)
     
-    # Rig test window at 1-min resolution (170 timesteps): Step 450 to 620
-    start_idx = 450
+    # Rig test window at 1-min resolution (13:26 PM to 16:16 PM = Minute 806 to 976)
+    start_idx = 806
     end_idx = start_idx + 170
+    if len(sim_temps) <= end_idx:
+        start_idx = 450
+        end_idx = start_idx + 170
+
     T_sim_window = sim_temps[start_idx:end_idx]
     
     if len(T_sim_window) < 170:

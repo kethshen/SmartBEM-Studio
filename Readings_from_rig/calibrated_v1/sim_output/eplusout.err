@@ -1,13 +1,8 @@
-Program Version,EnergyPlus, Version 25.2.0-cf7368216c, YMD=2026.07.29 00:53,
+Program Version,EnergyPlus, Version 25.2.0-cf7368216c, YMD=2026.07.29 10:49,
    ** Warning ** ProcessScheduleInput: Schedule:Compact = PRE_TEST_HEAT_SOAK_SCH
    **   ~~~   ** Schedule Type Limits Name = FRACTION, item not found.
    **   ~~~   ** Schedule will not be validated.
    ************* Beginning Zone Sizing Calculations
-   ** Warning ** Weather file location will be used rather than entered (IDF) Location object.
-   **   ~~~   ** ..Location object=PERADENIYA_SRI_LANKA
-   **   ~~~   ** ..Weather File Location=Colombo Western Sri Lanka CUSTOM-RIG-TEST WMO#=434000
-   **   ~~~   ** ..due to location differences, Latitude difference=[0.35] degrees, Longitude difference=[0.73] degrees.
-   **   ~~~   ** ..Time Zone difference=[0.5] hour(s), Elevation difference=[97.05] percent, [461.00] meters.
    ** Warning ** CheckUsedConstructions: There are 6 nominally unused constructions in input.
    **   ~~~   ** For explicit details on each unused construction, use Output:Diagnostics,DisplayExtraWarnings;
    ** Warning ** Calculated design heating load for zone=CHAMBER_THERMALZONE is zero.
@@ -21,6 +16,16 @@ Program Version,EnergyPlus, Version 25.2.0-cf7368216c, YMD=2026.07.29 00:53,
    ************* All Return Air Paths passed integrity testing
    ************* No node connection errors were found.
    ************* Beginning Simulation
+   ** Warning ** The resource referenced by LifeCycleCost:UsePriceEscalation= "U.S. AVG  COMMERCIAL-ELECTRICITY" has no energy cost. 
+   **   ~~~   ** ... It is likely that the wrong resource is used. The resource should match the meter used in Utility:Tariff.
+   ** Warning ** The resource referenced by LifeCycleCost:UsePriceEscalation= "U.S. AVG  COMMERCIAL-DISTILLATE OIL" has no energy cost. 
+   **   ~~~   ** ... It is likely that the wrong resource is used. The resource should match the meter used in Utility:Tariff.
+   ** Warning ** The resource referenced by LifeCycleCost:UsePriceEscalation= "U.S. AVG  COMMERCIAL-RESIDUAL OIL" has no energy cost. 
+   **   ~~~   ** ... It is likely that the wrong resource is used. The resource should match the meter used in Utility:Tariff.
+   ** Warning ** The resource referenced by LifeCycleCost:UsePriceEscalation= "U.S. AVG  COMMERCIAL-NATURAL GAS" has no energy cost. 
+   **   ~~~   ** ... It is likely that the wrong resource is used. The resource should match the meter used in Utility:Tariff.
+   ** Warning ** The resource referenced by LifeCycleCost:UsePriceEscalation= "U.S. AVG  COMMERCIAL-COAL" has no energy cost. 
+   **   ~~~   ** ... It is likely that the wrong resource is used. The resource should match the meter used in Utility:Tariff.
    ************* Simulation Error Summary *************
    ** Severe  ** Orphaned ZoneHVAC object found.  This was object never referenced in the input, and was not used.
    **   ~~~   **  -- Object type: ZoneHVAC:PackagedTerminalAirConditioner
@@ -36,5 +41,5 @@ Program Version,EnergyPlus, Version 25.2.0-cf7368216c, YMD=2026.07.29 00:53,
    ************* ..object. You may remove the constructions indicated (when you use the DisplayExtraWarnings option).
    *************
    ************* EnergyPlus Warmup Error Summary. During Warmup: 0 Warning; 0 Severe Errors.
-   ************* EnergyPlus Sizing Error Summary. During Sizing: 3 Warning; 0 Severe Errors.
-   ************* EnergyPlus Completed Successfully-- 5 Warning; 1 Severe Errors; Elapsed Time=00hr 00min  0.77sec
+   ************* EnergyPlus Sizing Error Summary. During Sizing: 2 Warning; 0 Severe Errors.
+   ************* EnergyPlus Completed Successfully-- 9 Warning; 1 Severe Errors; Elapsed Time=00hr 00min  0.71sec
