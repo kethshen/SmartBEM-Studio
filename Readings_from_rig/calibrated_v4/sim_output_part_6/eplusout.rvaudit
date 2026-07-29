@@ -1,0 +1,16 @@
+ ReadVarsESO
+ processing:d:\UNI\Sem 7\ME420 Mech Eng Research Project\SmartBEM-Studio\Readings_from_rig\calibrated_v4\hanger_chamber_after_calibrated_v4_part_6.rvi
+ input file:d:\UNI\Sem 7\ME420 Mech Eng Research Project\SmartBEM-Studio\Readings_from_rig\calibrated_v4\sim_output_part_6\eplusout.eso
+ output file:d:\UNI\Sem 7\ME420 Mech Eng Research Project\SmartBEM-Studio\Readings_from_rig\calibrated_v4\sim_output_part_6\eplusout.csv
+ getting all vars from:d:\UNI\Sem 7\ME420 Mech Eng Research Project\SmartBEM-Studio\Readings_from_rig\calibrated_v4\sim_output_part_6\eplusout.eso
+  number variables requested for output=          26
+ ReadVars Run Time=00hr 00min  0.94sec
+ ReadVarsESO program completed successfully.
+ ReadVarsESO
+ processing:d:\UNI\Sem 7\ME420 Mech Eng Research Project\SmartBEM-Studio\Readings_from_rig\calibrated_v4\hanger_chamber_after_calibrated_v4_part_6.mvi
+ input file:d:\UNI\Sem 7\ME420 Mech Eng Research Project\SmartBEM-Studio\Readings_from_rig\calibrated_v4\sim_output_part_6\eplusout.mtr
+ output file:d:\UNI\Sem 7\ME420 Mech Eng Research Project\SmartBEM-Studio\Readings_from_rig\calibrated_v4\sim_output_part_6\eplusmtr.csv
+ getting all vars from:d:\UNI\Sem 7\ME420 Mech Eng Research Project\SmartBEM-Studio\Readings_from_rig\calibrated_v4\sim_output_part_6\eplusout.mtr
+  number variables requested for output=           1
+ ReadVars Run Time=00hr 00min  0.02sec
+ ReadVarsESO program completed successfully.
