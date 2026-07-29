@@ -1,4 +1,4 @@
-Program Version,EnergyPlus, Version 25.2.0-cf7368216c, YMD=2026.07.29 11:23
+Program Version,EnergyPlus, Version 25.2.0-cf7368216c, YMD=2026.07.29 15:04
 ! <Version>, Version ID
  Version, 25.2
 ! <Timesteps per Hour>, #TimeSteps, Minutes per TimeStep {minutes}
@@ -82,8 +82,8 @@ Surface Heat Transfer Algorithm, CTF - ConductionTransferFunction,200,0.10,1000.
  OtherEquipment Internal Gains Nominal, CHAMBER_PRETEST_HEATSOAK,PRE_TEST_HEAT_SOAK_SCH,CHAMBER_THERMALZONE,4.00,0.3,320.000,80.000,1200.000,0.000,1.000,0.000,0.000,0.000,320.000,0.000,320.000,0.000,320.000,0.000,320.000,0.000,320.000
 ! <ZoneInfiltration Airflow Stats Nominal>,Name,Input Object, Schedule Name,Zone Name, Zone Floor Area {m2}, # Zone Occupants,Design Volume Flow Rate {m3/s},Volume Flow Rate/Floor Area {m3/s-m2},Volume Flow Rate/Exterior Surface Area {m3/s-m2},ACH - Air Changes per Hour,Equation A - Constant Term Coefficient {},Equation B - Temperature Term Coefficient {1/C},Equation C - Velocity Term Coefficient {s/m}, Equation D - Velocity Squared Term Coefficient {s2/m2}
  ZoneInfiltration Airflow Stats Nominal, CHAMBER_INFILTRATION,ZoneInfiltration:DesignFlowRate,Constant-1.0,CHAMBER_THERMALZONE,4.00,0.3,2.222E-005,5.556E-006,1.111E-006,1.000E-002,1.000,0.000,0.000,0.000
- ZoneInfiltration Airflow Stats Nominal, HANGER_INFILTRATION,ZoneInfiltration:DesignFlowRate,Constant-1.0,HANGER_THERMALZONE,1360.00,90.7,2.456,1.806E-003,6.532E-004,0.500,1.000,0.000,0.000,0.000
- ZoneInfiltration Airflow Stats Nominal, HANGER_CONTINUOUS_EAVE_INFILTRATION,ZoneInfiltration:DesignFlowRate,ALWAYS ON CONTINUOUS,HANGER_THERMALZONE,1360.00,90.7,14.733,1.083E-002,3.919E-003,3.000,1.000,0.000,0.000,0.000
+ ZoneInfiltration Airflow Stats Nominal, HANGER_INFILTRATION,ZoneInfiltration:DesignFlowRate,Constant-1.0,HANGER_THERMALZONE,1360.00,90.7,4.911E-002,3.611E-005,1.306E-005,1.000E-002,1.000,0.000,0.000,0.000
+ ZoneInfiltration Airflow Stats Nominal, HANGER_CONTINUOUS_EAVE_INFILTRATION,ZoneInfiltration:DesignFlowRate,ALWAYS ON CONTINUOUS,HANGER_THERMALZONE,1360.00,90.7,4.911E-002,3.611E-005,1.306E-005,1.000E-002,1.000,0.000,0.000,0.000
 ! <AirFlow Model>, Simple
  AirFlow Model, Simple
 ! <RoomAir Model>, Zone Name, Mixing/Mundt/UCSDDV/UCSDCV/UCSDUFI/UCSDUFE/User Defined
@@ -104,15 +104,13 @@ Zone Volume Capacitance Multiplier,   1.000 ,   1.000,   1.000,   1.000
  Cooling Sizing Factor Information, Zone CHAMBER_THERMALZONE,          1.2
  Cooling Sizing Factor Information, Zone HANGER_THERMALZONE,          1.2
 ! <Zone Sizing Information>, Zone Name, Load Type, Calc Des Load {W}, User Des Load {W}, Calc Des Air Flow Rate {m3/s}, User Des Air Flow Rate {m3/s}, Design Day Name, Date/Time of Peak, Temperature at Peak {C}, Humidity Ratio at Peak {kgWater/kgDryAir}, Floor Area {m2}, # Occupants, Calc Outdoor Air Flow Rate {m3/s}, Calc DOAS Heat Addition Rate {W}
- Zone Sizing Information, CHAMBER_THERMALZONE, Cooling, 749.66483, 899.59780, 7.68102E-002, 9.50330E-002, CHICAGO_IL_USA COOLING .4% CONDITIONS DB=>MWB, 7/21 14:25:00, 32.80000, 1.50099E-002, 4.00000, 0.26667, 9.50330E-002, 0.00000
+ Zone Sizing Information, CHAMBER_THERMALZONE, Cooling, 749.66486, 899.59783, 7.68103E-002, 9.50330E-002, CHICAGO_IL_USA COOLING .4% CONDITIONS DB=>MWB, 7/21 14:25:00, 32.80000, 1.50099E-002, 4.00000, 0.26667, 9.50330E-002, 0.00000
  Zone Sizing Information, CHAMBER_THERMALZONE, Heating, 0.00000, 0.00000, 0.00000, 9.50330E-002, CHICAGO_IL_USA HEATING 99.6% CONDITIONS, 1/21 00:01:00, -21.20000, 5.78027E-004, 4.00000, 0.26667, 9.50330E-002, 0.00000
- Zone Sizing Information, HANGER_THERMALZONE, Cooling, 516935.72467, 620322.86960, 49.24875, 59.09850, CHICAGO_IL_USA COOLING .4% CONDITIONS DB=>MWB, 7/21 14:25:00, 32.80000, 1.50099E-002, 1360.00000, 90.66667, 0.00000, 0.00000
- Zone Sizing Information, HANGER_THERMALZONE, Heating, 891119.29613, 1069343.15535, 19.19808, 23.03769, CHICAGO_IL_USA HEATING 99.6% CONDITIONS, 1/21 08:00:00, -21.20000, 5.78027E-004, 1360.00000, 90.66667, 0.00000, 0.00000
+ Zone Sizing Information, HANGER_THERMALZONE, Cooling, 277034.74796, 332441.69755, 23.62818, 28.35382, CHICAGO_IL_USA COOLING .4% CONDITIONS DB=>MWB, 7/21 14:25:00, 32.80000, 1.50099E-002, 1360.00000, 90.66667, 0.00000, 0.00000
+ Zone Sizing Information, HANGER_THERMALZONE, Heating, 150237.85814, 180285.42976, 3.23741, 3.88489, CHICAGO_IL_USA HEATING 99.6% CONDITIONS, 1/21 08:00:00, -21.20000, 5.78027E-004, 1360.00000, 90.66667, 0.00000, 0.00000
 ! <Component Sizing Information>, Component Type, Component Name, Input Field Description, Value
  Component Sizing Information, ZoneHVAC:IdealLoadsAirSystem, CHAMBER_IDEALLOADS, User-Specified Maximum Heating Air Flow Rate [m3/s], 0.00000
  Component Sizing Information, ZoneHVAC:IdealLoadsAirSystem, CHAMBER_IDEALLOADS, User-Specified Maximum Cooling Air Flow Rate [m3/s], 9.50330E-002
- Component Sizing Information, ZoneHVAC:IdealLoadsAirSystem, CHAMBER_IDEALLOADS, Design Size Maximum Total Cooling Capacity [W], 477.30000
- Component Sizing Information, ZoneHVAC:IdealLoadsAirSystem, CHAMBER_IDEALLOADS, User-Specified Maximum Total Cooling Capacity [W], 477.30000
  Component Sizing Information, ZoneHVAC:IdealLoadsAirSystem, HANGER_IDEALLOADS, User-Specified Maximum Heating Air Flow Rate [m3/s], 0.00000
  Component Sizing Information, ZoneHVAC:IdealLoadsAirSystem, HANGER_IDEALLOADS, User-Specified Maximum Cooling Air Flow Rate [m3/s], 0.00000
 ! <Environment>,Environment Name,Environment Type, Start Date, End Date, Start DayOfWeek, Duration {#days}, Source:Start DayOfWeek,  Use Daylight Saving, Use Holidays, Apply Weekend Holiday Rule,  Use Rain Values, Use Snow Values, Sky Temperature Model
@@ -125,13 +123,13 @@ Environment:WarmupDays,  3
 ! <Tabular Report>,Style,Unit Conversion, Format Reals
 Tabular Report,HTML,None,Yes
 ! <Warmup Convergence Information>,Zone Name,Environment Type/Name,Average Warmup Temperature Difference {deltaC},Std Dev Warmup Temperature Difference {deltaC},Max Temperature Pass/Fail Convergence,Min Temperature Pass/Fail Convergence,Average Warmup Load Difference {W},Std Dev Warmup Load Difference {W},Heating Load Pass/Fail Convergence,Cooling Load Pass/Fail Convergence
- Warmup Convergence Information,CHAMBER_THERMALZONE,RunPeriod: TEST_DAY_JULY21,1.1567293707E-002,7.3302402058E-002,Pass,Pass,2.3440115380E-002,0.1896465552,Pass,Pass
- Warmup Convergence Information,HANGER_THERMALZONE,RunPeriod: TEST_DAY_JULY21,1.5226314988E-002,2.2734447986E-002,Pass,Pass,0.0000000000,0.0000000000,Pass,Pass
+ Warmup Convergence Information,CHAMBER_THERMALZONE,RunPeriod: TEST_DAY_JULY21,4.0655349873E-002,0.3219888344,Pass,Pass,2.5889666340E-003,4.9423806260E-002,Pass,Pass
+ Warmup Convergence Information,HANGER_THERMALZONE,RunPeriod: TEST_DAY_JULY21,1.4109705976E-002,7.0633281745E-003,Pass,Pass,0.0000000000,0.0000000000,Pass,Pass
 Environment,TESTDAYRUNPERIOD,WeatherFileRunPeriod,07/21/2013,07/21/2013,Sunday,1,Use RunPeriod Specified Day,Yes,Yes,No,Yes,Yes,Clark and Allen
 Environment:Daylight Saving,No,
 Environment:WarmupDays,  3
- Warmup Convergence Information,CHAMBER_THERMALZONE,RunPeriod: TESTDAYRUNPERIOD,1.0336952977E-002,7.3151555819E-002,Pass,Pass,1.5530711031E-002,0.1159805236,Pass,Pass
- Warmup Convergence Information,HANGER_THERMALZONE,RunPeriod: TESTDAYRUNPERIOD,1.4600412551E-002,2.1937195450E-002,Pass,Pass,0.0000000000,0.0000000000,Pass,Pass
+ Warmup Convergence Information,CHAMBER_THERMALZONE,RunPeriod: TESTDAYRUNPERIOD,3.7767025409E-002,0.2920744348,Pass,Pass,2.4812210596E-003,4.6811662687E-002,Pass,Pass
+ Warmup Convergence Information,HANGER_THERMALZONE,RunPeriod: TESTDAYRUNPERIOD,1.2190815893E-002,4.7858322056E-003,Pass,Pass,0.0000000000,0.0000000000,Pass,Pass
 ! <Program Control Information:Threads/Parallel Sims>, Threading Supported,Maximum Number of Threads, Env Set Threads (OMP_NUM_THREADS), EP Env Set Threads (EP_OMP_NUM_THREADS), IDF Set Threads, Number of Threads Used (Interior Radiant Exchange), Number Nominal Surfaces, Number Parallel Sims
 Program Control Information:Threads/Parallel Sims, No,1, N/A, N/A, N/A, N/A, N/A, N/A
 End of Data

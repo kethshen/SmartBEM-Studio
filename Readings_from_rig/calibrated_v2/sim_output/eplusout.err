@@ -1,8 +1,17 @@
-Program Version,EnergyPlus, Version 25.2.0-cf7368216c, YMD=2026.07.29 11:23,
+Program Version,EnergyPlus, Version 25.2.0-cf7368216c, YMD=2026.07.29 15:04,
    ** Warning ** ProcessScheduleInput: Schedule:Compact = PRE_TEST_HEAT_SOAK_SCH
    **   ~~~   ** Schedule Type Limits Name = FRACTION, item not found.
    **   ~~~   ** Schedule will not be validated.
    ** Warning ** ProcessScheduleInput: Schedule:Compact = FLOW_RATE_SCHEDULE
+   **   ~~~   ** Schedule Type Limits Name = FRACTION, item not found.
+   **   ~~~   ** Schedule will not be validated.
+   ** Warning ** ProcessScheduleInput: Schedule:Compact = SUPPLY_FLOW_FRACTION_SCH
+   **   ~~~   ** Schedule Type Limits Name = FRACTION, item not found.
+   **   ~~~   ** Schedule will not be validated.
+   ** Warning ** ProcessScheduleInput: Schedule:Compact = OUTDOOR_AIR_FRACTION_SCH
+   **   ~~~   ** Schedule Type Limits Name = FRACTION, item not found.
+   **   ~~~   ** Schedule will not be validated.
+   ** Warning ** ProcessScheduleInput: Schedule:Compact = COOLING_AVAILABILITY_SCH
    **   ~~~   ** Schedule Type Limits Name = FRACTION, item not found.
    **   ~~~   ** Schedule will not be validated.
    ************* Beginning Zone Sizing Calculations
@@ -35,6 +44,8 @@ Program Version,EnergyPlus, Version 25.2.0-cf7368216c, YMD=2026.07.29 11:23,
    **   ~~~   **  -- Object name: Chamber_SplitAC
    ************* There are 5 unused objects in input.
    ************* Use Output:Diagnostics,DisplayUnusedObjects; to see them.
+   ************* There are 1 unused schedules in input.
+   ************* Use Output:Diagnostics,DisplayUnusedSchedules; to see them.
    *************
    ************* ===== Final Error Summary =====
    ************* The following error categories occurred.  Consider correcting or noting.
@@ -45,4 +56,4 @@ Program Version,EnergyPlus, Version 25.2.0-cf7368216c, YMD=2026.07.29 11:23,
    *************
    ************* EnergyPlus Warmup Error Summary. During Warmup: 0 Warning; 0 Severe Errors.
    ************* EnergyPlus Sizing Error Summary. During Sizing: 2 Warning; 0 Severe Errors.
-   ************* EnergyPlus Completed Successfully-- 10 Warning; 1 Severe Errors; Elapsed Time=00hr 00min  1.99sec
+   ************* EnergyPlus Completed Successfully-- 13 Warning; 1 Severe Errors; Elapsed Time=00hr 00min  2.73sec

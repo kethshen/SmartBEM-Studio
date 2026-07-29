@@ -857,9 +857,9 @@ ZoneHVAC:IdealLoadsAirSystem,
   NoLimit,                                !- Heating Limit
   ,                                       !- Maximum Heating Air Flow Rate {m3/s}
   0,                                      !- Maximum Sensible Heating Capacity {W}
-  LimitFlowRate,               !- Cooling Limit
+  LimitFlowRate,                          !- Cooling Limit
   0.095033,                               !- Maximum Cooling Air Flow Rate {m3/s}
-  600.0,                                  !- Maximum Total Cooling Capacity {W}
+  ,                                       !- Maximum Total Cooling Capacity {W}
   ,                                       !- Heating Availability Schedule Name
   COOLING_AVAILABILITY_SCH,               !- Cooling Availability Schedule Name
   None,                                   !- Dehumidification Control Type
