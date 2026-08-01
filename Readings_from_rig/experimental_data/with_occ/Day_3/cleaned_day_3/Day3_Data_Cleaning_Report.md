@@ -165,3 +165,41 @@ All raw 5-second sensor telemetry streams were processed through a 4-stage seque
 - `Day 3 Test 1 Take 2_2026-07-31_occupancy.png`
 - `Day 3 Test 1 Take 4_2026-07-31_occupancy.png`
 - `Day 3 Test 1 Take 5_2026-07-31_occupancy.png`
+
+
+---
+
+## Appendix A: Mathematical Deep Dive — Piecewise Cubic Hermite Interpolating Polynomial (PCHIP)
+
+Piecewise Cubic Hermite Interpolating Polynomial (PCHIP) interpolation is used to reconstruct missing or corrupted telemetry segments (such as sensor microcontroller bus freezes) while strictly preserving monotonic physical trends and preventing non-physical oscillations.
+
+### 1. Hermite Cubic Polynomial Representation
+On each subinterval $[x_i, x_{i+1}]$ of length $h_i = x_{i+1} - x_i$, the interpolating polynomial $P(x)$ is a cubic polynomial satisfying:
+$$P(x_i) = y_i, \quad P(x_{i+1}) = y_{i+1}$$
+$$P'(x_i) = d_i, \quad P'(x_{i+1}) = d_{i+1}$$
+where $d_i$ represents the specified derivative (slope) at node $x_i$.
+
+Defining the normalized local coordinate $t = \frac{x - x_i}{h_i} \in [0, 1]$, the polynomial is expressed in terms of cubic Hermite basis functions:
+$$P(x) = y_i H_0(t) + y_{i+1} H_1(t) + h_i d_i H_2(t) + h_i d_{i+1} H_3(t)$$
+
+where the Hermite basis functions are:
+$$H_0(t) = 1 - 3t^2 + 2t^3$$
+$$H_1(t) = 3t^2 - 2t^3$$
+$$H_2(t) = t - 2t^2 + t^3$$
+$$H_3(t) = -t^2 + t^3$$
+
+### 2. Monotonicity-Preserving Derivatives ($d_i$)
+Let $\delta_i = \frac{y_{i+1} - y_i}{h_i}$ be the secant slope of interval $[x_i, x_{i+1}]$. PCHIP selects interior node slopes $d_i$ according to strict monotonicity constraints:
+
+1. **Local Extrema Condition:**
+   If $\delta_{i-1}$ and $\delta_i$ have opposite signs ($\delta_{i-1} \cdot \delta_i \le 0$), a local extremum occurs at $x_i$. To eliminate non-physical overshoot or undershoot:
+   $$d_i = 0$$
+
+2. **Monotonic Condition:**
+   If $\delta_{i-1}$ and $\delta_i$ have the same sign ($\delta_{i-1} \cdot \delta_i > 0$), $d_i$ is computed as the weighted harmonic mean of the secant slopes:
+   $$\frac{1}{d_i} = \frac{1}{2} \left( \frac{w_1}{\delta_{i-1}} + \frac{w_2}{\delta_i} \right)$$
+   $$d_i = \frac{3(h_{i-1} + h_i)}{\frac{2h_i + h_{i-1}}{\delta_{i-1}} + \frac{h_i + 2h_{i-1}}{\delta_i}}$$
+
+### 3. Comparison: PCHIP ($C^1$ Monotonic) vs Standard Cubic Spline ($C^2$)
+- **Standard Cubic Splines ($C^2$ Continuity):** Enforce continuous second derivatives, which causes severe non-physical overshoots, undershoots, and spurious ringing oscillations (Runge's phenomenon) near sudden step changes or sensor freezes.
+- **PCHIP ($C^1$ Monotonicity):** Enforces continuous first derivatives ($C^1$) while guaranteeing that $P(x)$ is strictly monotonic on intervals where the data is monotonic. This ensures that sensor telemetry reconstructions preserve physical momentum without generating artificial peaks or valleys.
