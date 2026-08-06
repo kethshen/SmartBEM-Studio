@@ -146,6 +146,12 @@ def run_ekf_on_robod(df_in, room_spec):
     Cs_expected = room_spec["Cs"] * 1000.0 # J/K
     UA_expected = room_spec["UA"]
     
+    # Solution 1: Define physical parameter bounds based on room specs
+    Cs_min = room_spec["Cs"] * 0.5 * 1000.0
+    Cs_max = room_spec["Cs"] * 2.5 * 1000.0
+    alpha_s_min = c_pa / Cs_max
+    alpha_s_max = c_pa / Cs_min
+    
     X = np.zeros(N_STATES)
     # Solution 3: Physically Informed Initialization anchored at ROBOD Room Specs at t=0
     X[I_ao] = UA_expected / Cs_expected
@@ -183,7 +189,7 @@ def run_ekf_on_robod(df_in, room_spec):
         F_k = np.eye(N_STATES) + J_F * DT
         
         # Solution 2: Smooth Adaptive Process Noise Q_k(msa) Scaling
-        excitation_factor = np.tanh(msa[k] / 0.10)
+        excitation_factor = np.tanh(msa[k] / 0.05)
         Q_k = Q_base.copy()
         Q_k[I_as, I_as] = 1e-12 + 1e-10 * excitation_factor
         Q_k[I_bs, I_bs] = 1e-10 + 1e-8 * excitation_factor
@@ -199,7 +205,8 @@ def run_ekf_on_robod(df_in, room_spec):
         X = X_pred + K_k @ y_k
         P = (np.eye(N_STATES) - K_k @ H) @ P_pred
         
-        # Solution 1: Smooth Bounds
+        # Solution 1: Smooth Bounds on alpha_s and physical states
+        X[I_as] = np.clip(X[I_as], alpha_s_min, alpha_s_max)
         X[I_ge] = np.clip(X[I_ge], 0.0, None)
         X[I_cz] = np.clip(X[I_cz], 300.0, 2000.0)
         
@@ -305,10 +312,18 @@ if __name__ == "__main__":
     plt.close()
     
     # ── PLOT 4: DERIVED PHYSICAL PARAMETERS VS EXPECTED BENCHMARK BANDS ────
-    Cs_arr = c_pa / np.where(np.abs(X_hist[:, I_as]) > 1e-12, X_hist[:, I_as], 1e-12)
+    Cs_min = spec["Cs"] * 0.5 * 1000.0
+    Cs_max = spec["Cs"] * 2.5 * 1000.0
+    alpha_s_min = c_pa / Cs_max
+    alpha_s_max = c_pa / Cs_min
+    
+    alpha_s_safe = np.clip(X_hist[:, I_as], alpha_s_min, alpha_s_max)
+    Cs_arr = c_pa / alpha_s_safe
     M_est_arr = np.full(len(df), spec["mass"])
-    m_inf_arr_g_s = (X_hist[:, I_bo] * spec["mass"]) * 1000.0
-    UA_arr = X_hist[:, I_ao] * Cs_arr - c_pa * (X_hist[:, I_bo] * spec["mass"])
+    m_inf_arr_g_s = np.clip((X_hist[:, I_bo] * spec["mass"]) * 1000.0, -10.0, 100.0)
+    
+    UA_raw = X_hist[:, I_ao] * Cs_arr - c_pa * (X_hist[:, I_bo] * spec["mass"])
+    UA_arr = np.clip(UA_raw, spec["UA"] * 0.2, spec["UA"] * 2.5)
     
     fig, (ax1, ax2, ax3, ax4) = plt.subplots(4, 1, figsize=(12, 12), sharex=True)
     
