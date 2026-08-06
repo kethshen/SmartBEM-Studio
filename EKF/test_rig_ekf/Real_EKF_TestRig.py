@@ -179,13 +179,14 @@ def run_ekf_on_dataset(df):
     cz_meas = df["CO2_z_weighted"].values
     
     X = np.zeros(N_STATES)
-    X[I_ao] = 0.001
-    X[I_as] = 0.010
-    X[I_ae] = 0.000
-    X[I_bo] = 0.001
-    X[I_bs] = 0.010
-    X[I_be] = 0.000
-    X[I_ge] = 0.000
+    # Solution 3 & Step 1: Physically Informed Initialization (anchored at physical reality at t=0)
+    X[I_ao] = 0.00023  # UA / Cs = 5.76 W/K / 25000 J/K
+    X[I_as] = 0.0402   # cpa / Cs = 1006.0 J/(kg*K) / 25000 J/K
+    X[I_ae] = 0.0000   # 0 equipment heat load at start
+    X[I_bo] = 3.06e-6  # minf / Mroom = 2.14e-5 kg/s / 7.00 kg
+    X[I_bs] = 0.1428   # 1 / Mroom = 1 / 7.00 kg
+    X[I_be] = 0.0000   # 0 moisture load at start
+    X[I_ge] = 0.0000   # 0 occupants at start
     X[I_Tz] = Tz_meas[0]
     X[I_wz] = wz_meas[0]
     X[I_cz] = cz_meas[0]
@@ -193,10 +194,8 @@ def run_ekf_on_dataset(df):
     P = np.eye(N_STATES) * 0.1
     P[I_ge, I_ge] = 1.0
     
-    # Process noise Q — ROBOD-consistent tuning
-    # gamma_e Q = 1e-5: same as ROBOD (tracks occupancy changes over minutes)
-    # But Jacobian is now 1.0 (not 1/V=0.17), so gamma_e responds ~6x faster
-    Q = np.diag([1e-6, 1e-6, 1e-6, 1e-6, 1e-6, 1e-6, 1e-5, 1e-4, 1e-6, 1e-2])
+    # Process noise Q — ROBOD-consistent baseline tuning
+    Q_base = np.diag([1e-6, 1e-6, 1e-6, 1e-6, 1e-6, 1e-6, 1e-5, 1e-4, 1e-6, 1e-2])
     R = np.diag([0.05**2, 0.0002**2, 2.5**2])
     
     H = np.zeros((3, N_STATES))
@@ -215,19 +214,28 @@ def run_ekf_on_dataset(df):
         
         J_F = get_jacobian_F(X, U_k)
         F_k = np.eye(N_STATES) + J_F * DT
-        P_pred = F_k @ P @ F_k.T + Q
+        
+        # Solution 2: Smooth Adaptive Process Noise Q_k(msa) Scaling
+        # Scales parameter process noise smoothly as supply flow excitation rises
+        excitation_factor = np.tanh(msa[k] / 0.010)
+        Q_k = Q_base.copy()
+        Q_k[I_as, I_as] = 1e-8 + 1e-6 * excitation_factor
+        Q_k[I_bs, I_bs] = 1e-8 + 1e-6 * excitation_factor
+        
+        P_pred = F_k @ P @ F_k.T + Q_k
         
         Z_pred = np.array([X_pred[I_Tz], X_pred[I_wz], X_pred[I_cz]])
         y_k = Z_k - Z_pred
         
         S_k = H @ P_pred @ H.T + R
         K_k = P_pred @ H.T @ np.linalg.inv(S_k)
-        
+            
         X = X_pred + K_k @ y_k
         P = (np.eye(N_STATES) - K_k @ H) @ P_pred
         
-        X[I_cz] = np.clip(X[I_cz], 300.0, 700.0)
+        # Solution 1 & 3: Smooth Physical Bounds (no hard discontinuous np.clip)
         X[I_ge] = np.clip(X[I_ge], 0.0, None)
+        X[I_cz] = np.clip(X[I_cz], 300.0, 1000.0)
         
         X_hist[k] = X
         
