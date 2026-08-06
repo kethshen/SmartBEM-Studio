@@ -168,8 +168,9 @@ def run_ekf_on_robod(df_in, room_spec):
     P = np.eye(N_STATES) * 0.1
     P[I_ge, I_ge] = 1.0
     
-    Q_base = np.diag([1e-10, 1e-10, 1e-8, 1e-10, 1e-8, 1e-14, 1e-5, 0.01, 1e-7, 1.0])
-    R = np.diag([0.25, 1e-6, 200.0])
+    # Bayesian-Tuned Optimal Process & Measurement Noise Matrices
+    Q_base = np.diag([1.107e-7, 1.220e-7, 1e-8, 1.0e-12, 1.0e-6, 1e-14, 1.0e-3, 0.01, 1e-7, 1.0])
+    R = np.diag([1.0e-3, 1e-6, 1.0e0])
     
     H = np.zeros((3, N_STATES))
     H[0, I_Tz] = 1.0
