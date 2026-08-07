@@ -33,8 +33,7 @@ STUDIO_DIR = os.path.abspath(os.path.join(TEST_RIG_DIR, "..", ".."))
 DAY3_DIR = os.path.join(STUDIO_DIR, "Readings_from_rig", "sensor_readings", "with_occ", "Day_3")
 DAY4_DIR = os.path.join(STUDIO_DIR, "Readings_from_rig", "sensor_readings", "with_occ", "Day_4")
 
-DAY3_CLEAN_DIR = os.path.join(DAY3_DIR, "cleaned_day_3")
-DAY4_CLEAN_DIR = os.path.join(DAY4_DIR, "cleaned_day_4")
+DAY_WITH_OCC_CLEAN_DIR = os.path.join(STUDIO_DIR, "Readings_from_rig", "sensor_readings", "cleaned", "with_occ")
 
 OUT_DIR = os.path.join(SCRIPT_DIR, "results_plots_dualekf")
 os.makedirs(OUT_DIR, exist_ok=True)
@@ -384,9 +383,11 @@ if __name__ == "__main__":
     df_sched4 = pd.read_csv(os.path.join(DAY4_DIR, "occ_schedule_day_4.csv"))
     df_sched4.columns = [c.strip() for c in df_sched4.columns]
 
-    d3_files = [(3, f) for f in os.listdir(DAY3_CLEAN_DIR) if f.endswith("_cleaned.csv")]
-    d4_files = [(4, f) for f in os.listdir(DAY4_CLEAN_DIR) if f.endswith("_cleaned.csv")]
-    all_runs = d3_files + d4_files
+    all_clean_files = sorted([f for f in os.listdir(DAY_WITH_OCC_CLEAN_DIR) if f.endswith(".csv")])
+    all_runs = []
+    for f in all_clean_files:
+        day_num = 3 if f.startswith("day_3") else 4
+        all_runs.append((day_num, f))
 
     print(f"\n=================================================================")
     print(f"  Dual EKF v3 — Experimental Test Rig (Day 3 & Day 4)")
@@ -394,10 +395,9 @@ if __name__ == "__main__":
     print(f"=================================================================\n")
 
     for day, fname in all_runs:
-        folder = DAY3_CLEAN_DIR if day == 3 else DAY4_CLEAN_DIR
-        df = pd.read_csv(os.path.join(folder, fname))
-        base_name = fname.replace("_cleaned.csv", "")
-        raw_filename = f"{base_name}.csv"
+        df = pd.read_csv(os.path.join(DAY_WITH_OCC_CLEAN_DIR, fname))
+        base_name = fname.replace(".csv", "")
+        raw_filename = fname
 
         print(f"Running Dual EKF for Day {day}: {base_name}...")
         res = run_dual_ekf_test_rig(df)

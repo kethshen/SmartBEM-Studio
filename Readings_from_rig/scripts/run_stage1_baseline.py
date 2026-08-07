@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 STUDIO_DIR = r"d:\UNI\Sem 7\ME420 Mech Eng Research Project\SmartBEM-Studio"
 RIG_DIR = os.path.join(STUDIO_DIR, "Readings_from_rig")
 IDF_PATH = os.path.join(STUDIO_DIR, "hanger_chamber_master.idf")
-EPW_PATH = os.path.join(RIG_DIR, "experimental_data", "test_day_weather.epw")
+EPW_PATH = os.path.join(RIG_DIR, "sensor_readings", "weather", "test_day_weather.epw")
 CSV_SENSOR_CLEANED_PATH = os.path.join(RIG_DIR, "experimental_data", "cleaned", "Idel_test_2026_07_21_cleaned.csv")
 OUT_DIR = os.path.join(RIG_DIR, "sim_models", "sim_output")
 PLOT_PATH = os.path.join(RIG_DIR, "plots", "sim_vs_sensors_exact_rig_match.png")

@@ -11,7 +11,7 @@ from scipy.optimize import minimize
 STUDIO_DIR = r"d:\UNI\Sem 7\ME420 Mech Eng Research Project\SmartBEM-Studio"
 RIG_DIR = os.path.join(STUDIO_DIR, "Readings_from_rig")
 MASTER_IDF_PATH = os.path.join(STUDIO_DIR, "hanger_chamber_master.idf")
-EPW_PATH = os.path.join(RIG_DIR, "experimental_data", "test_day_weather.epw")
+EPW_PATH = os.path.join(RIG_DIR, "sensor_readings", "weather", "test_day_weather.epw")
 CSV_CLEANED_PATH = os.path.join(RIG_DIR, "experimental_data", "cleaned", "Idel_test_2026_07_21_cleaned.csv")
 OUT_DIR = os.path.join(RIG_DIR, "sim_models", "sim_calibration_temp")
 FINAL_IDF_PATH = os.path.join(STUDIO_DIR, "hanger_chamber_calibrated.idf")

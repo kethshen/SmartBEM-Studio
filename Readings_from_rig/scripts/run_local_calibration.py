@@ -19,7 +19,7 @@ STUDIO_DIR = os.path.dirname(BASE_DIR)
 
 TEMPLATE_IDF = os.path.join(STUDIO_DIR, "hanger_chamber_master.idf")
 CALIBRATED_IDF = os.path.join(BASE_DIR, "chamber_calibrated.idf")
-WEATHER_EPW = os.path.join(BASE_DIR, "experimental_data\test_day_weather.epw")
+WEATHER_EPW = os.path.join(BASE_DIR, "sensor_readings", "weather", "test_day_weather.epw")
 OUTPUT_DIR = os.path.join(BASE_DIR, "sim_output")
 
 STANDARD_EPW_SRC = r"C:\EnergyPlusV25-2-0\WeatherData\USA_FL_Tampa.Intl.AP.722110_TMY3.epw"
