@@ -60,7 +60,7 @@ rho_air         = 1.2         # kg/m³
 DT              = 300.0       # seconds per step
 CMH_TO_KGS      = rho_air / 3600.0
 F_RECIRC        = 0.5         # AHU recirculation fraction
-PARAM_UPDATE_STEP = 12        # Update params every 12 steps = 60 min window
+PARAM_UPDATE_STEP = 6         # Update params every 6 steps = 30 min window
 GE_PER_PERSON   = 0.0055      # CO₂ generation per person [ppm·kg/s] (typical ~0.005-0.008)
 
 # ── Room Specifications ────────────────────────────────────────────────────────
@@ -246,7 +246,7 @@ def run_dual_ekf(df_in, spec):
     Qp = np.diag([
         1e-4,     # xi_ao — UA changes very slowly
         5e-4,     # xi_bo — infiltration changes slowly
-        5e-3,     # xi_ge — occupancy on timescale of 30-60 min, NOT seconds
+        1e-2,     # xi_ge — respond within 30-60 min to occupancy events
     ])
 
     # Param filter R: sets how much CO2 residual pulls gamma_e
@@ -316,7 +316,14 @@ def run_dual_ekf(df_in, spec):
 
         # ── EKF_PARAMS: Update (every PARAM_UPDATE_STEP = 60 min) ────────
         if len(innov_window) >= PARAM_UPDATE_STEP:
-            innov_batch  = np.mean(innov_window, axis=0)
+            innov_arr   = np.array(innov_window)    # shape (PARAM_UPDATE_STEP, 3)
+            # Tz/wz: use mean (stable signal)
+            # cz: use signed-max (preserves CO2 peak events, not averaged away)
+            cz_vals     = innov_arr[:, 2]
+            cz_signmax  = cz_vals[np.argmax(np.abs(cz_vals))]  # signed max abs
+            innov_batch = np.array([innov_arr[:,0].mean(),
+                                    innov_arr[:,1].mean(),
+                                    cz_signmax])
             innov_window = []
 
             S_avg = S.copy()
