@@ -225,8 +225,8 @@ def run_dual_ekf(df_in, spec):
     Cs_f     = spec["Cs"] * 1000.0       # J/K
     as_f     = c_pa / Cs_f
     UA_nom   = spec["UA"]
-    UA_lo    = UA_nom * 0.2
-    UA_hi    = UA_nom * 4.0
+    UA_lo    = UA_nom * 0.7   # FIX 2: tight bounds — real envelope doesn't change >30%
+    UA_hi    = UA_nom * 1.3
 
     bounds_p = {
         "ao": (UA_lo / Cs_f,   UA_hi / Cs_f),     # α_o = UA/Cs_f
@@ -343,7 +343,17 @@ def run_dual_ekf(df_in, spec):
 
             delta_xi = K_p @ innov_batch
             delta_xi = np.clip(delta_xi, -0.5, 0.5)   # prevent single-window jumps
-            xi_p     = xi_p + delta_xi
+
+            # FIX 1: Freeze β_o once its covariance converges (< threshold).
+            # Once frozen, β_o stops competing with γ_e for CO2 residuals.
+            BO_FREEZE_THRESH = 0.01   # Pp[1,1] in xi-space; tune if needed
+            if Pp[1, 1] < BO_FREEZE_THRESH:
+                delta_xi[1] = 0.0     # lock β_o update
+                Pp[1, :]    = 0.0     # zero out covariance row/col to keep PD
+                Pp[:, 1]    = 0.0
+                Pp[1, 1]    = 1e-12   # tiny diagonal to keep matrix non-singular
+
+            xi_p = xi_p + delta_xi
 
             Pp = (np.eye(3) - K_p @ H_p) @ Pp
             Pp = 0.5 * (Pp + Pp.T)
