@@ -229,9 +229,9 @@ def run_dual_ekf(df_in, spec):
     UA_hi    = UA_nom * 4.0
 
     bounds_p = {
-        "ao": (UA_lo / Cs_f,   UA_hi / Cs_f),   # α_o = UA/Cs_f
-        "bo": (1e-6,            2e-3),            # β_o = m_inf/M
-        "ge": (0.0,             0.5),             # γ_e [ppm·kg/s]
+        "ao": (UA_lo / Cs_f,   UA_hi / Cs_f),     # α_o = UA/Cs_f
+        "bo": (1e-6,            2e-3),              # β_o = m_inf/M
+        "ge": (0.0,             0.5),              # γ_e [ppm·kg/s], max ~91 people equiv
     }
 
     # ── EKF_PARAMS init ─────────────────────────────────────────────────────
@@ -249,13 +249,12 @@ def run_dual_ekf(df_in, spec):
         5e-3,     # xi_ge — occupancy on timescale of 30-60 min, NOT seconds
     ])
 
-    # Param filter measurement noise: LARGE = params change slowly, trust prior
-    # KEY: separate channels — Tz->ao, wz->bo, cz->ge
-    # R must be large relative to Q * window_duration to prevent divergence
+    # Param filter R: sets how much CO2 residual pulls gamma_e
+    # Smaller Rp[cz] = gamma_e reacts faster to CO2 errors
     Rp = np.diag([
-        5.0,      # Tz residual variance: sigma_Tz ~ 0.3C => var ~ 0.09, use 5 to slow
-        1e-4,     # wz residual variance (small — humidity signal drives bo)
-        1000.0,   # cz residual variance: large = slow ge adaptation
+        5.0,      # Tz residual variance
+        1e-4,     # wz residual variance
+        500.0,    # cz residual variance (tuned: not too aggressive)
     ])
 
     # ── EKF_STATES init ─────────────────────────────────────────────────────
@@ -263,15 +262,11 @@ def run_dual_ekf(df_in, spec):
     Ps = np.diag([0.25, 1e-6, 100.0])
 
     # State filter Q: model uncertainty (NOT adaptive — fixed)
-    Qs = np.diag([0.05, 1e-7, 5.0])    # per step (before ×DT)
+    # Qs[cz] must be large enough that CO2 state can drift with occupancy
+    Qs = np.diag([0.05, 1e-7, 50.0])   # cz: 50 ppm²/s model uncertainty
 
-    # CRITICAL DESIGN: State filter measures ONLY Tz and wz (NOT cz).
-    # CO2 is a predicted-only state driven entirely by gamma_e.
-    # The parameter filter is the ONLY place that assimilates CO2 measurement.
-    # This ensures cz residual is always nonzero and encodes occupancy signal.
-    H_s = np.array([[1, 0, 0],   # Tz measured
-                    [0, 1, 0]])   # wz measured — cz NOT measured in state filter
-    Rs  = np.diag([0.09, 4e-6])  # Tz: 0.3degC std, wz: 0.002 kg/kg std
+    H_s = np.eye(3)                              # full 3-state measurement
+    Rs  = np.diag([0.09, 4e-6, 10000.0])        # Tz: tight, wz: tight, cz: very loose
 
     # ── Storage ──────────────────────────────────────────────────────────────
     Tz_est  = np.zeros(N)
@@ -281,9 +276,12 @@ def run_dual_ekf(df_in, spec):
     bo_hist = np.zeros(N)
     ge_hist = np.zeros(N)
     innov_window  = []   # rolling innovation buffer for param update
-    cz_innov_buf  = []   # separate CO2 innovation buffer (raw meas - predicted cz)
 
-    # ── DUAL EKF MAIN LOOP ───────────────────────────────────────────────────
+    # ── DUAL EKF MAIN LOOP ────────────────────────────────────────────────────
+    # Architecture:
+    #   EKF_STATES: measures [Tz, wz] ONLY.  CO2 is free-running (predicted only).
+    #   EKF_PARAMS: receives [Tz_resid, wz_resid, cz_raw_error] every 60 min.
+    #   cz_raw_error = cz_measured - cz_predicted  (always nonzero → drives γ_e)
     for k in range(N):
         # Current param estimates (physical)
         ao_k, bo_k, ge_k = params_from_xi(xi_p, bounds_p)
@@ -292,40 +290,43 @@ def run_dual_ekf(df_in, spec):
         # Recirculation CO2 supply based on current cz estimate
         csa_k = F_RECIRC * S[2] + (1.0 - F_RECIRC) * co[k]
         U_k   = (To[k], wo[k], co[k], Tsa[k], wsa[k], csa_k, msa[k])
-        Z_k   = np.array([Tz_m[k], wz_m[k], cz_m[k]])
 
-        # ── EKF_STATES: Predict ───────────────────────────────────────────
-        S_pred = state_rk4(S, U_k, DT, theta_k)
-        J_s    = state_jacobian(S, U_k, theta_k)
-        Fs     = np.eye(3) + J_s * DT
+        # ── EKF_STATES: Predict (RK4) ────────────────────────────────────
+        S_pred  = state_rk4(S, U_k, DT, theta_k)
+        J_s     = state_jacobian(S, U_k, theta_k)
+        Fs      = np.eye(3) + J_s * DT
         Ps_pred = Fs @ Ps @ Fs.T + Qs * DT
         Ps_pred = 0.5 * (Ps_pred + Ps_pred.T)
 
-        # ── EKF_STATES: Update ────────────────────────────────────────────
-        y_k    = Z_k - S_pred          # innovation
-        S_S    = Ps_pred + Rs
-        K_s    = np.linalg.solve(S_S.T, Ps_pred.T).T
-        S      = S_pred + K_s @ y_k
-        Ps     = (np.eye(3) - K_s) @ Ps_pred
-        Ps     = 0.5 * (Ps + Ps.T)
+        # ── EKF_STATES: Update — H_s=eye(3), cz weakly measured (Rs[cz]=10000) ─
+        Z_3     = np.array([Tz_m[k], wz_m[k], cz_m[k]])   # 3-element measurement
+        # CO2 raw error BEFORE update (pure model error, drives gamma_e)
+        cz_err  = Z_3[2] - S_pred[2]
+        y_3     = Z_3 - H_s @ S_pred                       # 3-element innovation
+        S_inn   = H_s @ Ps_pred @ H_s.T + Rs               # 3×3 innovation covariance
+        K_s     = np.linalg.solve(S_inn.T, (Ps_pred @ H_s.T).T).T   # 3×3 Kalman gain
+        S       = S_pred + K_s @ y_3
+        Ps      = (np.eye(3) - K_s @ H_s) @ Ps_pred
+        Ps      = 0.5 * (Ps + Ps.T)
 
-        # Collect innovation for parameter update
-        innov_window.append(y_k)
+        # Build 3-channel innovation for parameter filter
+        # Use Tz/wz innovation from state update; cz uses pre-update raw error
+        innov_3 = np.array([y_3[0], y_3[1], cz_err])
+        innov_window.append(innov_3)
 
-        # ── EKF_PARAMS: Update (every PARAM_UPDATE_STEP steps) ───────────
+        # ── EKF_PARAMS: Update (every PARAM_UPDATE_STEP = 60 min) ────────
         if len(innov_window) >= PARAM_UPDATE_STEP:
-            # Average innovation over the window
-            innov_batch = np.mean(innov_window, axis=0)
+            innov_batch  = np.mean(innov_window, axis=0)
             innov_window = []
 
             S_avg = S.copy()
             U_avg = U_k
 
-            # Param filter "prediction" (random walk)
+            # Param random-walk prediction
             Pp = Pp + Qp * (DT * PARAM_UPDATE_STEP)
             Pp = 0.5 * (Pp + Pp.T)
 
-            # Param filter "update"
+            # Compute param Jacobian (block-diagonal)
             H_p = param_jacobian(xi_p, S_avg, U_avg, bounds_p, as_f, bs_f)
             S_p = H_p @ Pp @ H_p.T + Rp
             try:
@@ -334,11 +335,11 @@ def run_dual_ekf(df_in, spec):
                 K_p = np.zeros((3, 3))
 
             delta_xi = K_p @ innov_batch
-            # Hard-clip update step to prevent single-window divergence
-            delta_xi = np.clip(delta_xi, -0.5, 0.5)
-            xi_p = xi_p + delta_xi
-            Pp   = (np.eye(3) - K_p @ H_p) @ Pp
-            Pp   = 0.5 * (Pp + Pp.T)
+            delta_xi = np.clip(delta_xi, -0.5, 0.5)   # prevent single-window jumps
+            xi_p     = xi_p + delta_xi
+
+            Pp = (np.eye(3) - K_p @ H_p) @ Pp
+            Pp = 0.5 * (Pp + Pp.T)
             # Enforce positive definiteness
             eigvals = np.linalg.eigvalsh(Pp)
             if np.any(eigvals < 0):
