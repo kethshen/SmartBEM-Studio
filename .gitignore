@@ -5,7 +5,7 @@
 *.env
 backend_server/secrets.json
 backend_server/serviceAccountKey.json
-
+No_commit_to_git/
 # ==============================================================
 # 2. PERSONAL NOTES, ACADEMIC & STUDY MATERIAL
 # ==============================================================
