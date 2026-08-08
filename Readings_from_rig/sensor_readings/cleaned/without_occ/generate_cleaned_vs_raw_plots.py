@@ -21,7 +21,7 @@ import seaborn as sns
 PALETTE = {
     "S1":      "#3A86EF",  # Light Vibrant Blue
     "S2":      "#2A9D8F",  # Emerald Cyan
-    "S3":      "#F4A261",  # Soft Light Orange/Amber
+    "S3":      "#EB802A",  # Rich Vibrant Orange
     "Outdoor": "#FF6B6B",  # Light Coral Red
     "Supply":  "#9D4EDD",  # Crisp Light Purple
     "Return":  "#264653",  # Teal Slate
