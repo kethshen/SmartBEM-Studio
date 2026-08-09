@@ -1,4 +1,4 @@
-Program Version,EnergyPlus, Version 25.2.0-cf7368216c, YMD=2026.07.29 16:03
+Program Version,EnergyPlus, Version 25.2.0-cf7368216c, YMD=2026.08.09 15:43
 ! <Version>, Version ID
  Version, 25.2
 ! <Timesteps per Hour>, #TimeSteps, Minutes per TimeStep {minutes}
@@ -125,13 +125,13 @@ Environment:WarmupDays,  3
 ! <Tabular Report>,Style,Unit Conversion, Format Reals
 Tabular Report,HTML,None,Yes
 ! <Warmup Convergence Information>,Zone Name,Environment Type/Name,Average Warmup Temperature Difference {deltaC},Std Dev Warmup Temperature Difference {deltaC},Max Temperature Pass/Fail Convergence,Min Temperature Pass/Fail Convergence,Average Warmup Load Difference {W},Std Dev Warmup Load Difference {W},Heating Load Pass/Fail Convergence,Cooling Load Pass/Fail Convergence
- Warmup Convergence Information,CHAMBER_THERMALZONE,RunPeriod: TEST_DAY_JULY21,1.8761232059E-002,0.1027109949,Pass,Pass,1.5191322928E-002,9.2985230664E-002,Pass,Pass
- Warmup Convergence Information,HANGER_THERMALZONE,RunPeriod: TEST_DAY_JULY21,1.4109395555E-002,7.0634927814E-003,Pass,Pass,0.0000000000,0.0000000000,Pass,Pass
+ Warmup Convergence Information,CHAMBER_THERMALZONE,RunPeriod: TEST_DAY_JULY21,1.4056385930E-002,0.1177234018,Pass,Pass,1.4576985653E-002,0.1023010735,Pass,Pass
+ Warmup Convergence Information,HANGER_THERMALZONE,RunPeriod: TEST_DAY_JULY21,1.4109209600E-002,7.0634319836E-003,Pass,Pass,0.0000000000,0.0000000000,Pass,Pass
 Environment,TESTDAYRUNPERIOD,WeatherFileRunPeriod,07/21/2013,07/21/2013,Sunday,1,Use RunPeriod Specified Day,Yes,Yes,No,Yes,Yes,Clark and Allen
 Environment:Daylight Saving,No,
 Environment:WarmupDays,  3
- Warmup Convergence Information,CHAMBER_THERMALZONE,RunPeriod: TESTDAYRUNPERIOD,1.8957936442E-002,9.6499665400E-002,Pass,Pass,1.5820936999E-002,6.9902645678E-002,Pass,Pass
- Warmup Convergence Information,HANGER_THERMALZONE,RunPeriod: TESTDAYRUNPERIOD,1.2190481228E-002,4.7860723483E-003,Pass,Pass,0.0000000000,0.0000000000,Pass,Pass
+ Warmup Convergence Information,CHAMBER_THERMALZONE,RunPeriod: TESTDAYRUNPERIOD,1.4398400478E-002,0.1157756799,Pass,Pass,1.4781985818E-002,0.1002834819,Pass,Pass
+ Warmup Convergence Information,HANGER_THERMALZONE,RunPeriod: TESTDAYRUNPERIOD,1.2190322394E-002,4.7859881855E-003,Pass,Pass,0.0000000000,0.0000000000,Pass,Pass
 ! <Program Control Information:Threads/Parallel Sims>, Threading Supported,Maximum Number of Threads, Env Set Threads (OMP_NUM_THREADS), EP Env Set Threads (EP_OMP_NUM_THREADS), IDF Set Threads, Number of Threads Used (Interior Radiant Exchange), Number Nominal Surfaces, Number Parallel Sims
 Program Control Information:Threads/Parallel Sims, No,1, N/A, N/A, N/A, N/A, N/A, N/A
 End of Data

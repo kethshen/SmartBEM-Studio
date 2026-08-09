@@ -1,16 +1,16 @@
  ReadVarsESO
- processing:D:\UNI\Sem 7\ME420 Mech Eng Research Project\SmartBEM-Studio\Readings_from_rig\calibrated_v3\temp_run.rvi
- input file:D:\UNI\Sem 7\ME420 Mech Eng Research Project\SmartBEM-Studio\Readings_from_rig\calibrated_v3\sim_output\eplusout.eso
- output file:D:\UNI\Sem 7\ME420 Mech Eng Research Project\SmartBEM-Studio\Readings_from_rig\calibrated_v3\sim_output\eplusout.csv
- getting all vars from:D:\UNI\Sem 7\ME420 Mech Eng Research Project\SmartBEM-Studio\Readings_from_rig\calibrated_v3\sim_output\eplusout.eso
+ processing:d:\UNI\Sem 7\ME420 Mech Eng Research Project\SmartBEM-Studio\Readings_from_rig\calibrated_v4_both_days_datasets_run\temp_run.rvi
+ input file:d:\UNI\Sem 7\ME420 Mech Eng Research Project\SmartBEM-Studio\Readings_from_rig\calibrated_v4_both_days_datasets_run\sim_output\eplusout.eso
+ output file:d:\UNI\Sem 7\ME420 Mech Eng Research Project\SmartBEM-Studio\Readings_from_rig\calibrated_v4_both_days_datasets_run\sim_output\eplusout.csv
+ getting all vars from:d:\UNI\Sem 7\ME420 Mech Eng Research Project\SmartBEM-Studio\Readings_from_rig\calibrated_v4_both_days_datasets_run\sim_output\eplusout.eso
   number variables requested for output=          22
- ReadVars Run Time=00hr 00min  0.80sec
+ ReadVars Run Time=00hr 00min  0.75sec
  ReadVarsESO program completed successfully.
  ReadVarsESO
- processing:D:\UNI\Sem 7\ME420 Mech Eng Research Project\SmartBEM-Studio\Readings_from_rig\calibrated_v3\temp_run.mvi
- input file:D:\UNI\Sem 7\ME420 Mech Eng Research Project\SmartBEM-Studio\Readings_from_rig\calibrated_v3\sim_output\eplusout.mtr
- output file:D:\UNI\Sem 7\ME420 Mech Eng Research Project\SmartBEM-Studio\Readings_from_rig\calibrated_v3\sim_output\eplusmtr.csv
- getting all vars from:D:\UNI\Sem 7\ME420 Mech Eng Research Project\SmartBEM-Studio\Readings_from_rig\calibrated_v3\sim_output\eplusout.mtr
+ processing:d:\UNI\Sem 7\ME420 Mech Eng Research Project\SmartBEM-Studio\Readings_from_rig\calibrated_v4_both_days_datasets_run\temp_run.mvi
+ input file:d:\UNI\Sem 7\ME420 Mech Eng Research Project\SmartBEM-Studio\Readings_from_rig\calibrated_v4_both_days_datasets_run\sim_output\eplusout.mtr
+ output file:d:\UNI\Sem 7\ME420 Mech Eng Research Project\SmartBEM-Studio\Readings_from_rig\calibrated_v4_both_days_datasets_run\sim_output\eplusmtr.csv
+ getting all vars from:d:\UNI\Sem 7\ME420 Mech Eng Research Project\SmartBEM-Studio\Readings_from_rig\calibrated_v4_both_days_datasets_run\sim_output\eplusout.mtr
   number variables requested for output=           1
- ReadVars Run Time=00hr 00min  0.02sec
+ ReadVars Run Time=00hr 00min  0.05sec
  ReadVarsESO program completed successfully.
