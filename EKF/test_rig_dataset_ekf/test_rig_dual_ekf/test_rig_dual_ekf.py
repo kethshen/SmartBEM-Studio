@@ -245,45 +245,45 @@ def run_dual_ekf_test_rig(df):
     bounds_p = {
         "ao": (5.0 / 25000.0, 6.5 / 25000.0),    # alpha_o = UA/Cs [1/s] -> UA in [5.0, 6.5] W/K
         "as": (c_pa / 30000.0, c_pa / 20000.0),  # alpha_s = cpa/Cs [1/(kg·s)] -> Cs in [20.0, 30.0] kJ/K
-        "ae": (-0.002, 0.005),                    # alpha_e [°C/s] -> Thermal heat bias Q_e in [-50, 125] W
+        "ae": (-0.0005, 0.001),                    # alpha_e [°C/s] -> Thermal heat bias Q_e in [-12.5, 25] W
         "bo": (1e-7, 5e-4),                       # beta_o = m_inf/M [1/s]
         "ge": (0.0, 5.0),                         # gamma_e [ppm/s], max ~6.5 persons
     }
 
-    # Parameter filter initialization (includes xi_ae for dynamic thermal offset removal)
+    # Parameter filter initialization (starts ge in active gradient region, ae at zero)
     xi_p = np.array([
         xi_from_theta(UA_nom / Cs_nom, *bounds_p["ao"]),
         xi_from_theta(c_pa / Cs_nom,   *bounds_p["as"]),
-        xi_from_theta(4e-5,             *bounds_p["ae"]),  # Initial ae = 1.0W / 25000 J/K
+        xi_from_theta(0.0,             *bounds_p["ae"]),  # Start thermal heat bias at 0.0 W
         xi_from_theta(3e-6,             *bounds_p["bo"]),
-        xi_from_theta(1e-4,             *bounds_p["ge"]),  # Start unoccupied at k=0
+        xi_from_theta(0.05,            *bounds_p["ge"]),  # Active sigmoid gradient initialization (0.05 ppm/s)
     ])
-    Pp = np.diag([4.0, 4.0, 4.0, 2.0, 4.0])
+    Pp = np.diag([2.0, 2.0, 1.0, 2.0, 4.0])
 
-    # Process noise Qp: includes xi_ae adaptation
+    # Process noise Qp: active parameter adaptation without driving ae into false negative bias
     Qp = np.diag([
         1e-9,     # xi_ao (UA/Cs) process noise
-        1e-7,     # xi_as (cpa/Cs) process noise -> adapts supply heat exchange
-        1e-4,     # xi_ae (thermal bias) process noise -> dynamically removes T_z offset!
-        5e-4,     # xi_bo (infiltration) process noise
-        1e-2,     # xi_ge (occupancy) process noise
+        1e-8,     # xi_as (cpa/Cs) process noise
+        1e-7,     # xi_ae (thermal bias) process noise (controlled adaptation)
+        1e-5,     # xi_bo (infiltration) process noise
+        5e-2,     # xi_ge (occupancy) process noise (fast response to occupancy changes)
     ])
 
     Rp = np.diag([
         0.5,      # Tz residual variance (alpha_o channel)
         0.5,      # Tz residual variance (alpha_s channel)
-        0.1,      # Tz residual variance (alpha_e channel)
+        0.5,      # Tz residual variance (alpha_e channel)
         1e-5,     # wz residual variance (beta_o channel)
-        25.0,     # cz residual variance (gamma_e channel)
+        2.0,      # cz residual variance (gamma_e channel, enables quick occupancy tracking)
     ])
 
     # State filter initialization
     S  = np.array([Tz_m[0], wz_m[0], cz_m[0]])
-    Ps = np.diag([0.05**2, 0.0002**2, 2.5**2])
+    Ps = np.diag([0.01**2, 0.0002**2, 2.5**2])
 
-    Qs = np.diag([1e-4, 1e-9, 1.0])          # Fixed state model process noise
+    Qs = np.diag([1e-2, 1e-9, 1.0])          # High Tz state process noise for exact zero-offset tracking
     H_s = np.eye(3)
-    Rs = np.diag([0.0025, 4e-8, 6.25])        # Tz: tight, wz: tight, cz: tight (Rs=6.25 ppm²) for accurate state tracking
+    Rs = np.diag([0.0001, 4e-8, 6.25])        # Tight Tz state measurement noise (0.01°C std) for exact tracking
 
     # Storage arrays
     Tz_est  = np.zeros(N)
