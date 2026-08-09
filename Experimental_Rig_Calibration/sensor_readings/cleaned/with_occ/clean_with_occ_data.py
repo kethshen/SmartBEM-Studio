@@ -139,16 +139,17 @@ def process_raw_dataset(raw_filename):
         df_clean["m_sa_kgs"] = compute_m_sa(df_clean["fan"], mixer_col).round(4)
 
     # Calculate spatial weighted zone target columns
-    if "room_1_t" in df_clean.columns and "room_2_t" in df_clean.columns and "room_3_t" in df_clean.columns:
+    # S3 active in day_3_p_1 & day_3_p_2; offline in day_3_p_3/4 and all day_4
+    is_s3_active = (base_name in ["day_3_p_1", "day_3_p_2"]) and ("room_3_t" in df_clean.columns) and not df_clean["room_3_t"].isna().all()
+
+    if is_s3_active:
         df_clean["Tz_weighted"] = (0.50 * df_clean["room_1_t"] + 0.30 * df_clean["room_2_t"] + 0.20 * df_clean["room_3_t"]).round(2)
-
-    if "room_1_h" in df_clean.columns and "room_2_h" in df_clean.columns and "room_3_h" in df_clean.columns:
         df_clean["RHz_weighted"] = (0.50 * df_clean["room_1_h"] + 0.30 * df_clean["room_2_h"] + 0.20 * df_clean["room_3_h"]).round(2)
-
-    # CO2 weighting depends on sensor S3 status (active in day_3_p_1 & day_3_p_2, offline in day_3_p_3/4 and all day_4)
-    if base_name in ["day_3_p_1", "day_3_p_2"] and "room_2_c" in df_clean.columns and "room_3_c" in df_clean.columns:
         df_clean["CO2z_weighted"] = (0.60 * df_clean["room_2_c"] + 0.40 * df_clean["room_3_c"]).round(2)
-    elif "room_2_c" in df_clean.columns:
+    else:
+        # S3 Offline Exception: Tz = 0.60*S1 + 0.40*S2, RHz = 0.60*S1 + 0.40*S2, CO2z = S2
+        df_clean["Tz_weighted"] = (0.60 * df_clean["room_1_t"] + 0.40 * df_clean["room_2_t"]).round(2)
+        df_clean["RHz_weighted"] = (0.60 * df_clean["room_1_h"] + 0.40 * df_clean["room_2_h"]).round(2)
         df_clean["CO2z_weighted"] = df_clean["room_2_c"].round(2)
 
     # Re-round float columns to 2 decimal places (except m_sa_kgs which has 4 decimals)
