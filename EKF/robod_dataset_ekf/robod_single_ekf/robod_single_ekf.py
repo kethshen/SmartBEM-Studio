@@ -199,7 +199,9 @@ def run_single_ekf_robod(df, room_spec):
     X_hist = np.zeros((N, N_STATES))
 
     for k in range(N):
-        U_k = (To[k], wo[k], co[k], Tsa[k], wsa[k], csa[k], msa[k])
+        # Dynamic AHU Recirculation CO2 model: csa = 50% indoor CO2 state + 50% outdoor CO2
+        csa_k = 0.5 * X[I_cz] + 0.5 * co[k]
+        U_k = (To[k], wo[k], co[k], Tsa[k], wsa[k], csa_k, msa[k])
 
         # Flow-driven process noise scaling
         Q_k = Q_base.copy()

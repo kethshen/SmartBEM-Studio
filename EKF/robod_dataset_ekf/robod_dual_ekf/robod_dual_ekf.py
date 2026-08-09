@@ -46,7 +46,7 @@ os.makedirs(PLOTS_DIR, exist_ok=True)
 c_pa          = 1006.0     # Specific heat of dry air [J/(kg·K)]
 rho_air       = 1.20       # Standard dry air density [kg/m³]
 DT            = 300.0      # 5-minute sampling interval [seconds]
-PARAM_UPDATE_STEP = 2      # Update parameter filter every 2 steps (10 minutes)
+PARAM_UPDATE_STEP = 1      # Update parameter filter at EVERY single timestep (5 minutes)
 
 # ── Room Specifications (official NUS ROBOD room_descriptions) ─────────────────
 ROOM_SPECS = {
@@ -213,8 +213,8 @@ def run_dual_ekf_robod(df, room_spec):
     ])
 
     Pp = np.diag([2.0, 2.0, 1.0, 2.0, 4.0])
-    Qp = np.diag([1e-9, 1e-8, 1e-7, 1e-5, 5e-2])
-    Rp = np.diag([0.5, 0.5, 0.5, 1e-5, 2.0])
+    Qp = np.diag([1e-9, 1e-8, 1e-7, 1e-5, 2e-1])
+    Rp = np.diag([0.5, 0.5, 0.5, 1e-5, 0.1])
 
     S  = np.array([Tz_m[0], wz_m[0], cz_m[0]])
     Ps = np.diag([0.01**2, 0.0002**2, 2.5**2])
@@ -235,7 +235,8 @@ def run_dual_ekf_robod(df, room_spec):
     for k in range(N):
         ao_k, as_k, ae_k, bo_k, ge_k = params_from_xi(xi_p, bounds_p)
         theta_k = (ao_k, as_k, ae_k, bo_k, ge_k, bs_f)
-        U_k = (To[k], wo[k], co[k], Tsa[k], wsa[k], csa[k], msa[k])
+        csa_k = 0.5 * S[2] + 0.5 * co[k]
+        U_k = (To[k], wo[k], co[k], Tsa[k], wsa[k], csa_k, msa[k])
 
         S_pred  = state_rk4(S, U_k, DT, theta_k, Cs_nom, v_room)
         J_s     = state_jacobian(S, U_k, theta_k)
