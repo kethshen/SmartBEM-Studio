@@ -26,7 +26,7 @@ RIG_DIR = os.path.join(STUDIO_DIR, "Readings_from_rig")
 CALIBRATED_V1_DIR = SCRIPT_DIR
 
 MASTER_IDF_PATH = os.path.join(CALIBRATED_V1_DIR, "hanger_chamber_base_template.idf")
-EPW_PATH = os.path.join(CALIBRATED_V1_DIR, "test_day_weather_merged_1min.epw")
+EPW_PATH = os.path.join(CALIBRATED_V1_DIR, "day_1_weather_merged_1min.epw")
 CSV_CLEANED_PATH = os.path.join(CALIBRATED_V1_DIR, "day_1_p_1.csv")
 OUT_DIR = os.path.join(CALIBRATED_V1_DIR, "sim_output")
 FINAL_IDF_PATH = os.path.join(CALIBRATED_V1_DIR, "hanger_chamber_after_calibrated_v1.idf")

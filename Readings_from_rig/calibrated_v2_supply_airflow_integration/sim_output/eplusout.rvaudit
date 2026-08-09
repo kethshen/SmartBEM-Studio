@@ -1,16 +1,16 @@
  ReadVarsESO
- processing:Readings_from_rig\calibrated_v2\temp_supply_test.rvi
- input file:Readings_from_rig\calibrated_v2\sim_output\eplusout.eso
- output file:Readings_from_rig\calibrated_v2\sim_output\eplusout.csv
- getting all vars from:Readings_from_rig\calibrated_v2\sim_output\eplusout.eso
+ processing:d:\UNI\Sem 7\ME420 Mech Eng Research Project\SmartBEM-Studio\Readings_from_rig\calibrated_v2_supply_airflow_integration\temp_run.rvi
+ input file:d:\UNI\Sem 7\ME420 Mech Eng Research Project\SmartBEM-Studio\Readings_from_rig\calibrated_v2_supply_airflow_integration\sim_output\eplusout.eso
+ output file:d:\UNI\Sem 7\ME420 Mech Eng Research Project\SmartBEM-Studio\Readings_from_rig\calibrated_v2_supply_airflow_integration\sim_output\eplusout.csv
+ getting all vars from:d:\UNI\Sem 7\ME420 Mech Eng Research Project\SmartBEM-Studio\Readings_from_rig\calibrated_v2_supply_airflow_integration\sim_output\eplusout.eso
   number variables requested for output=          22
- ReadVars Run Time=00hr 00min  0.77sec
+ ReadVars Run Time=00hr 00min  0.81sec
  ReadVarsESO program completed successfully.
  ReadVarsESO
- processing:Readings_from_rig\calibrated_v2\temp_supply_test.mvi
- input file:Readings_from_rig\calibrated_v2\sim_output\eplusout.mtr
- output file:Readings_from_rig\calibrated_v2\sim_output\eplusmtr.csv
- getting all vars from:Readings_from_rig\calibrated_v2\sim_output\eplusout.mtr
+ processing:d:\UNI\Sem 7\ME420 Mech Eng Research Project\SmartBEM-Studio\Readings_from_rig\calibrated_v2_supply_airflow_integration\temp_run.mvi
+ input file:d:\UNI\Sem 7\ME420 Mech Eng Research Project\SmartBEM-Studio\Readings_from_rig\calibrated_v2_supply_airflow_integration\sim_output\eplusout.mtr
+ output file:d:\UNI\Sem 7\ME420 Mech Eng Research Project\SmartBEM-Studio\Readings_from_rig\calibrated_v2_supply_airflow_integration\sim_output\eplusmtr.csv
+ getting all vars from:d:\UNI\Sem 7\ME420 Mech Eng Research Project\SmartBEM-Studio\Readings_from_rig\calibrated_v2_supply_airflow_integration\sim_output\eplusout.mtr
   number variables requested for output=           1
  ReadVars Run Time=00hr 00min  0.02sec
  ReadVarsESO program completed successfully.
