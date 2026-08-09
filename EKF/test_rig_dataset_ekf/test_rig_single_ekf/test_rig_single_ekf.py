@@ -187,31 +187,9 @@ def run_ekf_on_dataset(df):
     
     msa = df["m_sa_kgs"].values
     
-    tz_col = "Tz_weighted" if "Tz_weighted" in df.columns else ("T_z_weighted" if "T_z_weighted" in df.columns else "room_1_t")
-    rhz_col = "RHz_weighted" if "RHz_weighted" in df.columns else ("RH_z_weighted" if "RH_z_weighted" in df.columns else "room_1_h")
-    co2z_col = "CO2z_weighted" if "CO2z_weighted" in df.columns else ("CO2_z_weighted" if "CO2_z_weighted" in df.columns else "room_1_c")
-
-    # Fallback for room temperature if Tz_weighted contains NaNs
-    Tz_series = df[tz_col]
-    if Tz_series.isna().any():
-        fallback_tz = (df["room_1_t"] + df["room_2_t"]) / 2.0 if ("room_1_t" in df.columns and "room_2_t" in df.columns) else df["room_1_t"]
-        Tz_series = Tz_series.fillna(fallback_tz)
-    Tz_meas = Tz_series.values
-
-    # Fallback for relative humidity if RHz_weighted contains NaNs
-    RHz_series = df[rhz_col]
-    if RHz_series.isna().any():
-        fallback_rh = (df["room_1_h"] + df["room_2_h"]) / 2.0 if ("room_1_h" in df.columns and "room_2_h" in df.columns) else df["room_1_h"]
-        RHz_series = RHz_series.fillna(fallback_rh)
-    RHz_meas = RHz_series.values
-
-    # Fallback for CO2 if CO2z_weighted contains NaNs
-    co2_series = df[co2z_col]
-    if co2_series.isna().any():
-        fallback_co2 = (df["room_1_c"] + df["room_2_c"]) / 2.0 if ("room_1_c" in df.columns and "room_2_c" in df.columns) else df["room_1_c"]
-        co2_series = co2_series.fillna(fallback_co2)
-    cz_meas = co2_series.values
-
+    Tz_meas = df["Tz_weighted"].values if "Tz_weighted" in df.columns else df["T_z_weighted"].values
+    RHz_meas = df["RHz_weighted"].values if "RHz_weighted" in df.columns else df["RH_z_weighted"].values
+    cz_meas = df["CO2z_weighted"].values if "CO2z_weighted" in df.columns else df["CO2_z_weighted"].values
     wz_meas = np.array([rh_to_humidity_ratio(RHz_meas[i], Tz_meas[i], P_live_arr[i]) for i in range(N)])
     
     X = np.zeros(N_STATES)
