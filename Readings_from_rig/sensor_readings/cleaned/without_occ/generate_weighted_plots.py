@@ -56,15 +56,10 @@ def process_dataset_weighted(cleaned_filename):
 
     is_day2_p4 = (base_name == "day_2_p_4")
 
-    # ── Compute Spatial Weighted Averages ────────────────────────────────────
-    if is_day2_p4:
-        df["Tz"]   = 0.60 * df["room_1_t"] + 0.40 * df["room_2_t"]
-        df["RHz"]  = 0.60 * df["room_1_h"] + 0.40 * df["room_2_h"]
-        df["CO2z"] = df["room_2_c"]
-    else:
-        df["Tz"]   = 0.50 * df["room_1_t"] + 0.30 * df["room_2_t"] + 0.20 * df["room_3_t"]
-        df["RHz"]  = 0.50 * df["room_1_h"] + 0.30 * df["room_2_h"] + 0.20 * df["room_3_h"]
-        df["CO2z"] = 0.60 * df["room_2_c"] + 0.40 * df["room_3_c"]
+    # ── Read Pre-Calculated Spatial Weighted Target Columns ──────────────────
+    df["Tz"]   = df["Tz_weighted"] if "Tz_weighted" in df.columns else (0.50 * df["room_1_t"] + 0.30 * df["room_2_t"] + 0.20 * df["room_3_t"])
+    df["RHz"]  = df["RHz_weighted"] if "RHz_weighted" in df.columns else (0.50 * df["room_1_h"] + 0.30 * df["room_2_h"] + 0.20 * df["room_3_h"])
+    df["CO2z"] = df["CO2z_weighted"] if "CO2z_weighted" in df.columns else (0.60 * df["room_2_c"] + 0.40 * df["room_3_c"])
 
     dataset_plot_dir = os.path.join(PLOTS_BASE_DIR, base_name)
     os.makedirs(dataset_plot_dir, exist_ok=True)

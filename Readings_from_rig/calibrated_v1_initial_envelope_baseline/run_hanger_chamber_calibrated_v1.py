@@ -26,8 +26,8 @@ RIG_DIR = os.path.join(STUDIO_DIR, "Readings_from_rig")
 CALIBRATED_V1_DIR = SCRIPT_DIR
 
 MASTER_IDF_PATH = os.path.join(CALIBRATED_V1_DIR, "hanger_chamber_base_template.idf")
-EPW_PATH = os.path.join(CALIBRATED_V1_DIR, "test_day_weather_merged_1min.epw")
-CSV_CLEANED_PATH = os.path.join(CALIBRATED_V1_DIR, "Idel_test_2026_07_21_cleaned.csv")
+EPW_PATH = os.path.abspath(os.path.join(RIG_DIR, "sensor_readings", "weather", "test_day_weather.epw"))
+CSV_CLEANED_PATH = os.path.abspath(os.path.join(RIG_DIR, "sensor_readings", "cleaned", "without_occ", "day_1_p_1.csv"))
 OUT_DIR = os.path.join(CALIBRATED_V1_DIR, "sim_output")
 FINAL_IDF_PATH = os.path.join(CALIBRATED_V1_DIR, "hanger_chamber_after_calibrated_v1.idf")
 PLOT_PATH = os.path.join(CALIBRATED_V1_DIR, "hanger_chamber_after_calibrated_v1.png")
@@ -52,7 +52,11 @@ def clean_sensor_signal_4stage(series, min_val=5.0, max_val=50.0, rolling_window
 
 # 3. Load Sensor Reference Trajectory (170.1 min test window) & Clean Signals
 df_cleaned = pd.read_csv(CSV_CLEANED_PATH)
-Tz_raw = df_cleaned["Tz_weighted"].values
+if "Tz_weighted" in df_cleaned.columns:
+    Tz_raw = df_cleaned["Tz_weighted"].values
+else:
+    Tz_raw = (0.50 * df_cleaned["room_1_t"] + 0.30 * df_cleaned["room_2_t"] + 0.20 * df_cleaned["room_3_t"]).values
+
 Tz_ema = pd.Series(Tz_raw).ewm(alpha=0.10, adjust=False).mean().values
 N_sensor = len(Tz_ema)
 mean_Tz = np.mean(Tz_ema)

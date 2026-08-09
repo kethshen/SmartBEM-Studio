@@ -61,15 +61,10 @@ def process_dataset_weighted(cleaned_filename):
     # Determine weighting rule based on dataset
     has_s3_active = (base_name in ["day_3_p_1", "day_3_p_2"])
 
-    # ── Compute Spatial Weighted Averages ────────────────────────────────────
-    if has_s3_active:
-        df["Tz"]   = 0.50 * df["room_1_t"] + 0.30 * df["room_2_t"] + 0.20 * df["room_3_t"]
-        df["RHz"]  = 0.50 * df["room_1_h"] + 0.30 * df["room_2_h"] + 0.20 * df["room_3_h"]
-        df["CO2z"] = 0.60 * df["room_2_c"] + 0.40 * df["room_3_c"]
-    else:
-        df["Tz"]   = 0.60 * df["room_1_t"] + 0.40 * df["room_2_t"]
-        df["RHz"]  = 0.60 * df["room_1_h"] + 0.40 * df["room_2_h"]
-        df["CO2z"] = df["room_2_c"]
+    # ── Read Pre-Calculated Spatial Weighted Target Columns ──────────────────
+    df["Tz"]   = df["Tz_weighted"] if "Tz_weighted" in df.columns else (0.50 * df["room_1_t"] + 0.30 * df["room_2_t"] + 0.20 * df["room_3_t"])
+    df["RHz"]  = df["RHz_weighted"] if "RHz_weighted" in df.columns else (0.50 * df["room_1_h"] + 0.30 * df["room_2_h"] + 0.20 * df["room_3_h"])
+    df["CO2z"] = df["CO2z_weighted"] if "CO2z_weighted" in df.columns else df["room_2_c"]
 
     dataset_plot_dir = os.path.join(PLOTS_BASE_DIR, base_name)
     os.makedirs(dataset_plot_dir, exist_ok=True)

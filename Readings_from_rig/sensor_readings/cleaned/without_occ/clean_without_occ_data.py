@@ -74,7 +74,17 @@ def process_raw_dataset(raw_filename):
             if pd.api.types.is_numeric_dtype(df_raw[col]):
                 df_clean[col] = clean_series(df_raw[col], min_val, max_val).round(2)
 
-    # Save cleaned dataset (without Tz_weighted column)
+    # Calculate spatial weighted zone target columns
+    if "room_1_t" in df_clean.columns and "room_2_t" in df_clean.columns and "room_3_t" in df_clean.columns:
+        df_clean["Tz_weighted"] = (0.50 * df_clean["room_1_t"] + 0.30 * df_clean["room_2_t"] + 0.20 * df_clean["room_3_t"]).round(2)
+
+    if "room_1_h" in df_clean.columns and "room_2_h" in df_clean.columns and "room_3_h" in df_clean.columns:
+        df_clean["RHz_weighted"] = (0.50 * df_clean["room_1_h"] + 0.30 * df_clean["room_2_h"] + 0.20 * df_clean["room_3_h"]).round(2)
+
+    if "room_2_c" in df_clean.columns and "room_3_c" in df_clean.columns:
+        df_clean["CO2z_weighted"] = (0.60 * df_clean["room_2_c"] + 0.40 * df_clean["room_3_c"]).round(2)
+
+    # Save cleaned dataset
     df_clean.to_csv(clean_path, index=False)
     print(f"  Successfully saved cleaned dataset: {clean_path}")
 

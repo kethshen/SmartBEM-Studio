@@ -138,11 +138,24 @@ def process_raw_dataset(raw_filename):
         mixer_col = df_clean["mixer"] if "mixer" in df_clean.columns else None
         df_clean["m_sa_kgs"] = compute_m_sa(df_clean["fan"], mixer_col).round(4)
 
+    # Calculate spatial weighted zone target columns
+    if "room_1_t" in df_clean.columns and "room_2_t" in df_clean.columns and "room_3_t" in df_clean.columns:
+        df_clean["Tz_weighted"] = (0.50 * df_clean["room_1_t"] + 0.30 * df_clean["room_2_t"] + 0.20 * df_clean["room_3_t"]).round(2)
+
+    if "room_1_h" in df_clean.columns and "room_2_h" in df_clean.columns and "room_3_h" in df_clean.columns:
+        df_clean["RHz_weighted"] = (0.50 * df_clean["room_1_h"] + 0.30 * df_clean["room_2_h"] + 0.20 * df_clean["room_3_h"]).round(2)
+
+    # CO2 weighting depends on sensor S3 status (active in day_3_p_1 & day_3_p_2, offline in day_3_p_3/4 and all day_4)
+    if base_name in ["day_3_p_1", "day_3_p_2"] and "room_2_c" in df_clean.columns and "room_3_c" in df_clean.columns:
+        df_clean["CO2z_weighted"] = (0.60 * df_clean["room_2_c"] + 0.40 * df_clean["room_3_c"]).round(2)
+    elif "room_2_c" in df_clean.columns:
+        df_clean["CO2z_weighted"] = df_clean["room_2_c"].round(2)
+
     # Re-round float columns to 2 decimal places (except m_sa_kgs which has 4 decimals)
     float_cols = [c for c in df_clean.columns if c not in ["timestamp", "m_sa_kgs"] and pd.api.types.is_float_dtype(df_clean[c])]
     df_clean[float_cols] = df_clean[float_cols].round(2)
 
-    # Save cleaned dataset (Step 1 complete — no weighted columns yet)
+    # Save cleaned dataset
     df_clean.to_csv(clean_path, index=False)
     print(f"  Successfully created cleaned file: {clean_path}")
 
