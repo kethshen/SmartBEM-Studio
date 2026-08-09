@@ -194,7 +194,7 @@ def run_ekf_on_dataset(df):
     
     X = np.zeros(N_STATES)
     # Solution 3 & Step 1: Physically Informed Initialization (anchored at physical reality at t=0)
-    X[I_ao] = 0.00023  # UA / Cs = 5.76 W/K / 25000 J/K
+    X[I_ao] = 0.00023  # (UA + cpa*minf) / Cs = (5.76 + 0.0215) W/K / 25000 J/K
     X[I_as] = 0.0402   # cpa / Cs = 1006.0 J/(kg*K) / 25000 J/K
     X[I_ae] = 0.0000   # 0 equipment heat load at start
     X[I_bo] = 3.06e-6  # minf / Mroom = 2.14e-5 kg/s / 7.00 kg

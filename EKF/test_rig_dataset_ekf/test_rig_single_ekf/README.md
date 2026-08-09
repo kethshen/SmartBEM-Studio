@@ -108,6 +108,90 @@ $$
 
 ---
 
+## 2.1 Exact Mathematical Differential Equations ($\dot{X}$)
+
+The continuous-time state vector rates of change $\dot{X} = f(X, U)$ implemented in `state_transition_and_jacobian` ([`test_rig_single_ekf.py#L127-L138`](file:///d:/UNI/Sem%207/ME420%20Mech%20Eng%20Research%20Project/SmartBEM-Studio/EKF/test_rig_dataset_ekf/test_rig_single_ekf/test_rig_single_ekf.py#L127-L138)) are:
+
+### 1. Exact Physical Compact Definitions ($\alpha, \beta, \gamma$)
+
+From the master FYP reference ([`EKF_System_Reference.md`](file:///d:/UNI/Sem%207/ME420%20Mech%20Eng%20Research%20Project/SmartBEM-Studio/No_commit_to_git/docs/ES73/EKF_System_Reference.md)):
+
+* **$\alpha_o = \frac{UA + c_{pa}\,m_{\text{inf}}}{C_s} \ [\text{s}^{-1}]$**: Lumped outdoor heat loss coefficient (Combines conductive wall loss $UA$ **and** infiltration heat flow $c_{pa}\,m_{\text{inf}}$ per unit thermal capacitance $C_s$).
+* **$\alpha_s = \frac{c_{pa}}{C_s} \ [(\text{kg}\cdot\text{s})^{-1}]$**: Supply air thermal coupling coefficient per unit mass flow rate.
+* **$\alpha_e = \frac{Q_{bg} + f_c\,q^{\text{occ}}_{\text{sens}}\,N}{C_s} \ [^\circ\text{C}/\text{s}]$**: Unmodeled internal heat generation bias (background equipment $Q_{bg}$ + occupant convective heat gain).
+* **$\beta_o = \frac{m_{\text{inf}}}{M} \ [\text{s}^{-1}]$**: Infiltration mass flow rate per unit dry-air room mass ($M$).
+* **$\beta_s = \frac{1}{M} \ [\text{kg}^{-1}]$**: Inverse of dry-air room mass ($M_{\text{room}}$).
+* **$\beta_e = \frac{G_{bg} + g^{\text{occ}}_\omega\,N}{M} \ [(\text{kg}_w/\text{kg}_{da})/\text{s}]$**: Unmodeled internal moisture generation rate per unit dry-air mass.
+* **$\gamma_e = \frac{g^{\text{occ}}_{\text{CO}_2}\,N}{M} \ [\text{ppm}/\text{s}]$**: Lumped occupant $\text{CO}_2$ generation rate per unit dry-air mass.
+
+---
+
+### 2. Physical Zone State Differential Equations ($\dot{\mathbf{x}}$)
+
+#### **A. Zone Air Temperature Rates ($\dot{T}_z$)**
+```python
+dTz = ao * (To - Tz) + as_ * msa * (Tsa - Tz) + ae
+```
+$$
+\frac{dT_z}{dt} = \alpha_o (T_o - T_z) + \alpha_s \cdot \dot{m}_{sa} \cdot (T_{sa} - T_z) + \alpha_e
+$$
+* **$\alpha_o (T_o - T_z)$**: Total outdoor thermal exchange rate combining envelope wall conduction ($UA$) and infiltration air ingress ($c_{pa}\,m_{\text{inf}}$).
+* **$\alpha_s \cdot \dot{m}_{sa} \cdot (T_{sa} - T_z)$**: Forced convection heat transfer rate from HVAC supply air ($\alpha_s = \frac{c_{pa}}{C_s}$).
+* **$\alpha_e$**: Internal equipment & occupant sensible heat gain rate ($[^\circ\text{C}/\text{s}]$).
+
+#### **B. Zone Humidity Ratio Rates ($\dot{\omega}_z$)**
+```python
+dwz = bo * (wo - wz) + bs * msa * (wsa - wz) + be
+```
+$$
+\frac{d\omega_z}{dt} = \beta_o (\omega_o - \omega_z) + \beta_s \cdot \dot{m}_{sa} \cdot (\omega_{sa} - \omega_z) + \beta_e
+$$
+* **$\beta_o (\omega_o - \omega_z)$**: Infiltration moisture ingress rate ($\beta_o = \frac{m_{\text{inf}}}{M}$).
+* **$\beta_s \cdot \dot{m}_{sa} \cdot (\omega_{sa} - \omega_z)$**: Supply air moisture mixing rate ($\beta_s = \frac{1}{M}$).
+* **$\beta_e$**: Unmodeled internal moisture generation rate ($[\text{kg}_w/(\text{kg}_{da}\cdot\text{s})]$).
+
+#### **C. Zone $\text{CO}_2$ Concentration Rates ($\dot{c}_z$)**
+```python
+dcz = bo * (co - cz) + bs * msa * (csa - cz) + ge
+```
+$$
+\frac{dc_z}{dt} = \beta_o (c_o - c_z) + \beta_s \cdot \dot{m}_{sa} \cdot (c_{sa} - c_z) + \gamma_e
+$$
+* **$\beta_o (c_o - c_z)$**: Outdoor $\text{CO}_2$ infiltration ingress.
+* **$\beta_s \cdot \dot{m}_{sa} \cdot (c_{sa} - c_z)$**: Supply air $\text{CO}_2$ dilution/flushing rate.
+* **$\gamma_e$**: Lumped occupant $\text{CO}_2$ generation rate directly in $[\text{ppm}/\text{s}]$ ($\gamma_e = N_{\text{occ}} \cdot 0.7716\text{ ppm/s}$).
+
+---
+
+### 3. Decoupling Pure Conductance $UA$ from Lumped $\alpha_o$
+
+Because $\alpha_o = \frac{UA + c_{pa}\,m_{\text{inf}}}{C_s}$, isolating pure conductive envelope conductance $UA$ requires subtracting the infiltration term $c_{pa}\,m_{\text{inf}}$:
+
+$$
+UA = \alpha_o \cdot C_s - c_{pa} \cdot m_{\text{inf}} = \alpha_o \cdot \left(\frac{c_{pa}}{\alpha_s}\right) - c_{pa} \cdot \left(\frac{\beta_o}{\beta_s}\right)
+$$
+
+This exact decoupling formula is implemented in line 384 of `test_rig_single_ekf.py`:
+```python
+UA_arr = X_hist[:, I_ao] * Cs_arr - c_pa * (X_hist[:, I_bo] * M_est_arr)
+```
+
+---
+
+### 3. Continuous Analytical State Jacobian ($F_{10 \times 10} = \frac{\partial f(X, U)}{\partial X}$)
+
+The non-zero Jacobian partial derivatives in `get_jacobian_F` ([`test_rig_single_ekf.py#L141-L167`](file:///d:/UNI/Sem%207/ME420%20Mech%20Eng%20Research%20Project/SmartBEM-Studio/EKF/test_rig_dataset_ekf/test_rig_single_ekf/test_rig_single_ekf.py#L141-L167)) are:
+
+$$
+\begin{aligned}
+\frac{\partial \dot{T}_z}{\partial \alpha_o} &= T_o - T_z, & \frac{\partial \dot{T}_z}{\partial \alpha_s} &= \dot{m}_{sa}(T_{sa} - T_z), & \frac{\partial \dot{T}_z}{\partial \alpha_e} &= 1.0, & \frac{\partial \dot{T}_z}{\partial T_z} &= -(\alpha_o + \alpha_s \cdot \dot{m}_{sa}) \\
+\frac{\partial \dot{\omega}_z}{\partial \beta_o} &= \omega_o - \omega_z, & \frac{\partial \dot{\omega}_z}{\partial \beta_s} &= \dot{m}_{sa}(\omega_{sa} - \omega_z), & \frac{\partial \dot{\omega}_z}{\partial \beta_e} &= 1.0, & \frac{\partial \dot{\omega}_z}{\partial \omega_z} &= -(\beta_o + \beta_s \cdot \dot{m}_{sa}) \\
+\frac{\partial \dot{c}_z}{\partial \beta_o} &= c_o - c_z, & \frac{\partial \dot{c}_z}{\partial \beta_s} &= \dot{m}_{sa}(c_{sa} - c_z), & \frac{\partial \dot{c}_z}{\partial \gamma_e} &= 1.0, & \frac{\partial \dot{c}_z}{\partial c_z} &= -(\beta_o + \beta_s \cdot \dot{m}_{sa})
+\end{aligned}
+$$
+
+---
+
 ## 3. ⚙️ Special Custom Enhancements Beyond Typical EKF
 
 Apart from standard EKF predict/update equations, `test_rig_single_ekf.py` incorporates 4 custom engineering enhancements:
