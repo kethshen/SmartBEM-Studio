@@ -326,32 +326,48 @@ print(f"Saved Calibrated Comparison Plot to: {PLOT_PATH}")
 EVAL_PLOT_PATH = os.path.join(CALIBRATED_V1_DIR, "calibrated_v1_evaluation_parameters.png")
 fig, axes = plt.subplots(5, 1, figsize=(12, 14), sharex=True, dpi=300)
 
-axes[0].plot(history_iters, history_loss, color="#E76F51", lw=1.8)
+# 1. Composite Loss
+max_loss_cushion = max(history_loss) * 1.15 if len(history_loss) > 0 else 30.0
+axes[0].plot(history_iters, history_loss, color="#E63946", lw=1.8)
 axes[0].set_ylabel("Composite Loss", fontsize=10, fontweight="bold")
+axes[0].set_ylim(0, max_loss_cushion)
 axes[0].set_title("calibrated_v1 — Optimization Convergence & Evaluation Metrics History", fontsize=13, fontweight="bold", pad=12)
 axes[0].grid(True, linestyle=":", alpha=0.6)
 
+# 2. CV(RMSE)
+max_cv_cushion = max(history_cv_rmse) * 1.15 if len(history_cv_rmse) > 0 else 25.0
 axes[1].plot(history_iters, history_cv_rmse, color="#2A9D8F", lw=1.8, label="CV(RMSE)")
-axes[1].axhline(5.0, color="#D90429", linestyle="--", lw=1.2, label="ASHRAE Target (≤ 5%)")
+axes[1].axhspan(0.0, 5.0, color="#2A9D8F", alpha=0.15, label="ASHRAE Target Band (0 - 5%)")
+axes[1].axhline(5.0, color="#2A9D8F", linestyle="--", lw=1.2)
 axes[1].set_ylabel("CV(RMSE) (%)", fontsize=10, fontweight="bold")
+axes[1].set_ylim(0, max_cv_cushion)
 axes[1].legend(loc="upper right", frameon=True, facecolor="white")
 axes[1].grid(True, linestyle=":", alpha=0.6)
 
+# 3. NMBE
+max_nmbe_abs = max(abs(min(history_nmbe)), abs(max(history_nmbe))) * 1.25 if len(history_nmbe) > 0 else 15.0
 axes[2].plot(history_iters, history_nmbe, color="#3A86EF", lw=1.8, label="NMBE")
 axes[2].axhspan(-2.0, 2.0, color="#2A9D8F", alpha=0.15, label="ASHRAE Target Band (±2%)")
+axes[2].axhline(0.0, color="#6B2D5C", linestyle=":", lw=1.0)
 axes[2].set_ylabel("NMBE (%)", fontsize=10, fontweight="bold")
+axes[2].set_ylim(-max_nmbe_abs, max_nmbe_abs)
 axes[2].legend(loc="upper right", frameon=True, facecolor="white")
 axes[2].grid(True, linestyle=":", alpha=0.6)
 
-axes[3].plot(history_iters, history_rmse, color="#8338EC", lw=1.8, label="RMSE (°C)")
-axes[3].plot(history_iters, history_mae, color="#F4A261", lw=1.6, linestyle="--", label="MAE (°C)")
+# 4. Error (RMSE & MAE)
+max_rmse_cushion = max(history_rmse) * 1.15 if len(history_rmse) > 0 else 15.0
+axes[3].plot(history_iters, history_rmse, color="#9D4EDD", lw=1.8, label="RMSE (°C)")
+axes[3].plot(history_iters, history_mae, color="#EB802A", lw=1.6, linestyle="--", label="MAE (°C)")
 axes[3].set_ylabel("Error (°C)", fontsize=10, fontweight="bold")
+axes[3].set_ylim(0, max_rmse_cushion)
 axes[3].legend(loc="upper right", frameon=True, facecolor="white")
 axes[3].grid(True, linestyle=":", alpha=0.6)
 
-axes[4].plot(history_iters, history_r2, color="#06D6A0", lw=1.8)
+# 5. R² Score
+axes[4].plot(history_iters, history_r2, color="#6B2D5C", lw=1.8)
 axes[4].set_ylabel("R² Score", fontsize=10, fontweight="bold")
 axes[4].set_xlabel("Optimization Iteration Step", fontsize=11, fontweight="bold")
+axes[4].set_ylim(0.0, 1.05)
 axes[4].grid(True, linestyle=":", alpha=0.6)
 
 plt.tight_layout()
@@ -365,24 +381,29 @@ fig, axes = plt.subplots(5, 1, figsize=(12, 14), sharex=True, dpi=300)
 
 axes[0].plot(history_iters, history_k, color="#264653", lw=1.8)
 axes[0].set_ylabel("k [W/(m·K)]", fontsize=10, fontweight="bold")
+axes[0].set_ylim(0.0200, 0.0300)
 axes[0].set_title("calibrated_v1 — Physical Parameter Calibration Trajectories", fontsize=13, fontweight="bold", pad=12)
 axes[0].grid(True, linestyle=":", alpha=0.6)
 
 axes[1].plot(history_iters, history_cp, color="#2A9D8F", lw=1.8)
 axes[1].set_ylabel("cp [J/(kg·K)]", fontsize=10, fontweight="bold")
+axes[1].set_ylim(600, 1700)
 axes[1].grid(True, linestyle=":", alpha=0.6)
 
-axes[2].plot(history_iters, history_rho, color="#E9C46A", lw=1.8)
+axes[2].plot(history_iters, history_rho, color="#EB802A", lw=1.8)
 axes[2].set_ylabel("rho [kg/m³]", fontsize=10, fontweight="bold")
+axes[2].set_ylim(30, 50)
 axes[2].grid(True, linestyle=":", alpha=0.6)
 
-axes[3].plot(history_iters, history_ach, color="#F4A261", lw=1.8)
+axes[3].plot(history_iters, history_ach, color="#3A86EF", lw=1.8)
 axes[3].set_ylabel("ACH [hr⁻¹]", fontsize=10, fontweight="bold")
+axes[3].set_ylim(0.0, 0.20)
 axes[3].grid(True, linestyle=":", alpha=0.6)
 
-axes[4].plot(history_iters, history_q, color="#E76F51", lw=1.8)
+axes[4].plot(history_iters, history_q, color="#FF6B6B", lw=1.8)
 axes[4].set_ylabel("Q_cool [W]", fontsize=10, fontweight="bold")
 axes[4].set_xlabel("Optimization Iteration Step", fontsize=11, fontweight="bold")
+axes[4].set_ylim(300, 750)
 axes[4].grid(True, linestyle=":", alpha=0.6)
 
 plt.tight_layout()
