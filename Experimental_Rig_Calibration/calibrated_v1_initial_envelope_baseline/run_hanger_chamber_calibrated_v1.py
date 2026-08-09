@@ -22,7 +22,7 @@ def compute_dtw_distance(s1, s2):
 # 1. Paths & Configuration
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 STUDIO_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, "..", ".."))
-RIG_DIR = os.path.join(STUDIO_DIR, "Readings_from_rig")
+RIG_DIR = os.path.join(STUDIO_DIR, "Experimental_Rig_Calibration")
 CALIBRATED_V1_DIR = SCRIPT_DIR
 
 MASTER_IDF_PATH = os.path.join(CALIBRATED_V1_DIR, "hanger_chamber_base_template.idf")

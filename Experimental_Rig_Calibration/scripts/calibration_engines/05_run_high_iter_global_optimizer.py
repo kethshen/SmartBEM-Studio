@@ -19,15 +19,16 @@ def compute_dtw_distance(s1, s2):
             dtw_matrix[i, j] = cost + min(dtw_matrix[i - 1, j], dtw_matrix[i, j - 1], dtw_matrix[i - 1, j - 1])
     return dtw_matrix[n, m] / max(n, m)
 
-# 1. Paths & Configuration
+# 1. Paths & Configuration (Strictly Isolated Files)
 STUDIO_DIR = r"d:\UNI\Sem 7\ME420 Mech Eng Research Project\SmartBEM-Studio"
-RIG_DIR = os.path.join(STUDIO_DIR, "Readings_from_rig")
+RIG_DIR = os.path.join(STUDIO_DIR, "Experimental_Rig_Calibration")
 MASTER_IDF_PATH = os.path.join(STUDIO_DIR, "hanger_chamber_master.idf")
 EPW_PATH = os.path.join(RIG_DIR, "experimental_data", "test_day_weather.epw")
 CSV_CLEANED_PATH = os.path.join(RIG_DIR, "experimental_data", "cleaned", "Idel_test_2026_07_21_cleaned.csv")
-OUT_DIR = os.path.join(RIG_DIR, "sim_models", "sim_calibration_ashrae")
-FINAL_IDF_PATH = os.path.join(STUDIO_DIR, "hanger_chamber_calibrated_ashrae.idf")
-PLOT_PATH = os.path.join(RIG_DIR, "plots", "calibrated_ashrae_dtw_sim_vs_sensors.png")
+
+OUT_DIR = os.path.join(RIG_DIR, "sim_models", "sim_calibration_ashrae_high_iter")
+FINAL_IDF_PATH = os.path.join(STUDIO_DIR, "hanger_chamber_calibrated_ashrae_high_iter.idf")
+PLOT_PATH = os.path.join(RIG_DIR, "plots", "calibrated_ashrae_dtw_high_iter_sim_vs_sensors.png")
 
 ENERGYPLUS_EXE = r"C:\EnergyPlusV25-2-0\energyplus.exe"
 if not os.path.exists(ENERGYPLUS_EXE):
@@ -35,7 +36,7 @@ if not os.path.exists(ENERGYPLUS_EXE):
 
 os.makedirs(OUT_DIR, exist_ok=True)
 
-# 2. Load Sensor Reference Trajectory (170.1 min test window) & EMA Target
+# 2. Load Sensor Reference Trajectory & EMA Target
 df_cleaned = pd.read_csv(CSV_CLEANED_PATH)
 Tz_raw = df_cleaned["Tz_weighted"].values
 Tz_ema = pd.Series(Tz_raw).ewm(alpha=0.10, adjust=False).mean().values
@@ -54,7 +55,7 @@ best_params = None
 best_Tsim = None
 
 print("=" * 95)
-print("  LAUNCHING STAGE 2 ASHRAE GUIDELINE 14 & DTW SHAPE-MATCHING CALIBRATION LOOP  ")
+print("  LAUNCHING HIGH-ITERATION ISOLATED ASHRAE & DTW CALIBRATION LOOP (MAXITER=600)  ")
 print("=" * 95)
 print(f"{'Iter':<5} | {'k_foam':<8} | {'cp_foam':<7} | {'rho_foam':<8} | {'ACH':<6} | {'Qcool(W)':<8} | {'CV(RMSE)%':<10} | {'NMBE%':<8} | {'Loss':<8}")
 print("-" * 95)
@@ -67,7 +68,7 @@ def run_energyplus_iteration(params):
     
     idf_str = master_idf_content
     
-    # 1. Update Chamber_PU_Foam material (Conductivity, Density, Specific Heat)
+    # Update Material
     old_mat_block = (
         "  Material,\n"
         "    Chamber_PU_Foam,                   !- Name\n"
@@ -102,12 +103,12 @@ def run_energyplus_iteration(params):
                 lines[5] = f"    {cp_foam:.2f},                           !- Specific Heat {{J/kg-K}}"
                 idf_str = idf_str[:mat_start] + "\n".join(lines) + idf_str[mat_end:]
 
-    # 2. Update Infiltration ACH
+    # Update Infiltration
     old_ach = "0.1000,                                    !- Air Changes per Hour {1/hr}"
     new_ach = f"{ach:.4f},                                    !- Air Changes per Hour {{1/hr}}"
     idf_str = idf_str.replace(old_ach, new_ach)
 
-    # 3. Update Cooling Capacity Q_cool (Robust replacement)
+    # Update Cooling Capacity
     q_start = idf_str.find("Maximum Total Cooling Capacity")
     if q_start != -1:
         line_start = idf_str.rfind("\n", 0, q_start) + 1
@@ -115,7 +116,7 @@ def run_energyplus_iteration(params):
         idf_str = idf_str[:line_start] + f"  {q_cool:.1f},                                    !- Maximum Total Cooling Capacity {{W}}" + idf_str[line_end:]
 
     # Write temporary IDF file
-    temp_idf = os.path.join(OUT_DIR, "temp_calibration_ashrae.idf")
+    temp_idf = os.path.join(OUT_DIR, "temp_calibration_high_iter.idf")
     with open(temp_idf, "w", encoding="utf-8") as f:
         f.writelines(idf_str)
 
@@ -149,7 +150,6 @@ def run_energyplus_iteration(params):
 
     sim_temps = np.array(sim_temps)
     
-    # Rig test window: Step 45 to Step 79 (34 timesteps at 5-min intervals = 170.1 min)
     start_idx = 45
     end_idx = start_idx + 34
     T_sim_window = sim_temps[start_idx:end_idx]
@@ -157,19 +157,16 @@ def run_energyplus_iteration(params):
     if len(T_sim_window) < 34:
         return 999.0
 
-    # Interpolate time vectors to match sensor length
     sim_times = np.linspace(0, 170.1, len(T_sim_window))
     sensor_times = np.linspace(0, 170.1, N_sensor)
     T_sim_interp = np.interp(sensor_times, sim_times, T_sim_window)
 
-    # Calculate ASHRAE Guideline 14 Standard Metrics
     rmse = np.sqrt(np.mean((T_sim_interp - Tz_ema)**2))
-    cv_rmse = (rmse / mean_Tz) * 100.0  # CV(RMSE) %
-    nmbe = (np.mean(T_sim_interp - Tz_ema) / mean_Tz) * 100.0  # NMBE %
-    dtw_dist = compute_dtw_distance(T_sim_interp, Tz_ema)  # DTW Distance
+    cv_rmse = (rmse / mean_Tz) * 100.0
+    nmbe = (np.mean(T_sim_interp - Tz_ema) / mean_Tz) * 100.0
+    dtw_dist = compute_dtw_distance(T_sim_interp, Tz_ema)
     
-    # Composite ASHRAE + DTW Loss Function
-    loss = cv_rmse + 0.5 * abs(nmbe) + 2.0 * dtw_dist
+    loss = cv_rmse + 0.5 * abs(nmbe) + 2.5 * dtw_dist
     
     print(f"{iteration_counter:<5d} | {k_foam:<8.4f} | {cp_foam:<7.0f} | {rho_foam:<8.1f} | {ach:<6.3f} | {q_cool:<8.1f} | {cv_rmse:<10.2f} | {nmbe:<8.2f} | {loss:<8.3f}")
 
@@ -184,7 +181,7 @@ def run_energyplus_iteration(params):
 
     return loss
 
-# 4. Initial Guesses & Bounds in Normalized Scale [0, 1]
+# Bounds in Normalized Scale [0, 1]
 bounds_raw = np.array([
     (0.015, 0.045),    # k_foam
     (800.0, 1800.0),   # cp_foam
@@ -203,25 +200,26 @@ def objective_normalized(p_norm):
     p_real = denormalize_params(p_norm)
     return run_energyplus_iteration(p_real)
 
-x0_norm = [0.33, 0.60, 0.48, 0.18, 0.33]  # Normalized initial guess
+# Starting from previous optimal point for high-precision local refinement
+# k=0.0260 (0.3667), cp=1449 (0.6492), rho=32.2 (0.4880), ACH=0.115 (0.2143), Q=461.0 (0.1789)
+x0_norm = [0.3667, 0.6492, 0.4880, 0.2143, 0.1789]
 
-# Execute Nelder-Mead Optimization on normalized parameters
 res = minimize(
     objective_normalized,
     x0_norm,
     method="Nelder-Mead",
-    options={"maxiter": 300, "disp": True, "xatol": 1e-3, "fatol": 1e-2}
+    options={"maxiter": 600, "disp": True, "xatol": 1e-4, "fatol": 1e-4}
 )
 
 print("\n" + "=" * 95)
-print("              STAGE 2 ASHRAE & DTW CALIBRATION COMPLETED SUCCESSFULLY!             ")
+print("       HIGH-ITERATION ASHRAE & DTW CALIBRATION COMPLETED SUCCESSFULLY!        ")
 print("=" * 95)
 print(f"Optimal Composite Loss: {best_loss:.3f}")
 print(f"Optimal ASHRAE CV(RMSE): {best_cv_rmse:.2f}% (Target <= 5.0%)")
 print(f"Optimal ASHRAE NMBE:     {best_nmbe:.2f}% (Target <= 2.0%)")
 
 k_opt, cp_opt, rho_opt, ach_opt, q_opt = best_params
-print(f"\nCalibrated Physical Parameters:")
+print(f"\nCalibrated Physical Parameters (High-Iteration):")
 print(f"• Foam Conductivity k:   {k_opt:.5f} W/(m·K)")
 print(f"• Foam Specific Heat cp: {cp_opt:.1f} J/(kg·K)")
 print(f"• Foam Density rho:      {rho_opt:.1f} kg/m³")
@@ -229,7 +227,6 @@ print(f"• Chamber Infiltration:  {ach_opt:.3f} ACH")
 print(f"• Peak AC Cooling Q:     {q_opt:.1f} W")
 print(f"Saved Calibrated IDF to: {FINAL_IDF_PATH}")
 
-# 5. Final Evaluation Metrics & High-Resolution Plot
 rmse_final = np.sqrt(np.mean((best_Tsim - Tz_ema)**2))
 mae_final = np.mean(np.abs(best_Tsim - Tz_ema))
 r2_final = 1.0 - (np.sum((Tz_ema - best_Tsim)**2) / np.sum((Tz_ema - np.mean(Tz_ema))**2))
@@ -238,16 +235,16 @@ plt.figure(figsize=(12, 6), dpi=300)
 sensor_times_min = np.linspace(0, 170.1, N_sensor)
 plt.plot(sensor_times_min, Tz_raw, label="Cleaned Raw Sensor $T_z$ (0.50 S1 + 0.30 S2 + 0.20 S3)", color="#a1d99b", alpha=0.4, linewidth=1.5)
 plt.plot(sensor_times_min, Tz_ema, label="EMA-Smoothed Target Sensor $T_z$", color="#2ca02c", linewidth=2.5)
-plt.plot(sensor_times_min, best_Tsim, label=f"Calibrated EnergyPlus $T_{{sim}}$ (ASHRAE CV={best_cv_rmse:.1f}%)", color="#d62728", linewidth=2.2, linestyle="--")
+plt.plot(sensor_times_min, best_Tsim, label=f"High-Iter EnergyPlus $T_{{sim}}$ (ASHRAE CV={best_cv_rmse:.1f}%)", color="#9467bd", linewidth=2.2, linestyle="--")
 
-plt.title("Stage 2 ASHRAE Guideline 14 & DTW Calibrated EnergyPlus vs. Sensor Pulldown", fontsize=14, fontweight="bold", pad=15)
+plt.title("High-Iteration ASHRAE & DTW Calibrated EnergyPlus vs. Sensor Pulldown", fontsize=14, fontweight="bold", pad=15)
 plt.xlabel("Elapsed Time (Minutes)", fontsize=12)
 plt.ylabel("Chamber Zone Air Temperature (°C)", fontsize=12)
 plt.grid(True, linestyle=":", alpha=0.6)
 plt.legend(fontsize=11, loc="upper right")
 
 textstr = (
-    f"Calibrated Parameters:\n"
+    f"High-Iter Calibrated Parameters:\n"
     f"• $k_{{foam}}$ = {k_opt:.4f} W/(m·K)\n"
     f"• $c_{{p,foam}}$ = {cp_opt:.0f} J/(kg·K)\n"
     f"• $\\rho_{{foam}}$ = {rho_opt:.1f} kg/m³\n"
@@ -267,4 +264,4 @@ plt.tight_layout()
 plt.savefig(PLOT_PATH)
 plt.close()
 
-print(f"Saved Calibrated Comparison Plot to: {PLOT_PATH}")
+print(f"Saved High-Iteration Plot to: {PLOT_PATH}")

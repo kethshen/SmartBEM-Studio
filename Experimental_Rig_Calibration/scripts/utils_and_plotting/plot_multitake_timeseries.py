@@ -7,14 +7,14 @@ import matplotlib.pyplot as plt
 import os
 
 OVERFLOW = 60000
-OUT_DIR = r"d:\UNI\Sem 7\ME420 Mech Eng Research Project\SmartBEM-Studio\Readings_from_rig\plots\full_day1"
+OUT_DIR = r"d:\UNI\Sem 7\ME420 Mech Eng Research Project\SmartBEM-Studio\Experimental_Rig_Calibration\plots\full_day1"
 os.makedirs(OUT_DIR, exist_ok=True)
 
 files = {
-    "Part 1": r"d:\UNI\Sem 7\ME420 Mech Eng Research Project\SmartBEM-Studio\Readings_from_rig\Full Day 1 part 1_2026-07-23.csv",
-    "Part 2": r"d:\UNI\Sem 7\ME420 Mech Eng Research Project\SmartBEM-Studio\Readings_from_rig\Full day 1 part 2_2026-07-23.csv",
-    "Part 5": r"d:\UNI\Sem 7\ME420 Mech Eng Research Project\SmartBEM-Studio\Readings_from_rig\Full Day 1 part 5_2026-07-23.csv",
-    "Part 6": r"d:\UNI\Sem 7\ME420 Mech Eng Research Project\SmartBEM-Studio\Readings_from_rig\Full Day 1 part 6_2026-07-23.csv",
+    "Part 1": r"d:\UNI\Sem 7\ME420 Mech Eng Research Project\SmartBEM-Studio\Experimental_Rig_Calibration\Full Day 1 part 1_2026-07-23.csv",
+    "Part 2": r"d:\UNI\Sem 7\ME420 Mech Eng Research Project\SmartBEM-Studio\Experimental_Rig_Calibration\Full day 1 part 2_2026-07-23.csv",
+    "Part 5": r"d:\UNI\Sem 7\ME420 Mech Eng Research Project\SmartBEM-Studio\Experimental_Rig_Calibration\Full Day 1 part 5_2026-07-23.csv",
+    "Part 6": r"d:\UNI\Sem 7\ME420 Mech Eng Research Project\SmartBEM-Studio\Experimental_Rig_Calibration\Full Day 1 part 6_2026-07-23.csv",
 }
 
 TEMP_COLS   = ["outside_t", "room_1_t", "room_2_t", "room_3_t", "supply_t", "return_t"]

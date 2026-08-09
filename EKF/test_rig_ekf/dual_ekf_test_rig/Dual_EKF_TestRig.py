@@ -30,10 +30,10 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 TEST_RIG_DIR = os.path.dirname(SCRIPT_DIR)
 STUDIO_DIR = os.path.abspath(os.path.join(TEST_RIG_DIR, "..", ".."))
 
-DAY3_DIR = os.path.join(STUDIO_DIR, "Readings_from_rig", "sensor_readings", "with_occ", "Day_3")
-DAY4_DIR = os.path.join(STUDIO_DIR, "Readings_from_rig", "sensor_readings", "with_occ", "Day_4")
+DAY3_DIR = os.path.join(STUDIO_DIR, "Experimental_Rig_Calibration", "sensor_readings", "with_occ", "Day_3")
+DAY4_DIR = os.path.join(STUDIO_DIR, "Experimental_Rig_Calibration", "sensor_readings", "with_occ", "Day_4")
 
-DAY_WITH_OCC_CLEAN_DIR = os.path.join(STUDIO_DIR, "Readings_from_rig", "sensor_readings", "cleaned", "with_occ")
+DAY_WITH_OCC_CLEAN_DIR = os.path.join(STUDIO_DIR, "Experimental_Rig_Calibration", "sensor_readings", "cleaned", "with_occ")
 
 OUT_DIR = os.path.join(SCRIPT_DIR, "results_plots_dualekf")
 os.makedirs(OUT_DIR, exist_ok=True)

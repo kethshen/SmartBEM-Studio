@@ -225,8 +225,8 @@ if __name__ == "__main__":
     SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
     STUDIO_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, "..", ".."))
 
-    DAY3_DIR = os.path.join(STUDIO_DIR, "Readings_from_rig", "experimental_data", "with_occ", "Day_3")
-    DAY4_DIR = os.path.join(STUDIO_DIR, "Readings_from_rig", "experimental_data", "with_occ", "Day_4")
+    DAY3_DIR = os.path.join(STUDIO_DIR, "Experimental_Rig_Calibration", "experimental_data", "with_occ", "Day_3")
+    DAY4_DIR = os.path.join(STUDIO_DIR, "Experimental_Rig_Calibration", "experimental_data", "with_occ", "Day_4")
 
     DAY3_CLEAN_DIR = os.path.join(DAY3_DIR, "cleaned_day_3")
     DAY4_CLEAN_DIR = os.path.join(DAY4_DIR, "cleaned_day_4")
