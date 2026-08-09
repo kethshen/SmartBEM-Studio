@@ -27,7 +27,7 @@ CALIBRATED_V1_DIR = SCRIPT_DIR
 
 MASTER_IDF_PATH = os.path.join(CALIBRATED_V1_DIR, "hanger_chamber_base_template.idf")
 EPW_PATH = os.path.join(CALIBRATED_V1_DIR, "test_day_weather_merged_1min.epw")
-CSV_CLEANED_PATH = os.path.join(CALIBRATED_V1_DIR, "Idel_test_2026_07_21_cleaned.csv")
+CSV_CLEANED_PATH = os.path.join(CALIBRATED_V1_DIR, "day_1_p_1.csv")
 OUT_DIR = os.path.join(CALIBRATED_V1_DIR, "sim_output")
 FINAL_IDF_PATH = os.path.join(CALIBRATED_V1_DIR, "hanger_chamber_after_calibrated_v1.idf")
 PLOT_PATH = os.path.join(CALIBRATED_V1_DIR, "hanger_chamber_after_calibrated_v1.png")
@@ -67,6 +67,21 @@ best_cv_rmse = float("inf")
 best_nmbe = float("inf")
 best_params = None
 best_Tsim = None
+
+# History Tracking Lists for Diagnostic Plots
+history_iters = []
+history_loss = []
+history_cv_rmse = []
+history_nmbe = []
+history_rmse = []
+history_mae = []
+history_r2 = []
+
+history_k = []
+history_cp = []
+history_rho = []
+history_ach = []
+history_q = []
 
 print("=" * 95)
 print("  LAUNCHING STAGE 2 ASHRAE GUIDELINE 14 & DTW SHAPE-MATCHING CALIBRATION LOOP  ")
@@ -187,9 +202,29 @@ def run_energyplus_iteration(params):
     nmbe = (np.mean(T_sim_interp - Tz_ema) / mean_Tz) * 100.0  # NMBE %
     dtw_dist = compute_dtw_distance(T_sim_interp, Tz_ema)  # DTW Distance
     
+    # Additional Metrics
+    mae = np.mean(np.abs(T_sim_interp - Tz_ema))
+    ss_tot = np.sum((Tz_ema - mean_Tz)**2)
+    r2 = 1.0 - (np.sum((Tz_ema - T_sim_interp)**2) / ss_tot) if ss_tot > 0 else 0.0
+
     # Composite ASHRAE + DTW Loss Function
     loss = cv_rmse + 0.5 * abs(nmbe) + 2.0 * dtw_dist
     
+    # Store History
+    history_iters.append(iteration_counter)
+    history_loss.append(loss)
+    history_cv_rmse.append(cv_rmse)
+    history_nmbe.append(nmbe)
+    history_rmse.append(rmse)
+    history_mae.append(mae)
+    history_r2.append(r2)
+
+    history_k.append(k_foam)
+    history_cp.append(cp_foam)
+    history_rho.append(rho_foam)
+    history_ach.append(ach)
+    history_q.append(q_cool)
+
     print(f"{iteration_counter:<5d} | {k_foam:<8.4f} | {cp_foam:<7.0f} | {rho_foam:<8.1f} | {ach:<6.3f} | {q_cool:<8.1f} | {cv_rmse:<10.2f} | {nmbe:<8.2f} | {loss:<8.3f}")
 
     if loss < best_loss:
@@ -255,15 +290,14 @@ r2_final = 1.0 - (np.sum((Tz_ema - best_Tsim)**2) / np.sum((Tz_ema - np.mean(Tz_
 
 plt.figure(figsize=(12, 6), dpi=300)
 sensor_times_min = np.linspace(0, 170.1, N_sensor)
-plt.plot(sensor_times_min, Tz_raw, label="Cleaned Raw Sensor $T_z$ (0.50 S1 + 0.30 S2 + 0.20 S3)", color="#a1d99b", alpha=0.4, linewidth=1.5)
-plt.plot(sensor_times_min, Tz_ema, label="EMA-Smoothed Target Sensor $T_z$", color="#2ca02c", linewidth=2.5)
-plt.plot(sensor_times_min, best_Tsim, label=f"Calibrated EnergyPlus $T_{{sim}}$ (ASHRAE CV={best_cv_rmse:.1f}%)", color="#d62728", linewidth=2.2, linestyle="--")
+plt.plot(sensor_times_min, Tz_ema, label="Weighted Tz", color="#2A9D8F", linewidth=2.5)
+plt.plot(sensor_times_min, best_Tsim, label="Calibrated Tz", color="#FF6B6B", linewidth=2.2, linestyle="--")
 
-plt.title("Stage 2 ASHRAE Guideline 14 & DTW Calibrated EnergyPlus vs. Sensor Pulldown", fontsize=14, fontweight="bold", pad=15)
+plt.title("calibrated_v1_initial_envelope_baseline", fontsize=14, fontweight="bold", pad=15)
 plt.xlabel("Elapsed Time (Minutes)", fontsize=12)
 plt.ylabel("Chamber Zone Air Temperature (°C)", fontsize=12)
 plt.grid(True, linestyle=":", alpha=0.6)
-plt.legend(fontsize=11, loc="upper right")
+plt.legend(fontsize=11, loc="upper right", frameon=True, facecolor="white", edgecolor="none")
 
 textstr = (
     f"Calibrated Parameters:\n"
@@ -272,7 +306,7 @@ textstr = (
     f"• $\\rho_{{foam}}$ = {rho_opt:.1f} kg/m³\n"
     f"• $\\text{{ACH}}$ = {ach_opt:.3f} hr⁻¹\n"
     f"• $Q_{{cool}}$ = {q_opt:.0f} W\n\n"
-    f"ASHRAE Guideline 14 Metrics:\n"
+    f"Evaluation Metrics:\n"
     f"• CV(RMSE) = {best_cv_rmse:.2f}% (Target ≤ 5%)\n"
     f"• NMBE     = {best_nmbe:.2f}% (Target ≤ 2%)\n"
     f"• RMSE     = {rmse_final:.2f} °C\n"
@@ -287,3 +321,71 @@ plt.savefig(PLOT_PATH)
 plt.close()
 
 print(f"Saved Calibrated Comparison Plot to: {PLOT_PATH}")
+
+# 6. Diagnostic Figure 1: calibrated_v1_evaluation_parameters.png (5 Error Subplots)
+EVAL_PLOT_PATH = os.path.join(CALIBRATED_V1_DIR, "calibrated_v1_evaluation_parameters.png")
+fig, axes = plt.subplots(5, 1, figsize=(12, 14), sharex=True, dpi=300)
+
+axes[0].plot(history_iters, history_loss, color="#E76F51", lw=1.8)
+axes[0].set_ylabel("Composite Loss", fontsize=10, fontweight="bold")
+axes[0].set_title("calibrated_v1 — Optimization Convergence & Evaluation Metrics History", fontsize=13, fontweight="bold", pad=12)
+axes[0].grid(True, linestyle=":", alpha=0.6)
+
+axes[1].plot(history_iters, history_cv_rmse, color="#2A9D8F", lw=1.8, label="CV(RMSE)")
+axes[1].axhline(5.0, color="#D90429", linestyle="--", lw=1.2, label="ASHRAE Target (≤ 5%)")
+axes[1].set_ylabel("CV(RMSE) (%)", fontsize=10, fontweight="bold")
+axes[1].legend(loc="upper right", frameon=True, facecolor="white")
+axes[1].grid(True, linestyle=":", alpha=0.6)
+
+axes[2].plot(history_iters, history_nmbe, color="#3A86EF", lw=1.8, label="NMBE")
+axes[2].axhspan(-2.0, 2.0, color="#2A9D8F", alpha=0.15, label="ASHRAE Target Band (±2%)")
+axes[2].set_ylabel("NMBE (%)", fontsize=10, fontweight="bold")
+axes[2].legend(loc="upper right", frameon=True, facecolor="white")
+axes[2].grid(True, linestyle=":", alpha=0.6)
+
+axes[3].plot(history_iters, history_rmse, color="#8338EC", lw=1.8, label="RMSE (°C)")
+axes[3].plot(history_iters, history_mae, color="#F4A261", lw=1.6, linestyle="--", label="MAE (°C)")
+axes[3].set_ylabel("Error (°C)", fontsize=10, fontweight="bold")
+axes[3].legend(loc="upper right", frameon=True, facecolor="white")
+axes[3].grid(True, linestyle=":", alpha=0.6)
+
+axes[4].plot(history_iters, history_r2, color="#06D6A0", lw=1.8)
+axes[4].set_ylabel("R² Score", fontsize=10, fontweight="bold")
+axes[4].set_xlabel("Optimization Iteration Step", fontsize=11, fontweight="bold")
+axes[4].grid(True, linestyle=":", alpha=0.6)
+
+plt.tight_layout()
+plt.savefig(EVAL_PLOT_PATH)
+plt.close()
+print(f"Saved Evaluation Parameters Plot to: {EVAL_PLOT_PATH}")
+
+# 7. Diagnostic Figure 2: calibrated_v1_parameter_trajectories.png (5 Parameter Subplots)
+PARAM_PLOT_PATH = os.path.join(CALIBRATED_V1_DIR, "calibrated_v1_parameter_trajectories.png")
+fig, axes = plt.subplots(5, 1, figsize=(12, 14), sharex=True, dpi=300)
+
+axes[0].plot(history_iters, history_k, color="#264653", lw=1.8)
+axes[0].set_ylabel("k [W/(m·K)]", fontsize=10, fontweight="bold")
+axes[0].set_title("calibrated_v1 — Physical Parameter Calibration Trajectories", fontsize=13, fontweight="bold", pad=12)
+axes[0].grid(True, linestyle=":", alpha=0.6)
+
+axes[1].plot(history_iters, history_cp, color="#2A9D8F", lw=1.8)
+axes[1].set_ylabel("cp [J/(kg·K)]", fontsize=10, fontweight="bold")
+axes[1].grid(True, linestyle=":", alpha=0.6)
+
+axes[2].plot(history_iters, history_rho, color="#E9C46A", lw=1.8)
+axes[2].set_ylabel("rho [kg/m³]", fontsize=10, fontweight="bold")
+axes[2].grid(True, linestyle=":", alpha=0.6)
+
+axes[3].plot(history_iters, history_ach, color="#F4A261", lw=1.8)
+axes[3].set_ylabel("ACH [hr⁻¹]", fontsize=10, fontweight="bold")
+axes[3].grid(True, linestyle=":", alpha=0.6)
+
+axes[4].plot(history_iters, history_q, color="#E76F51", lw=1.8)
+axes[4].set_ylabel("Q_cool [W]", fontsize=10, fontweight="bold")
+axes[4].set_xlabel("Optimization Iteration Step", fontsize=11, fontweight="bold")
+axes[4].grid(True, linestyle=":", alpha=0.6)
+
+plt.tight_layout()
+plt.savefig(PARAM_PLOT_PATH)
+plt.close()
+print(f"Saved Parameter Trajectories Plot to: {PARAM_PLOT_PATH}")
