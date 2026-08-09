@@ -22,10 +22,10 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 CALIBRATED_V3_DIR = SCRIPT_DIR
 
 MASTER_IDF_PATH = os.path.join(CALIBRATED_V3_DIR, "hanger_chamber_base_template_v3.idf")
-EPW_PATH = os.path.join(CALIBRATED_V3_DIR, "test_day_weather_merged_1min.epw")
-CSV_CLEANED_PATH = os.path.join(CALIBRATED_V3_DIR, "Idel_test_2026_07_21_cleaned.csv")
+EPW_PATH = os.path.join(CALIBRATED_V3_DIR, "day_1_weather_merged_1min.epw")
+CSV_CLEANED_PATH = os.path.join(CALIBRATED_V3_DIR, "day_1_p_1.csv")
 ANEMOMETER_PATH = os.path.join(os.path.dirname(SCRIPT_DIR), "experimental_data", "fan_value_and_anemometer.csv")
-SENSOR_FLOW_CSV_PATH = os.path.join(CALIBRATED_V3_DIR, "fan_flow_rate_sensor_v3.csv")
+SENSOR_FLOW_CSV_PATH = os.path.join(CALIBRATED_V3_DIR, "day_1_p_1_fan_flow_rate_raw.csv")
 
 OUT_DIR = os.path.join(CALIBRATED_V3_DIR, "sim_output")
 FINAL_IDF_PATH = os.path.join(CALIBRATED_V3_DIR, "hanger_chamber_after_calibrated_v3.idf")
@@ -101,6 +101,21 @@ best_nmbe = float("inf")
 best_params = None
 best_Tsim = None
 best_df_sim = None
+
+# History Tracking Lists for Diagnostic Plots
+history_iters = []
+history_loss = []
+history_cv_rmse = []
+history_nmbe = []
+history_rmse = []
+history_mae = []
+history_r2 = []
+
+history_k = []
+history_cp = []
+history_rho = []
+history_ach = []
+history_q = []
 
 print("=" * 95)
 print("  LAUNCHING STAGE 2 ASHRAE CALIBRATION OPTIMIZATION LOOP (calibrated_v3: 4 Envelope Parameters)  ")
@@ -185,7 +200,26 @@ def run_energyplus_iteration(params):
     nmbe = (np.mean(T_sim_interp - Tz_ema) / mean_Tz) * 100.0
     dtw_dist = compute_dtw_distance(T_sim_interp, Tz_ema)
 
+    mae = np.mean(np.abs(T_sim_interp - Tz_ema))
+    ss_tot = np.sum((Tz_ema - mean_Tz)**2)
+    r2 = 1.0 - (np.sum((Tz_ema - T_sim_interp)**2) / ss_tot) if ss_tot > 0 else 0.0
+
     composite_loss = cv_rmse + 1.5 * abs(nmbe) + 0.10 * dtw_dist
+
+    # Store History
+    history_iters.append(iteration_counter)
+    history_loss.append(composite_loss)
+    history_cv_rmse.append(cv_rmse)
+    history_nmbe.append(nmbe)
+    history_rmse.append(rmse)
+    history_mae.append(mae)
+    history_r2.append(r2)
+
+    history_k.append(k_foam)
+    history_cp.append(cp_foam)
+    history_rho.append(rho_foam)
+    history_ach.append(ach_val)
+    history_q.append(16.0)
 
     print(f"{iteration_counter:<5} | {k_foam:<8.4f} | {cp_foam:<7.0f} | {rho_foam:<8.1f} | {ach_val:<6.3f} | {cv_rmse:<10.2f} | {nmbe:<8.2f} | {composite_loss:<8.3f}")
 
@@ -240,27 +274,26 @@ print(f"• Chamber Infiltration:  {best_params[3]:.3f} ACH")
 plt.figure(figsize=(12, 6), dpi=300)
 time_vec_min = np.linspace(0, 170, len(Tz_ema))
 
-plt.plot(time_vec_min, Tz_raw, color="#2ca02c", alpha=0.30, linewidth=1.5, label="Cleaned Raw Sensor T_z (0.50 S1 + 0.30 S2 + 0.20 S3)")
-plt.plot(time_vec_min, Tz_ema, color="#2ca02c", linewidth=2.5, label="EMA-Smoothed Target Sensor T_z")
-plt.plot(time_vec_min, best_Tsim, color="#d62728", linestyle="--", linewidth=2.5, label=f"Calibrated EnergyPlus T_sim (ASHRAE CV={best_cv_rmse:.1f}%)")
+plt.plot(time_vec_min, Tz_ema, color="#2A9D8F", linewidth=2.5, label="Weighted Tz")
+plt.plot(time_vec_min, best_Tsim, color="#FF6B6B", linestyle="--", linewidth=2.2, label="Calibrated Tz")
 
-plt.title("Stage 2 ASHRAE Guideline 14 & DTW Calibrated EnergyPlus vs. Sensor Pulldown (calibrated_v3)", fontsize=14, fontweight="bold", pad=15)
+plt.title("calibrated_v3_dynamic_supply_controls", fontsize=14, fontweight="bold", pad=15)
 plt.xlabel("Elapsed Time (Minutes)", fontsize=12, labelpad=8)
 plt.ylabel("Chamber Zone Air Temperature (°C)", fontsize=12, labelpad=8)
 plt.grid(True, linestyle=":", alpha=0.6)
-plt.legend(loc="upper right", fontsize=11, frameon=True, facecolor="white", framealpha=0.9)
+plt.legend(loc="upper right", fontsize=11, frameon=True, facecolor="white", edgecolor="none")
 
 rmse_final = np.sqrt(np.mean((best_Tsim - Tz_ema) ** 2))
 mae_final = np.mean(np.abs(best_Tsim - Tz_ema))
 r2_final = 1.0 - (np.sum((Tz_ema - best_Tsim) ** 2) / np.sum((Tz_ema - np.mean(Tz_ema)) ** 2))
 
 stats_box = (
-    f"Calibrated 4 Envelope Parameters:\n"
-    f"• k_foam = {best_params[0]:.4f} W/(m·K)\n"
-    f"• c_p,foam = {best_params[1]:.0f} J/(kg·K)\n"
-    f"• ρ_foam = {best_params[2]:.1f} kg/m³\n"
-    f"• ACH = {best_params[3]:.3f} hr⁻¹\n\n"
-    f"ASHRAE Guideline 14 Metrics:\n"
+    f"Calibrated Parameters:\n"
+    f"• $k_{{foam}}$ = {best_params[0]:.4f} W/(m·K)\n"
+    f"• $c_{{p,foam}}$ = {best_params[1]:.0f} J/(kg·K)\n"
+    f"• $\\rho_{{foam}}$ = {best_params[2]:.1f} kg/m³\n"
+    f"• $\\text{{ACH}}$ = {best_params[3]:.3f} hr⁻¹\n\n"
+    f"Evaluation Metrics:\n"
     f"• CV(RMSE) = {best_cv_rmse:.2f}% (Target ≤ 5%)\n"
     f"• NMBE      = {best_nmbe:.2f}% (Target ≤ 2%)\n"
     f"• RMSE      = {rmse_final:.2f} °C\n"
@@ -268,7 +301,7 @@ stats_box = (
     f"• R²        = {r2_final:.4f}"
 )
 plt.gca().text(0.03, 0.05, stats_box, transform=plt.gca().transAxes, fontsize=10,
-               verticalalignment="bottom", bbox=dict(boxstyle="round,pad=0.5", facecolor="#f8f9fa", edgecolor="#cccccc", alpha=0.95))
+               verticalalignment="bottom", bbox=dict(boxstyle="round,pad=0.6", facecolor="white", edgecolor="#cccccc", alpha=0.95))
 
 plt.tight_layout()
 plt.savefig(PLOT_ZONE_TEMP_PATH, bbox_inches="tight")
@@ -290,17 +323,17 @@ cv_tout = (rmse_tout / np.mean(T_outdoor_sensor_interp)) * 100.0
 nmbe_tout = (np.mean(T_outdoor_sim - T_outdoor_sensor_interp) / np.mean(T_outdoor_sensor_interp)) * 100.0
 
 plt.figure(figsize=(12, 6), dpi=300)
-plt.plot(np.linspace(0, 170, len(T_outdoor_sensor_interp)), T_outdoor_sensor_interp, color="#2ca02c", linewidth=2.5, label="Outdoor Sensor T_outdoor (Rig Sensor)")
-plt.plot(np.linspace(0, 170, len(T_outdoor_sim)), T_outdoor_sim, color="#d62728", linestyle="--", linewidth=2.5, label="EnergyPlus Simulated T_outdoor (Merged EPW)")
+plt.plot(np.linspace(0, 170, len(T_outdoor_sensor_interp)), T_outdoor_sensor_interp, color="#2A9D8F", linewidth=2.5, label="Outdoor Sensor Toutdoor")
+plt.plot(np.linspace(0, 170, len(T_outdoor_sim)), T_outdoor_sim, color="#FF6B6B", linestyle="--", linewidth=2.2, label="EnergyPlus Simulated Toutdoor")
 
-plt.title("Calibrated V3: Outdoor Temperature — Sensor vs. EnergyPlus EPW Weather File", fontsize=14, fontweight="bold", pad=15)
+plt.title("calibrated_v3 — Outdoor Temperature Verification", fontsize=14, fontweight="bold", pad=15)
 plt.xlabel("Elapsed Time (Minutes)", fontsize=12, labelpad=8)
 plt.ylabel("Outdoor Air Temperature (°C)", fontsize=12, labelpad=8)
 plt.grid(True, linestyle=":", alpha=0.6)
-plt.legend(loc="upper left", fontsize=11, frameon=True, facecolor="white", framealpha=0.9)
+plt.legend(loc="upper left", fontsize=11, frameon=True, facecolor="white", edgecolor="none")
 
 stats_tout = (
-    f"Outdoor Temp Comparison Metrics:\n"
+    f"Evaluation Metrics:\n"
     f"• Sensor Mean = {np.mean(T_outdoor_sensor_interp):.2f} °C\n"
     f"• E+ Weather Mean = {np.mean(T_outdoor_sim):.2f} °C\n"
     f"• RMSE = {rmse_tout:.3f} °C\n"
@@ -308,7 +341,7 @@ stats_tout = (
     f"• CV(RMSE) = {cv_tout:.2f}%"
 )
 plt.gca().text(0.03, 0.05, stats_tout, transform=plt.gca().transAxes, fontsize=10,
-               verticalalignment="bottom", bbox=dict(boxstyle="round,pad=0.5", facecolor="#f8f9fa", edgecolor="#cccccc", alpha=0.95))
+               verticalalignment="bottom", bbox=dict(boxstyle="round,pad=0.6", facecolor="white", edgecolor="#cccccc", alpha=0.95))
 
 plt.tight_layout()
 plt.savefig(PLOT_OUTDOOR_TEMP_PATH, bbox_inches="tight")
@@ -328,16 +361,16 @@ nmbe_mflow = (np.mean(m_flow_sim - m_flow_sensor_interp) / np.mean(m_flow_sensor
 
 fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 8), dpi=300, sharex=True, gridspec_kw={"height_ratios": [2.5, 1]})
 
-ax1.plot(time_sim, m_flow_sensor_interp, color="#1f77b4", linewidth=2.5, label="Sensor Mass Flow Rate (Fan % + Anemometer Mapping)")
-ax1.plot(time_sim, m_flow_sim, color="#ff7f0e", linestyle="--", linewidth=2.5, label="EnergyPlus Total Chamber Supply Mass Flow Rate (Schedule:Compact)")
+ax1.plot(time_sim, m_flow_sensor_interp, color="#3A86EF", linewidth=2.5, label="Sensor Mass Flow Rate")
+ax1.plot(time_sim, m_flow_sim, color="#EB802A", linestyle="--", linewidth=2.2, label="EnergyPlus Supply Mass Flow Rate")
 
-ax1.set_title("Calibrated V3: Supply Air Mass Flow Rate — Sensor Conversion vs. EnergyPlus Simulation", fontsize=14, fontweight="bold", pad=15)
+ax1.set_title("calibrated_v3 — Supply Air Mass Flow Rate & Control Signals", fontsize=14, fontweight="bold", pad=15)
 ax1.set_ylabel("Mass Flow Rate (kg/s)", fontsize=12, labelpad=8)
 ax1.grid(True, linestyle=":", alpha=0.6)
-ax1.legend(loc="upper left", fontsize=11, frameon=True, facecolor="white", framealpha=0.9)
+ax1.legend(loc="upper left", fontsize=11, frameon=True, facecolor="white", edgecolor="none")
 
 stats_mflow = (
-    f"Mass Flow Rate Comparison Metrics:\n"
+    f"Evaluation Metrics:\n"
     f"• Sensor Mean Flow = {np.mean(m_flow_sensor_interp):.4f} kg/s\n"
     f"• E+ Sim Mean Flow = {np.mean(m_flow_sim):.4f} kg/s\n"
     f"• RMSE = {rmse_mflow:.4f} kg/s\n"
@@ -345,18 +378,102 @@ stats_mflow = (
     f"• CV(RMSE) = {cv_mflow:.2f}%"
 )
 ax1.text(0.03, 0.05, stats_mflow, transform=ax1.transAxes, fontsize=10,
-         verticalalignment="bottom", bbox=dict(boxstyle="round,pad=0.5", facecolor="#f8f9fa", edgecolor="#cccccc", alpha=0.95))
+         verticalalignment="bottom", bbox=dict(boxstyle="round,pad=0.6", facecolor="white", edgecolor="#cccccc", alpha=0.95))
 
-ax2.plot(time_sim, fan_pct_interp, color="#9467bd", linewidth=2.0, label="Fan Speed Control (%)")
-ax2.plot(time_sim, mixer_pct_interp, color="#8c564b", linestyle="-.", linewidth=2.0, label="Mixer Opening (0-100% = 0-100 cm²)")
+ax2.plot(time_sim, fan_pct_interp, color="#9D4EDD", linewidth=2.0, label="Fan Speed Control (%)")
+ax2.plot(time_sim, mixer_pct_interp, color="#264653", linestyle="-.", linewidth=2.0, label="Mixer Opening (%)")
 
 ax2.set_xlabel("Elapsed Time (Minutes)", fontsize=12, labelpad=8)
 ax2.set_ylabel("Control State (%)", fontsize=12, labelpad=8)
 ax2.set_ylim(-5, 105)
 ax2.grid(True, linestyle=":", alpha=0.6)
-ax2.legend(loc="upper left", fontsize=10, frameon=True, facecolor="white", framealpha=0.9)
+ax2.legend(loc="upper left", fontsize=10, frameon=True, facecolor="white", edgecolor="none")
 
 plt.tight_layout()
 plt.savefig(PLOT_FLOW_RATE_PATH, bbox_inches="tight")
 plt.close()
 print(f"[OK] Saved Plot 3 (Flow Rate Verification): {PLOT_FLOW_RATE_PATH}")
+
+# 6. Diagnostic Figure 1: calibrated_v3_evaluation_parameters.png (5 Error Subplots)
+EVAL_PLOT_PATH = os.path.join(CALIBRATED_V3_DIR, "calibrated_v3_evaluation_parameters.png")
+fig, axes = plt.subplots(5, 1, figsize=(12, 14), sharex=True, dpi=300)
+
+max_loss_cushion = max(history_loss) * 1.15 if len(history_loss) > 0 else 30.0
+axes[0].plot(history_iters, history_loss, color="#E63946", lw=1.8)
+axes[0].set_ylabel("Composite Loss", fontsize=10, fontweight="bold")
+axes[0].set_ylim(0, max_loss_cushion)
+axes[0].set_title("calibrated_v3 — Optimization Convergence & Evaluation Metrics History", fontsize=13, fontweight="bold", pad=12)
+axes[0].grid(True, linestyle=":", alpha=0.6)
+
+max_cv_cushion = max(history_cv_rmse) * 1.15 if len(history_cv_rmse) > 0 else 25.0
+axes[1].plot(history_iters, history_cv_rmse, color="#2A9D8F", lw=1.8, label="CV(RMSE)")
+axes[1].axhspan(0.0, 5.0, color="#2A9D8F", alpha=0.15, label="ASHRAE Target Band (0 - 5%)")
+axes[1].axhline(5.0, color="#2A9D8F", linestyle="--", lw=1.2)
+axes[1].set_ylabel("CV(RMSE) (%)", fontsize=10, fontweight="bold")
+axes[1].set_ylim(0, max_cv_cushion)
+axes[1].legend(loc="upper right", frameon=True, facecolor="white")
+axes[1].grid(True, linestyle=":", alpha=0.6)
+
+max_nmbe_abs = max(abs(min(history_nmbe)), abs(max(history_nmbe))) * 1.25 if len(history_nmbe) > 0 else 15.0
+axes[2].plot(history_iters, history_nmbe, color="#3A86EF", lw=1.8, label="NMBE")
+axes[2].axhspan(-2.0, 2.0, color="#2A9D8F", alpha=0.15, label="ASHRAE Target Band (±2%)")
+axes[2].axhline(0.0, color="#6B2D5C", linestyle=":", lw=1.0)
+axes[2].set_ylabel("NMBE (%)", fontsize=10, fontweight="bold")
+axes[2].set_ylim(-max_nmbe_abs, max_nmbe_abs)
+axes[2].legend(loc="upper right", frameon=True, facecolor="white")
+axes[2].grid(True, linestyle=":", alpha=0.6)
+
+max_rmse_cushion = max(history_rmse) * 1.15 if len(history_rmse) > 0 else 15.0
+axes[3].plot(history_iters, history_rmse, color="#9D4EDD", lw=1.8, label="RMSE (°C)")
+axes[3].plot(history_iters, history_mae, color="#EB802A", lw=1.6, linestyle="--", label="MAE (°C)")
+axes[3].set_ylabel("Error (°C)", fontsize=10, fontweight="bold")
+axes[3].set_ylim(0, max_rmse_cushion)
+axes[3].legend(loc="upper right", frameon=True, facecolor="white")
+axes[3].grid(True, linestyle=":", alpha=0.6)
+
+axes[4].plot(history_iters, history_r2, color="#6B2D5C", lw=1.8)
+axes[4].set_ylabel("R² Score", fontsize=10, fontweight="bold")
+axes[4].set_xlabel("Optimization Iteration Step", fontsize=11, fontweight="bold")
+axes[4].set_ylim(0.0, 1.05)
+axes[4].grid(True, linestyle=":", alpha=0.6)
+
+plt.tight_layout()
+plt.savefig(EVAL_PLOT_PATH)
+plt.close()
+print(f"Saved Evaluation Parameters Plot to: {EVAL_PLOT_PATH}")
+
+# 7. Diagnostic Figure 2: calibrated_v3_parameter_trajectories.png (5 Parameter Subplots)
+PARAM_PLOT_PATH = os.path.join(CALIBRATED_V3_DIR, "calibrated_v3_parameter_trajectories.png")
+fig, axes = plt.subplots(5, 1, figsize=(12, 14), sharex=True, dpi=300)
+
+axes[0].plot(history_iters, history_k, color="#264653", lw=1.8)
+axes[0].set_ylabel("k [W/(m·K)]", fontsize=10, fontweight="bold")
+axes[0].set_ylim(0.0200, 0.0300)
+axes[0].set_title("calibrated_v3 — Physical Parameter Calibration Trajectories", fontsize=13, fontweight="bold", pad=12)
+axes[0].grid(True, linestyle=":", alpha=0.6)
+
+axes[1].plot(history_iters, history_cp, color="#2A9D8F", lw=1.8)
+axes[1].set_ylabel("cp [J/(kg·K)]", fontsize=10, fontweight="bold")
+axes[1].set_ylim(600, 1700)
+axes[1].grid(True, linestyle=":", alpha=0.6)
+
+axes[2].plot(history_iters, history_rho, color="#EB802A", lw=1.8)
+axes[2].set_ylabel("rho [kg/m³]", fontsize=10, fontweight="bold")
+axes[2].set_ylim(30, 50)
+axes[2].grid(True, linestyle=":", alpha=0.6)
+
+axes[3].plot(history_iters, history_ach, color="#3A86EF", lw=1.8)
+axes[3].set_ylabel("ACH [hr⁻¹]", fontsize=10, fontweight="bold")
+axes[3].set_ylim(0.0, 0.075)
+axes[3].grid(True, linestyle=":", alpha=0.6)
+
+axes[4].plot(history_iters, history_q, color="#FF6B6B", lw=1.8)
+axes[4].set_ylabel("T_sup [°C]", fontsize=10, fontweight="bold")
+axes[4].set_xlabel("Optimization Iteration Step", fontsize=11, fontweight="bold")
+axes[4].set_ylim(14.0, 18.0)
+axes[4].grid(True, linestyle=":", alpha=0.6)
+
+plt.tight_layout()
+plt.savefig(PARAM_PLOT_PATH)
+plt.close()
+print(f"Saved Parameter Trajectories Plot to: {PARAM_PLOT_PATH}")
