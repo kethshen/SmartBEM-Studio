@@ -390,11 +390,13 @@ if __name__ == "__main__":
             sys.path.append(os.path.abspath(os.path.join(SCRIPT_DIR, "..", "..")))
             import ekf_evaluator
             metrics = ekf_evaluator.compute_occupancy_metrics(N_occ_est, n_gt)
+            p_metrics = ekf_evaluator.compute_parameter_metrics(Cs_arr, UA_arr, m_inf_arr_g_s)
+            metrics.update(p_metrics)
             metrics["dataset"] = base_name
             metrics["day"] = day
             metrics["model"] = "Single EKF"
             metrics_list.append(metrics)
-            print(f"  • Metrics for {base_name}: Continuous MAE={metrics['mae_cont']:.4f}, RMSE={metrics['rmse_cont']:.4f}, Opt Tau*={metrics['tau_opt']}, Exact Acc={metrics['acc_exact_pct']}%, F1={metrics['f1_score']}")
+            print(f"  • Metrics for {base_name}: MAE={metrics['mae_cont']:.4f}, Exact Acc={metrics['acc_exact_pct']}%, MAPE Cs={metrics['mape_cs_pct']}%, MAPE UA={metrics['mape_ua_pct']}%")
         except Exception as e:
             print(f"  • Metrics calculation skipped: {e}")
 

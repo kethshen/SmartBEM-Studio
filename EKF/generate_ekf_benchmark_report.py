@@ -62,7 +62,8 @@ def generate_report():
     print(f"Saved master benchmark CSV: {out_master_csv}\n")
     
     # ── Calculate Model Averages ───────────────────────────────────────────────
-    avg_summary = df_master.groupby(["environment", "model"])[["mae_cont", "rmse_cont", "acc_exact_pct", "acc_tol1_pct", "f1_score"]].mean().reset_index()
+    avail_cols = [c for c in ["mae_cont", "rmse_cont", "acc_exact_pct", "acc_tol1_pct", "f1_score", "mape_cs_pct", "mape_ua_pct", "pbar_cs_pct", "pbar_ua_pct"] if c in df_master.columns]
+    avg_summary = df_master.groupby(["environment", "model"])[avail_cols].mean().reset_index()
     print("  AVERAGE PERFORMANCE SUMMARY Across All Datasets:")
     print("--------------------------------------------------------------------------------")
     print(avg_summary.to_string(index=False))

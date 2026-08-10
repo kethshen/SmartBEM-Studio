@@ -90,3 +90,39 @@ def compute_occupancy_metrics(N_occ_est, N_gt, tau=None):
         "precision": round(float(precision), 4),
         "recall": round(float(recall), 4)
     }
+
+def compute_parameter_metrics(Cs_hist, UA_hist, m_inf_hist):
+    """
+    Computes performance metrics for derived physical building parameters (Cs, UA, m_inf):
+    - MAPE (%): Mean Absolute Percentage Error against calibrated physical target
+    - PBAR (%): Physical Bounds Adherence Rate (% of time inside valid physical window)
+    - CV (%): Steady-State Coefficient of Variation
+    """
+    Cs_hist = np.asarray(Cs_hist) / 1000.0  # convert J/K to kJ/K
+    UA_hist = np.asarray(UA_hist)
+    m_inf_hist = np.asarray(m_inf_hist)
+    
+    CS_TARGET = 25.0    # kJ/K
+    UA_TARGET = 5.76    # W/K
+    MINF_TARGET = 0.03  # g/s
+    
+    mape_cs = float(np.mean(np.abs(Cs_hist - CS_TARGET) / CS_TARGET) * 100.0)
+    mape_ua = float(np.mean(np.abs(UA_hist - UA_TARGET) / UA_TARGET) * 100.0)
+    mape_minf = float(np.mean(np.abs(m_inf_hist - MINF_TARGET) / MINF_TARGET) * 100.0)
+    
+    pbar_cs = float(np.mean((Cs_hist >= 20.0) & (Cs_hist <= 30.0)) * 100.0)
+    pbar_ua = float(np.mean((UA_hist >= 5.0) & (UA_hist <= 6.5)) * 100.0)
+    pbar_minf = float(np.mean((m_inf_hist >= 0.0) & (m_inf_hist <= 0.10)) * 100.0)
+    
+    cv_cs = float((np.std(Cs_hist) / np.mean(Cs_hist)) * 100.0) if np.mean(Cs_hist) > 0 else 0.0
+    cv_ua = float((np.std(UA_hist) / np.mean(UA_hist)) * 100.0) if np.mean(UA_hist) > 0 else 0.0
+    
+    return {
+        "mape_cs_pct": round(mape_cs, 2),
+        "mape_ua_pct": round(mape_ua, 2),
+        "pbar_cs_pct": round(pbar_cs, 2),
+        "pbar_ua_pct": round(pbar_ua, 2),
+        "pbar_minf_pct": round(pbar_minf, 2),
+        "cv_cs_pct": round(cv_cs, 2),
+        "cv_ua_pct": round(cv_ua, 2),
+    }
