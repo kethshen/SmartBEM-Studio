@@ -1,0 +1,13 @@
+Dataset name,start_min,end_min,total occupancy inside chamber
+day_3_p_1,0.0,5.0,0
+day_3_p_1,5.0,20.0,1
+day_3_p_1,20.0,41.58,0
+day_3_p_2,0.0,5.0,0
+day_3_p_2,5.0,20.0,1
+day_3_p_2,20.0,50.17,0
+day_3_p_3,0.0,5.0,0
+day_3_p_3,5.0,20.0,1
+day_3_p_3,20.0,25.67,0
+day_3_p_4,0.0,5.0,0
+day_3_p_4,5.0,20.0,1
+day_3_p_4,20.0,22.0,0
