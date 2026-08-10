@@ -92,40 +92,29 @@ def w_to_rh(omega, T_C, P_pa=101325.0):
     rh = (Pw / Psat) * 100.0
     return np.clip(rh, 0.0, 100.0)
 
-# ── Ground Truth Schedule Readers ──────────────────────────────────────────────
-def get_day4_occupancy_series(df_data, dataset_filename, df_sched4):
-    sched = df_sched4[df_sched4["Dataset name"].str.strip() == dataset_filename].copy()
-    ts_local = pd.to_datetime(df_data["timestamp"], utc=True).dt.tz_convert("Asia/Colombo")
-    occ_vec = np.zeros(len(df_data), dtype=float)
-    
-    for idx, row in sched.iterrows():
-        t1_str = str(row["time 1"]).strip()
-        t2_str = str(row["time 2"]).strip()
-        cnt    = float(row["total occupancy inside chamber"])
-        
-        if t1_str and t2_str and t1_str != "nan" and t2_str != "nan":
-            h1, m1 = map(int, t1_str.split(":"))
-            h2, m2 = map(int, t2_str.split(":"))
-            
-            for i, t in enumerate(ts_local):
-                t_m = t.hour * 60 + t.minute
-                m_start = h1 * 60 + m1
-                m_end   = h2 * 60 + m2
-                if m_start <= t_m <= m_end:
-                    occ_vec[i] = cnt
-    return occ_vec
-
-def get_day3_occupancy_series(df_data):
+# ── Ground Truth Schedule Parser ──────────────────────────────────────────────
+def get_ground_truth_occupancy(df_data, dataset_name):
     if "timestamp" in df_data.columns:
         ts = pd.to_datetime(df_data["timestamp"])
-        elapsed_min = (ts - ts.iloc[0]).dt.total_seconds() / 60.0
+        t_min = (ts - ts.iloc[0]).dt.total_seconds() / 60.0
     else:
-        elapsed_min = np.arange(len(df_data)) * 1.0
-        
+        t_min = np.arange(len(df_data)) * 1.0
+
     occ_vec = np.zeros(len(df_data), dtype=float)
-    for i, m in enumerate(elapsed_min):
-        if 5.0 <= m <= 20.0:
-            occ_vec[i] = 1.0
+    truth_filename = "occ_day_4_truth.csv" if "day_4" in dataset_name else "occ_day_3_truth.csv"
+    truth_csv_path = os.path.join(DAY_WITH_OCC_CLEAN_DIR, truth_filename)
+
+    if os.path.exists(truth_csv_path):
+        df_truth = pd.read_csv(truth_csv_path)
+        df_truth.columns = [c.strip() for c in df_truth.columns]
+        ds_rows = df_truth[df_truth["Dataset name"].str.strip() == dataset_name]
+
+        for _, row in ds_rows.iterrows():
+            t1 = float(row["start_min"])
+            t2 = float(row["end_min"])
+            cnt = float(row["total occupancy inside chamber"])
+            mask = (t_min >= t1) & (t_min <= t2)
+            occ_vec[mask] = cnt
     return occ_vec
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -368,8 +357,7 @@ if __name__ == "__main__":
     print(f"\n=================================================================")
     print(f"  Dual EKF v3 — EnergyPlus / 1-Min Benchmark Datasets")
     print(f"  Running on {len(all_csv_files)} datasets...")
-    print(f"=================================================================\n")
-
+    metrics_list = []
     for fname in all_csv_files:
         day = 4 if "day_4" in fname else 3
         df_raw = pd.read_csv(os.path.join(DAY_WITH_OCC_CLEAN_DIR, fname))
@@ -396,12 +384,9 @@ if __name__ == "__main__":
         ts = pd.to_datetime(df["timestamp"])
         t_min = (ts - ts.iloc[0]).dt.total_seconds() / 60.0
 
-        if day == 4 and not df_sched4.empty:
-            n_gt = get_day4_occupancy_series(df, raw_filename, df_sched4)
-        else:
-            n_gt = get_day3_occupancy_series(df)
+        n_gt = get_ground_truth_occupancy(df, base_name)
 
-        n_disc = np.where(N_occ_est >= 0.35, np.maximum(1.0, np.round(N_occ_est)), 0.0)
+        n_disc = np.maximum(0.0, np.floor(N_occ_est + (1.0 - 0.35)))
 
         # ── PLOT 1: STATES (Tz, RHz, CO2) ────────────────────────────────────
         fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(11, 10), sharex=True)
@@ -520,6 +505,26 @@ if __name__ == "__main__":
         plt.close()
         print(f"  • Saved Plot 4: {plot4_path}")
 
-        print(f"[SUCCESS] Saved 4 Dual-EKF plots for: {base_name}\n")
+        # ── METRIC EVALUATION ────────────────────────────────────────────────
+        try:
+            sys.path.append(os.path.abspath(os.path.join(SCRIPT_DIR, "..", "..")))
+            import ekf_evaluator
+            metrics = ekf_evaluator.compute_occupancy_metrics(N_occ_est, n_gt)
+            metrics["dataset"] = base_name
+            metrics["day"] = day
+            metrics["model"] = "EP Dual EKF"
+            metrics_list.append(metrics)
+            print(f"  • Metrics for {base_name}: Continuous MAE={metrics['mae_cont']:.4f}, RMSE={metrics['rmse_cont']:.4f}, Opt Tau*={metrics['tau_opt']}, Exact Acc={metrics['acc_exact_pct']}%, F1={metrics['f1_score']}")
+        except Exception as e:
+            print(f"  • Metrics calculation skipped: {e}")
+
+    if metrics_list:
+        df_metrics = pd.DataFrame(metrics_list)
+        csv_out_p = os.path.join(SCRIPT_DIR, "ep_dual_ekf_metrics.csv")
+        df_metrics.to_csv(csv_out_p, index=False)
+        print(f"\n=================================================================")
+        print(f"  ENERGYPLUS DUAL EKF SUMMARY METRICS (Saved to {csv_out_p})")
+        print(f"=================================================================")
+        print(df_metrics[["dataset", "mae_cont", "rmse_cont", "tau_opt", "acc_exact_pct", "acc_tol1_pct", "f1_score"]].to_string(index=False))
 
     print("\nALL DUAL EKF BENCHMARK RUNS COMPLETED SUCCESSFULLY.")
