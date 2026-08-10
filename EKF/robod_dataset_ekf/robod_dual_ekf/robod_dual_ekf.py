@@ -79,7 +79,8 @@ def sig_map(xi, lo, hi):
 
 def sig_jac(xi, lo, hi):
     s = sigmoid(xi)
-    return (hi - lo) * s * (1.0 - s)
+    # Enforce minimum derivative floor (0.05) to prevent sigmoid gradient vanishing trap
+    return (hi - lo) * np.maximum(s * (1.0 - s), 0.05)
 
 def xi_from_theta(theta, lo, hi):
     s = np.clip((theta - lo) / (hi - lo), 1e-6, 1.0 - 1e-6)
@@ -190,7 +191,8 @@ def run_dual_ekf_robod(df, room_spec):
     cz_m = df["indoor_co2 [ppm]"].values
     wz_m = np.array([rh_to_w(RHz_m[i], Tz_m[i], P_live_arr[i]) for i in range(N)])
 
-    csa = 0.5 * cz_m + 0.5 * co
+    # Supply air CO2: Central VAV fresh outdoor air supply (co)
+    csa = co.copy()
     bs_f = 1.0 / M_room
 
     ge_max = max_occ * g_CO2_per_person
@@ -213,8 +215,8 @@ def run_dual_ekf_robod(df, room_spec):
     ])
 
     Pp = np.diag([2.0, 2.0, 1.0, 2.0, 4.0])
-    Qp = np.diag([1e-9, 1e-8, 1e-7, 1e-5, 2e-1])
-    Rp = np.diag([0.5, 0.5, 0.5, 1e-5, 0.1])
+    Qp = np.diag([1e-9, 1e-8, 1e-7, 1e-5, 5e-1])
+    Rp = np.diag([0.5, 0.5, 0.5, 1e-5, 0.01])
 
     S  = np.array([Tz_m[0], wz_m[0], cz_m[0]])
     Ps = np.diag([0.01**2, 0.0002**2, 2.5**2])
@@ -235,7 +237,7 @@ def run_dual_ekf_robod(df, room_spec):
     for k in range(N):
         ao_k, as_k, ae_k, bo_k, ge_k = params_from_xi(xi_p, bounds_p)
         theta_k = (ao_k, as_k, ae_k, bo_k, ge_k, bs_f)
-        csa_k = 0.5 * S[2] + 0.5 * co[k]
+        csa_k = co[k]
         U_k = (To[k], wo[k], co[k], Tsa[k], wsa[k], csa_k, msa[k])
 
         S_pred  = state_rk4(S, U_k, DT, theta_k, Cs_nom, v_room)
@@ -258,15 +260,13 @@ def run_dual_ekf_robod(df, room_spec):
 
         if len(innov_window) >= PARAM_UPDATE_STEP:
             innov_arr  = np.array(innov_window)
-            cz_vals    = innov_arr[:, 4]
-            cz_signmax = cz_vals[np.argmax(np.abs(cz_vals))]
 
             innov_batch = np.array([
                 innov_arr[:, 0].mean(),
                 innov_arr[:, 1].mean(),
                 innov_arr[:, 2].mean(),
                 innov_arr[:, 3].mean(),
-                cz_signmax
+                innov_arr[:, 4].mean()
             ])
             innov_window = []
 
@@ -379,10 +379,10 @@ if __name__ == "__main__":
 
         # ── PLOT 2: OCCUPANCY ESTIMATION VS GROUND TRUTH ─────────────────────
         fig, ax = plt.subplots(figsize=(11, 5))
-        ax.plot(t_min, N_occ_est, color=COLOR_PURPLE, linestyle="-", linewidth=2.0, label="Continuous EKF Estimated Occupants (N_occ)")
+        ax.plot(t_min, N_occ_est, color=COLOR_PURPLE, linestyle="-", linewidth=2.0, label="Continuous Dual-EKF Estimated Occupants (N)")
         ax.step(t_min, N_occ_gt, color=COLOR_TEAL, where="post", linewidth=2.0, linestyle="--", alpha=0.8, label="Ground Truth Occupancy")
 
-        ax.set_ylabel("Occupants (persons)", fontsize=10)
+        ax.set_ylabel("Occupant Count (persons)", fontsize=11)
         ax.set_xlabel("Elapsed Time (minutes)", fontsize=11)
         ax.set_title(f"ROBOD {base_name} — Dual-EKF Occupancy Estimation vs Ground Truth", fontsize=12, fontweight="bold", pad=12)
         ax.legend(loc="upper right", fontsize=9, frameon=True, facecolor="white")
