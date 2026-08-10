@@ -235,6 +235,8 @@ def run_ekf_on_dataset(df):
 if __name__ == "__main__":
     SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
     STUDIO_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, "..", "..", ".."))
+    sys.path.append(os.path.abspath(os.path.join(SCRIPT_DIR, "..", "..")))
+    import ekf_evaluator
 
     CLEAN_DATA_DIR = os.path.join(STUDIO_DIR, "Experimental_Rig_Calibration", "sensor_readings", "cleaned", "with_occ")
     PLOTS_ROOT_DIR = os.path.join(SCRIPT_DIR, "plots")
@@ -307,8 +309,8 @@ if __name__ == "__main__":
         plt.savefig(plot1_path, dpi=150)
         plt.close()
 
-        # ── PLOT 2: OCCUPANCY RECOVERY VS GROUND TRUTH ─────────────────────────
-        n_disc = np.maximum(0.0, np.floor(N_occ_est + (1.0 - 0.35)))
+        import ekf_evaluator
+        n_disc = ekf_evaluator.apply_hysteresis_threshold(N_occ_est, tau_base=0.35, deadband=0.10)
 
         fig, ax = plt.subplots(figsize=(11, 5))
         ax.plot(t_min, N_occ_est, color=COLOR_PURPLE, linestyle="-", linewidth=2.0, label="Continuous Single-EKF Estimated Occupants (N)")

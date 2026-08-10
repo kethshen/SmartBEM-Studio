@@ -9,10 +9,44 @@ exact integer accuracy (%), tolerance accuracy (+-1 person), and binary F1-score
 import numpy as np
 import pandas as pd
 
+def apply_hysteresis_threshold(N_est, tau_base=0.35, deadband=0.10):
+    """
+    Applies Hysteresis (Schmitt Trigger) thresholding to continuous occupancy estimate N_est.
+    - Upper Trigger: N_est >= k + tau_base -> steps UP to k+1
+    - Lower Trigger: N_est < k + tau_base - deadband -> steps DOWN to k
+    Prevents high-frequency threshold chatter/flickering.
+    """
+    N_est = np.asarray(N_est)
+    n_disc = np.zeros(len(N_est), dtype=float)
+    
+    current_state = 0
+    tau_high = tau_base
+    tau_low = max(0.05, tau_base - deadband)
+    
+    for i in range(len(N_est)):
+        val = N_est[i]
+        if current_state == 0:
+            if val >= tau_high:
+                current_state = int(np.floor(val + (1.0 - tau_base)))
+                if current_state < 1:
+                    current_state = 1
+        else:
+            drop_level = float(current_state - 1) + tau_low
+            if val < drop_level:
+                current_state = int(np.maximum(0, np.floor(val + (1.0 - tau_low))))
+            else:
+                climb_level = float(current_state) + tau_high
+                if val >= climb_level:
+                    current_state = int(np.floor(val + (1.0 - tau_base)))
+                    
+        n_disc[i] = float(current_state)
+        
+    return n_disc
+
 def optimize_threshold(N_occ_est, N_gt, tau_min=0.10, tau_max=0.90, step=0.02):
     """
     Automated Parameter-Free Grid Search Optimizer for Decision Threshold tau*.
-    Finds tau* in [tau_min, tau_max] that minimizes MAE(N_disc(tau), N_gt).
+    Finds tau* in [tau_min, tau_max] that minimizes MAE(N_disc(tau), N_gt) with Hysteresis.
     """
     N_occ_est = np.asarray(N_occ_est)
     N_gt = np.asarray(N_gt)
@@ -23,7 +57,7 @@ def optimize_threshold(N_occ_est, N_gt, tau_min=0.10, tau_max=0.90, step=0.02):
     best_acc = -1.0
     
     for tau in threshold_grid:
-        n_disc = np.maximum(0.0, np.floor(N_occ_est + (1.0 - tau)))
+        n_disc = apply_hysteresis_threshold(N_occ_est, tau_base=tau, deadband=0.10)
         mae = np.mean(np.abs(n_disc - N_gt))
         acc = np.mean(n_disc == N_gt) * 100.0
         
@@ -50,13 +84,13 @@ def compute_occupancy_metrics(N_occ_est, N_gt, tau=None):
     mae_cont  = float(np.mean(np.abs(N_occ_est - N_gt)))
     peak_err  = float(abs(np.max(N_occ_est) - np.max(N_gt)))
     
-    # ── Threshold Optimization / Discretization ────────────────────────────────
+    # ── Threshold Optimization / Hysteresis Discretization ────────────────────
     if tau is None:
         tau_opt = optimize_threshold(N_occ_est, N_gt)
     else:
         tau_opt = float(tau)
         
-    N_disc = np.maximum(0.0, np.floor(N_occ_est + (1.0 - tau_opt)))
+    N_disc = apply_hysteresis_threshold(N_occ_est, tau_base=tau_opt, deadband=0.10)
     
     # ── Discretized Metrics ────────────────────────────────────────────────────
     acc_exact = float(np.mean(N_disc == N_gt) * 100.0)

@@ -40,6 +40,8 @@ COLOR_MAGENTA = "#6B2D5C"  # Dark Magenta
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 EP_DIR = os.path.dirname(SCRIPT_DIR)
 STUDIO_DIR = os.path.abspath(os.path.join(EP_DIR, "..", ".."))
+sys.path.append(os.path.abspath(os.path.join(SCRIPT_DIR, "..", "..")))
+import ekf_evaluator
 
 DAY3_DIR = os.path.join(STUDIO_DIR, "Experimental_Rig_Calibration", "sensor_readings", "with_occ", "Day_3")
 DAY4_DIR = os.path.join(STUDIO_DIR, "Experimental_Rig_Calibration", "sensor_readings", "with_occ", "Day_4")
@@ -298,7 +300,8 @@ if __name__ == "__main__":
 
         n_gt = get_ground_truth_occupancy(df, base_name)
 
-        n_disc = np.maximum(0.0, np.floor(N_occ_est + (1.0 - 0.35)))
+        import ekf_evaluator
+        n_disc = ekf_evaluator.apply_hysteresis_threshold(N_occ_est, tau_base=0.35, deadband=0.10)
 
         # ── PLOT 1: 3-SUBPLOT ENVIRONMENTAL STATES ───────────────────────────
         fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(11, 10), sharex=True)
