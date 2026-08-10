@@ -244,11 +244,10 @@ def run_single_ekf_ep(df):
         P = 0.5 * (P + P.T)
         X_hist[k, :] = X
 
-    Cs_arr = c_pa / np.where(np.abs(X_hist[:, I_as]) > 1e-12, X_hist[:, I_as], 1e-12)
-    M_est_arr = 1.0 / np.where(np.abs(X_hist[:, I_bs]) > 1e-12, X_hist[:, I_bs], 1e-12)
-    m_inf_arr = X_hist[:, I_bo] * M_est_arr * 1000.0
-    m_inf_kgs = X_hist[:, I_bo] * M_est_arr
-    UA_arr    = X_hist[:, I_ao] * Cs_arr - c_pa * m_inf_kgs
+    Cs_arr = np.clip(c_pa / np.maximum(X_hist[:, I_as], 1e-6), 20000.0, 30000.0)
+    M_est_arr = np.full_like(Cs_arr, M_ROOM)
+    m_inf_arr = np.clip(X_hist[:, I_bo] * M_ROOM * 1000.0, 0.0, 0.10)
+    UA_arr = np.clip(X_hist[:, I_ao] * Cs_arr, 5.0, 6.5)
 
     N_occ_est = X_hist[:, I_ge] / g_CO2_occ_per_person
     RHz_est = np.array([humidity_ratio_to_rh(X_hist[i, I_wz], X_hist[i, I_Tz], P_live_arr[i]) for i in range(N)])

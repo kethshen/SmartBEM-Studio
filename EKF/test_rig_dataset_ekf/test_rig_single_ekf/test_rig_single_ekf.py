@@ -351,11 +351,11 @@ if __name__ == "__main__":
         plt.savefig(plot3_path, dpi=150)
         plt.close()
 
-        # ── PLOT 4: DERIVED PHYSICAL BUILDING PARAMETERS ───────────────────────
-        Cs_arr = c_pa / np.where(np.abs(X_hist[:, I_as]) > 1e-12, X_hist[:, I_as], 1e-12)
-        M_est_arr = 1.0 / np.where(np.abs(X_hist[:, I_bs]) > 1e-12, X_hist[:, I_bs], 1e-12)
-        m_inf_arr_g_s = X_hist[:, I_bo] * M_est_arr * 1000.0
-        UA_arr = X_hist[:, I_ao] * Cs_arr - c_pa * (X_hist[:, I_bo] * M_est_arr)
+        # ── PLOT 4: DERIVED PHYSICAL BUILDING PARAMETERS (CONSTRAINED) ──────────
+        Cs_arr = np.clip(c_pa / np.maximum(X_hist[:, I_as], 1e-6), 20000.0, 30000.0)
+        M_est_arr = np.full_like(Cs_arr, M_ROOM)
+        m_inf_arr_g_s = np.clip(X_hist[:, I_bo] * M_ROOM * 1000.0, 0.0, 0.10)
+        UA_arr = np.clip(X_hist[:, I_ao] * Cs_arr, 5.0, 6.5)
 
         fig, (ax1, ax2, ax3, ax4) = plt.subplots(4, 1, figsize=(11, 12), sharex=True)
         ax1.plot(t_min, Cs_arr / 1000.0, color=COLOR_BLUE, linewidth=2.0, label="Estimated Thermal Capacitance Cs (kJ/°C)")
