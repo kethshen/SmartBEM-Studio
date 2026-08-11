@@ -264,6 +264,78 @@ async def upload_ekf_dataset(file: UploadFile = File(...)):
     return {"file_path": file_path, "filename": file.filename}
 
 
+class RunCalibrationRequest(BaseModel):
+    sensor_csv_path: Optional[str] = None
+    flow_schedule_path: Optional[str] = None
+    epw_path: Optional[str] = None
+    idf_path: Optional[str] = None
+
+def run_calibration_pipeline(job_id: str, sensor_csv_path: str = None, flow_schedule_path: str = None, epw_path: str = None, idf_path: str = None):
+    try:
+        jobs_db[job_id]["status"] = "processing"
+        target_dir = os.path.join(OUTPUT_DIR, "calib_runs", job_id)
+        os.makedirs(target_dir, exist_ok=True)
+
+        from core.calibration_engine import run_calibration_job
+
+        script_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        default_dir = os.path.join(os.path.dirname(script_dir), "Experimental_Rig_Calibration", "calibrated_v3_dynamic_supply_controls")
+        
+        master_idf = idf_path or os.path.join(default_dir, "hanger_chamber_base_template_v3.idf")
+        epw_file = epw_path or os.path.join(default_dir, "day_1_weather_merged_1min.epw")
+        sensor_csv = sensor_csv_path or os.path.join(default_dir, "day_1_p_1.csv")
+
+        results = run_calibration_job(
+            master_idf_path=master_idf,
+            epw_path=epw_file,
+            sensor_csv_path=sensor_csv,
+            output_dir=target_dir,
+            max_iters=25
+        )
+
+        plot_urls = {k: f"/results/calib_runs/{job_id}/{os.path.basename(v)}" for k, v in results["plots"].items()}
+
+        jobs_db[job_id]["status"] = "done"
+        jobs_db[job_id]["result"] = {
+            "plots": plot_urls,
+            "parameters": results["parameters"],
+            "metrics": results["metrics"]
+        }
+        print(f"[{job_id}] Calibration completed successfully.")
+    except Exception as e:
+        import traceback
+        tb_str = traceback.format_exc()
+        print(f"[{job_id}] Calibration run failed:\n{tb_str}")
+        jobs_db[job_id]["status"] = "error"
+        jobs_db[job_id]["error_message"] = f"Error: {str(e)}\n\nTraceback:\n{tb_str}"
+
+@app.post("/api/run_calibration")
+async def run_calibration(req: RunCalibrationRequest):
+    job_id = f"calib_{time.strftime('%Y_%m_%d_%H_%M_%S')}"
+    jobs_db[job_id] = {
+        "status": "queued",
+        "created_at": time.time(),
+        "result": None,
+        "error_message": None
+    }
+    thread = threading.Thread(
+        target=run_calibration_pipeline,
+        args=(job_id, req.sensor_csv_path, req.flow_schedule_path, req.epw_path, req.idf_path)
+    )
+    thread.start()
+    return {"job_id": job_id, "status": "queued"}
+
+@app.post("/api/upload_calibration_file")
+async def upload_calibration_file(file: UploadFile = File(...)):
+    os.makedirs(os.path.join(OUTPUT_DIR, "uploads"), exist_ok=True)
+    file_id = str(uuid.uuid4())
+    filename = f"calib_upload_{file_id}_{file.filename}"
+    file_path = os.path.join(OUTPUT_DIR, "uploads", filename)
+    with open(file_path, "wb") as buffer:
+        buffer.write(await file.read())
+    return {"file_path": file_path, "filename": file.filename}
+
+
 @app.post("/api/simulate", response_model=SimulateResponse)
 async def simulate(req: SimulateRequest):
     """

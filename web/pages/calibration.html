@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BEM Calibration Studio - SmartBEM Studio</title>
+  <link rel="icon" type="image/svg+xml" href="../assets/icons/bolt_boost_48dp_14EF10_FILL0_wght400_GRAD0_opsz48.svg">
+  <link rel="stylesheet" href="../style.css">
+  <!-- MathJax for TeX Rendering -->
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['$', '$'], ['\\(', '\\)']],
+        displayMath: [['$$', '$$'], ['\\[', '\\]']]
+      }
+    };
+  </script>
+  <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+
+<body>
+  <div class="dashboard-container">
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+      <div class="brand">
+        <span>⚡ SmartBEM</span>
+      </div>
+      <ul class="nav-links">
+        <li><a href="../index.html" class="nav-link"><span>Home</span></a></li>
+        <li><a href="nlp.html" class="nav-link"><span>Simulation Setup</span></a></li>
+        <li><a href="calibration.html" class="nav-link active"><span>Calibration</span></a></li>
+        <li><a href="methodology.html" class="nav-link"><span>Methodology</span></a></li>
+        <li><a href="results.html" class="nav-link"><span>Results</span></a></li>
+        <li><a href="ekf.html" class="nav-link"><span>EKF</span></a></li>
+        <li><a href="diff_viewer.html" class="nav-link"><span>Diff Viewer</span></a></li>
+        <li><a href="about.html" class="nav-link"><span>About</span></a></li>
+      </ul>
+      <button class="sidebar-toggle" onclick="toggleSidebar()">
+        &lsaquo;
+      </button>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+      <header class="page-header">
+        <h1 class="page-title">EnergyPlus BEM Calibration Studio</h1>
+        <p class="page-subtitle">Automated empty-room physical envelope calibration using experimental rig telemetry, Dynamic Time Warping (DTW) trajectory alignment, and Bounded Nelder-Mead Simplex optimization on Colab.</p>
+      </header>
+
+      <!-- Step 1: Backend Connection Card -->
+      <section class="card" style="margin-bottom: 1.75rem;">
+        <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+          <h2 class="card-title card-title-pill">Step 1: Connect to ngrok Colab Server</h2>
+          <span id="calibConnectionBadge" class="badge badge-secondary" style="font-size: 0.75rem;">Not Connected</span>
+        </div>
+        <p style="font-size: 0.88rem; color: var(--text-secondary); margin-bottom: 1rem; line-height: 1.5;">
+          Ensure <code>backend_server/main_backend.ipynb</code> is running on Google Colab and the Ngrok server URL is set below.
+        </p>
+
+        <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
+          <input type="text" id="calibBackendUrl" class="input-text" placeholder="http://127.0.0.1:8000 or https://xxxx.ngrok-free.dev" style="flex: 1; min-width: 280px; padding: 0.6rem 0.8rem; font-family: monospace; font-size: 0.88rem;">
+          <button type="button" class="btn btn-secondary" onclick="saveAndTestBackendUrlUI()">
+            Connect Server
+          </button>
+        </div>
+        <div id="calibConnMsg" style="margin-top: 0.5rem; font-size: 0.82rem; font-weight: 500;"></div>
+      </section>
+
+      <!-- Step 2: Upload Datasets Card -->
+      <section class="card" style="margin-bottom: 1.75rem;">
+        <div class="card-header">
+          <h2 class="card-title card-title-pill">Step 2: Upload Empty-Room Calibration Datasets</h2>
+        </div>
+        <p style="font-size: 0.88rem; color: var(--text-secondary); margin-bottom: 1.25rem;">
+          Provide baseline unoccupied telemetry files recorded during empty-room test runs.
+        </p>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem;">
+          <!-- Slot 1 -->
+          <div style="background: var(--bg-app); border: 1px dashed var(--border-subtle); border-radius: var(--radius-sm); padding: 1.25rem; text-align: center;">
+            <div style="font-weight: 600; font-size: 0.9rem; color: var(--text-primary); margin-bottom: 0.25rem;">1. Sensor Telemetry CSV</div>
+            <div style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 0.75rem;">e.g., <code>day_1_p_1.csv</code></div>
+            <input type="file" id="calibSensorInput" accept=".csv" style="display: none;" onchange="uploadCalibFileUI(this, 'sensor_csv_path', 'sensorFileStatus')">
+            <button type="button" class="btn btn-secondary" style="font-size: 0.8rem; padding: 0.4rem 0.8rem;" onclick="document.getElementById('calibSensorInput').click()">Choose File</button>
+            <div id="sensorFileStatus" style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.5rem;">No file chosen</div>
+          </div>
+
+          <!-- Slot 2 -->
+          <div style="background: var(--bg-app); border: 1px dashed var(--border-subtle); border-radius: var(--radius-sm); padding: 1.25rem; text-align: center;">
+            <div style="font-weight: 600; font-size: 0.9rem; color: var(--text-primary); margin-bottom: 0.25rem;">2. 1-Min Flow Schedule</div>
+            <div style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 0.75rem;">e.g., <code>flow_schedule_1min.csv</code></div>
+            <input type="file" id="calibFlowInput" accept=".csv" style="display: none;" onchange="uploadCalibFileUI(this, 'flow_schedule_path', 'flowFileStatus')">
+            <button type="button" class="btn btn-secondary" style="font-size: 0.8rem; padding: 0.4rem 0.8rem;" onclick="document.getElementById('calibFlowInput').click()">Choose File</button>
+            <div id="flowFileStatus" style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.5rem;">No file chosen</div>
+          </div>
+
+          <!-- Slot 3 -->
+          <div style="background: var(--bg-app); border: 1px dashed var(--border-subtle); border-radius: var(--radius-sm); padding: 1.25rem; text-align: center;">
+            <div style="font-weight: 600; font-size: 0.9rem; color: var(--text-primary); margin-bottom: 0.25rem;">3. Weather File EPW</div>
+            <div style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 0.75rem;">e.g., <code>day_1_weather_merged_1min.epw</code></div>
+            <input type="file" id="calibEpwInput" accept=".epw" style="display: none;" onchange="uploadCalibFileUI(this, 'epw_path', 'epwFileStatus')">
+            <button type="button" class="btn btn-secondary" style="font-size: 0.8rem; padding: 0.4rem 0.8rem;" onclick="document.getElementById('calibEpwInput').click()">Choose File</button>
+            <div id="epwFileStatus" style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.5rem;">No file chosen</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Step 3: Trigger Optimization Button Card -->
+      <section class="card" style="margin-bottom: 1.75rem; text-align: center; padding: 2rem 1.5rem;">
+        <h2 style="font-size: 1.1rem; font-weight: 600; color: var(--text-primary); margin-bottom: 0.5rem;">Step 3: Execute Optimization on Colab</h2>
+        <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1.25rem; max-width: 600px; margin-left: auto; margin-right: auto;">
+          Launches Bounded Nelder-Mead Simplex optimization in EnergyPlus to tune $k_{\text{foam}}, c_{p,\text{foam}}, \rho_{\text{foam}}, \text{ACH}$ and extract sensor measurement noise matrix $R$.
+        </p>
+
+        <button type="button" class="btn btn-primary" style="font-size: 1rem; padding: 0.8rem 2rem;" onclick="startCalibrationJobUI()">
+          <span style="font-size: 1.2rem; margin-right: 0.3rem;">⚡</span> Start EnergyPlus Calibration Optimization
+        </button>
+
+        <div id="calibStatusPanel" style="display: none; margin-top: 1.5rem; text-align: left; background: var(--bg-app); border: 1px solid var(--border-subtle); padding: 1.25rem; border-radius: var(--radius-sm);">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+            <span style="font-weight: 600; font-size: 0.88rem; color: var(--text-primary);" id="calibStatusMsg">Initializing...</span>
+          </div>
+          <div style="width: 100%; height: 8px; background: rgba(255,255,255,0.08); border-radius: 4px; overflow: hidden;">
+            <div id="calibProgressFill" style="width: 0%; height: 100%; background: var(--accent-primary); transition: width 0.4s ease;"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Placeholder State Card (Shown before run) -->
+      <section class="card" id="calibrationPlaceholderCard" style="margin-bottom: 1.75rem; text-align: center; padding: 3rem 1.5rem;">
+        <div style="font-size: 2.5rem; margin-bottom: 0.75rem;">📊</div>
+        <h2 style="font-size: 1.2rem; font-weight: 600; color: var(--text-primary); margin-bottom: 0.5rem;">No Calibration Results Generated Yet</h2>
+        <p style="font-size: 0.88rem; color: var(--text-secondary); max-width: 550px; margin: 0 auto;">
+          Connect to your Colab server in Step 1 and click <strong>"Start EnergyPlus Calibration Optimization"</strong> above. Once optimization completes, verification plots and ASHRAE compliance tables will be fetched from Colab and rendered here dynamically.
+        </p>
+      </section>
+
+      <!-- Step 4: Verification Plots & Results Card (Hidden until API returns) -->
+      <section class="card" id="calibrationResultsCard" style="display: none; margin-bottom: 1.75rem;">
+        <div class="card-header">
+          <h2 class="card-title card-title-pill">Step 4: Calibration Verification & ASHRAE Compliance</h2>
+        </div>
+
+        <!-- Verification Plot Gallery Grid -->
+        <h3 style="font-size: 1rem; font-weight: 600; color: var(--text-primary); margin-top: 1rem; margin-bottom: 0.75rem;">1. Calibration Verification & Diagnostic Plots</h3>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.25rem;">
+          <div style="background: var(--bg-app); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 0.85rem;">
+            <div style="font-size: 0.85rem; font-weight: 600; color: var(--text-primary); margin-bottom: 0.5rem;">Zone Temperature Verification (Measured vs Simulated)</div>
+            <img id="plot1Img" src="" alt="Zone Temp Plot" style="width: 100%; height: auto; border-radius: var(--radius-sm); background: #0d1117; display: block; min-height: 200px;">
+          </div>
+
+          <div style="background: var(--bg-app); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 0.85rem;">
+            <div style="font-size: 0.85rem; font-weight: 600; color: var(--text-primary); margin-bottom: 0.5rem;">Evaluation Parameters & Loss History</div>
+            <img id="plot2Img" src="" alt="Evaluation Parameters Plot" style="width: 100%; height: auto; border-radius: var(--radius-sm); background: #0d1117; display: block; min-height: 200px;">
+          </div>
+
+          <div style="background: var(--bg-app); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 0.85rem;">
+            <div style="font-size: 0.85rem; font-weight: 600; color: var(--text-primary); margin-bottom: 0.5rem;">Supply Airflow Rate Verification</div>
+            <img id="plot3Img" src="" alt="Supply Flow Rate Plot" style="width: 100%; height: auto; border-radius: var(--radius-sm); background: #0d1117; display: block; min-height: 200px;">
+          </div>
+
+          <div style="background: var(--bg-app); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 0.85rem;">
+            <div style="font-size: 0.85rem; font-weight: 600; color: var(--text-primary); margin-bottom: 0.5rem;">Outdoor Hangar Temperature</div>
+            <img id="plot4Img" src="" alt="Outdoor Temp Plot" style="width: 100%; height: auto; border-radius: var(--radius-sm); background: #0d1117; display: block; min-height: 200px;">
+          </div>
+
+          <div style="background: var(--bg-app); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 0.85rem; grid-column: span 1;">
+            <div style="font-size: 0.85rem; font-weight: 600; color: var(--text-primary); margin-bottom: 0.5rem;">Optimized Parameter Trajectories</div>
+            <img id="plot5Img" src="" alt="Parameter Convergence Plot" style="width: 100%; height: auto; border-radius: var(--radius-sm); background: #0d1117; display: block; min-height: 200px;">
+          </div>
+        </div>
+
+        <!-- Section 5 Tables -->
+        <h3 style="font-size: 1rem; font-weight: 600; color: var(--text-primary); margin-top: 2rem; margin-bottom: 0.75rem;">2. Table 1: Final Calibrated Envelope Parameters & Measurement Noise Matrix $R$</h3>
+        <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-bottom: 1.75rem;">
+          <thead>
+            <tr style="border-bottom: 1px solid var(--border-subtle); text-align: left; background: rgba(255,255,255,0.03);">
+              <th style="padding: 0.6rem 0.8rem; color: var(--text-secondary);">Parameter Symbol</th>
+              <th style="padding: 0.6rem 0.8rem; color: var(--text-secondary);">Initial Uncalibrated Value</th>
+              <th style="padding: 0.6rem 0.8rem; color: var(--text-secondary);">Calibrated Master Value</th>
+              <th style="padding: 0.6rem 0.8rem; color: var(--text-secondary);">Physical Unit</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style="border-bottom: 1px solid var(--border-subtle);">
+              <td style="padding: 0.6rem 0.8rem;">Foam Thermal Conductivity ($k_{\text{foam}}$)</td>
+              <td style="padding: 0.6rem 0.8rem; color: var(--text-muted);">0.04000</td>
+              <td style="padding: 0.6rem 0.8rem; font-weight: 600; color: var(--accent-primary);" id="valKFoam">—</td>
+              <td style="padding: 0.6rem 0.8rem; color: var(--text-secondary);">$\text{W/(m}\cdot\text{K)}$</td>
+            </tr>
+            <tr style="border-bottom: 1px solid var(--border-subtle);">
+              <td style="padding: 0.6rem 0.8rem;">Foam Specific Heat ($c_{p,\text{foam}}$)</td>
+              <td style="padding: 0.6rem 0.8rem; color: var(--text-muted);">1400.0</td>
+              <td style="padding: 0.6rem 0.8rem; font-weight: 600; color: var(--accent-primary);" id="valCpFoam">—</td>
+              <td style="padding: 0.6rem 0.8rem; color: var(--text-secondary);">$\text{J/(kg}\cdot\text{K)}$</td>
+            </tr>
+            <tr style="border-bottom: 1px solid var(--border-subtle);">
+              <td style="padding: 0.6rem 0.8rem;">Foam Material Density ($\rho_{\text{foam}}$)</td>
+              <td style="padding: 0.6rem 0.8rem; color: var(--text-muted);">30.0</td>
+              <td style="padding: 0.6rem 0.8rem; font-weight: 600; color: var(--accent-primary);" id="valRhoFoam">—</td>
+              <td style="padding: 0.6rem 0.8rem; color: var(--text-secondary);">$\text{kg/m}^3$</td>
+            </tr>
+            <tr style="border-bottom: 1px solid var(--border-subtle);">
+              <td style="padding: 0.6rem 0.8rem;">Infiltration Rate ($\text{ACH}$)</td>
+              <td style="padding: 0.6rem 0.8rem; color: var(--text-muted);">0.1000</td>
+              <td style="padding: 0.6rem 0.8rem; font-weight: 600; color: var(--accent-primary);" id="valACH">—</td>
+              <td style="padding: 0.6rem 0.8rem; color: var(--text-secondary);">$\text{hr}^{-1}$</td>
+            </tr>
+            <tr style="border-bottom: 1px solid var(--border-subtle);">
+              <td style="padding: 0.6rem 0.8rem;">Derived Overall Heat Conductance ($UA_0$)</td>
+              <td style="padding: 0.6rem 0.8rem; color: var(--text-muted);">8.71</td>
+              <td style="padding: 0.6rem 0.8rem; font-weight: 600; color: var(--accent-primary);" id="valUA0">—</td>
+              <td style="padding: 0.6rem 0.8rem; color: var(--text-secondary);">$\text{W/K}$</td>
+            </tr>
+            <tr style="border-bottom: 1px solid var(--border-subtle);">
+              <td style="padding: 0.6rem 0.8rem;">Derived Thermal Capacitance ($C_{s,0}$)</td>
+              <td style="padding: 0.6rem 0.8rem; color: var(--text-muted);">35,000</td>
+              <td style="padding: 0.6rem 0.8rem; font-weight: 600; color: var(--accent-primary);" id="valCs0">—</td>
+              <td style="padding: 0.6rem 0.8rem; color: var(--text-secondary);">$\text{J/K}$</td>
+            </tr>
+            <tr style="border-bottom: 1px solid var(--border-subtle);">
+              <td style="padding: 0.6rem 0.8rem;">Saved Temp Noise Variance ($R_{TT}$)</td>
+              <td style="padding: 0.6rem 0.8rem; color: var(--text-muted);">—</td>
+              <td style="padding: 0.6rem 0.8rem; font-weight: 600; color: var(--accent-primary);" id="valRTT">—</td>
+              <td style="padding: 0.6rem 0.8rem; color: var(--text-secondary);">$({^\circ}\text{C})^2$</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3 style="font-size: 1rem; font-weight: 600; color: var(--text-primary); margin-top: 1.5rem; margin-bottom: 0.75rem;">3. Table 2: ASHRAE Guideline 14 Calibration Accuracy Compliance</h3>
+        <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
+          <thead>
+            <tr style="border-bottom: 1px solid var(--border-subtle); text-align: left; background: rgba(255,255,255,0.03);">
+              <th style="padding: 0.6rem 0.8rem; color: var(--text-secondary);">Accuracy Metric</th>
+              <th style="padding: 0.6rem 0.8rem; color: var(--text-secondary);">Calibrated Model Value</th>
+              <th style="padding: 0.6rem 0.8rem; color: var(--text-secondary);">ASHRAE Guideline 14 Target</th>
+              <th style="padding: 0.6rem 0.8rem; color: var(--text-secondary);">Compliance Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style="border-bottom: 1px solid var(--border-subtle);">
+              <td style="padding: 0.6rem 0.8rem;"><strong>CV(RMSE)</strong></td>
+              <td style="padding: 0.6rem 0.8rem; font-weight: 600;" id="valCvRmse">—</td>
+              <td style="padding: 0.6rem 0.8rem; color: var(--text-secondary);">$\le 5.0\%$</td>
+              <td style="padding: 0.6rem 0.8rem;"><span class="badge badge-secondary" id="badgeCvRmse">PENDING</span></td>
+            </tr>
+            <tr style="border-bottom: 1px solid var(--border-subtle);">
+              <td style="padding: 0.6rem 0.8rem;"><strong>NMBE</strong></td>
+              <td style="padding: 0.6rem 0.8rem; font-weight: 600;" id="valNmbe">—</td>
+              <td style="padding: 0.6rem 0.8rem; color: var(--text-secondary);">$\le \pm 2.0\%$</td>
+              <td style="padding: 0.6rem 0.8rem;"><span class="badge badge-secondary" id="badgeNmbe">PENDING</span></td>
+            </tr>
+            <tr style="border-bottom: 1px solid var(--border-subtle);">
+              <td style="padding: 0.6rem 0.8rem;"><strong>RMSE</strong></td>
+              <td style="padding: 0.6rem 0.8rem; font-weight: 600;" id="valRmse">—</td>
+              <td style="padding: 0.6rem 0.8rem; color: var(--text-secondary);">—</td>
+              <td style="padding: 0.6rem 0.8rem;"><span class="badge badge-secondary" id="badgeRmse">PENDING</span></td>
+            </tr>
+            <tr style="border-bottom: 1px solid var(--border-subtle);">
+              <td style="padding: 0.6rem 0.8rem;"><strong>MAE</strong></td>
+              <td style="padding: 0.6rem 0.8rem; font-weight: 600;" id="valMae">—</td>
+              <td style="padding: 0.6rem 0.8rem; color: var(--text-secondary);">—</td>
+              <td style="padding: 0.6rem 0.8rem;"><span class="badge badge-secondary" id="badgeMae">PENDING</span></td>
+            </tr>
+            <tr style="border-bottom: 1px solid var(--border-subtle);">
+              <td style="padding: 0.6rem 0.8rem;"><strong>$R^2$ Determination Coefficient</strong></td>
+              <td style="padding: 0.6rem 0.8rem; font-weight: 600;" id="valR2">—</td>
+              <td style="padding: 0.6rem 0.8rem; color: var(--text-secondary);">$\ge 0.80$</td>
+              <td style="padding: 0.6rem 0.8rem;"><span class="badge badge-secondary" id="badgeR2">PENDING</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- Bottom Banner Card -->
+      <section class="card" style="text-align: center; padding: 2.5rem 1.5rem;">
+        <h2 style="font-size: 1.2rem; font-weight: 600; color: var(--text-primary); margin-bottom: 0.5rem;">Understand the Underlying Mathematics & Signal Processing</h2>
+        <p style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 1.25rem;">
+          Explore full mathematical derivations for 4-stage sensor filtering, Dynamic Time Warping (DTW) trajectory warping, and ASHRAE Guideline 14 statistical formulas.
+        </p>
+        <a href="methodology.html" class="btn btn-primary" style="text-decoration: none; display: inline-flex; align-items: center; gap: 0.5rem;">
+          View Detailed Calibration Methodology
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+        </a>
+      </section>
+    </main>
+  </div>
+
+  <script src="../script.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const backendInput = document.getElementById("calibBackendUrl");
+      if (backendInput) backendInput.value = getBackendUrl();
+      testBackendConnectionUI();
+    });
+
+    function saveAndTestBackendUrlUI() {
+      const backendInput = document.getElementById("calibBackendUrl");
+      if (backendInput && backendInput.value.trim()) {
+        setBackendUrl(backendInput.value.trim());
+      }
+      testBackendConnectionUI();
+    }
+
+    function testBackendConnectionUI() {
+      const url = getBackendUrl();
+      const badge = document.getElementById("calibConnectionBadge");
+      const msg = document.getElementById("calibConnMsg");
+
+      if (msg) msg.textContent = "Checking connection...";
+
+      fetch(`${url}/api/ping`, { headers: { 'ngrok-skip-browser-warning': 'true' } })
+        .then(res => {
+          if (!res.ok) throw new Error("Server ping failed");
+          return res.json();
+        })
+        .then(data => {
+          if (badge) {
+            badge.textContent = "Connected (Online)";
+            badge.className = "badge badge-success";
+          }
+          if (msg) {
+            msg.textContent = "Connected to Colab backend server successfully!";
+            msg.style.color = "var(--accent-primary)";
+          }
+        })
+        .catch(err => {
+          if (badge) {
+            badge.textContent = "Offline / Connection Error";
+            badge.className = "badge badge-error";
+          }
+          if (msg) {
+            msg.textContent = "Connection Error: " + err.message + ". Verify Ngrok URL.";
+            msg.style.color = "var(--error, #dc2626)";
+          }
+        });
+    }
+  </script>
+</body>
+
+</html>

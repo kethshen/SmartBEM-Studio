@@ -1284,3 +1284,177 @@ function renderCustomMaterialsList() {
   `).join("");
 }
 
+// ----------------------------
+// EnergyPlus Calibration Pipeline
+// ----------------------------
+window.uploadedCalibFiles = {
+  sensor_csv_path: null,
+  flow_schedule_path: null,
+  epw_path: null
+};
+
+window.uploadCalibFileUI = async function(fileInput, fileTypeKey, labelId) {
+  if (!fileInput.files || !fileInput.files[0]) return;
+  const file = fileInput.files[0];
+  const labelEl = document.getElementById(labelId);
+  if (labelEl) labelEl.textContent = "Uploading " + file.name + "...";
+
+  const url = getBackendUrl();
+  const formData = new FormData();
+  formData.append("file", file);
+
+  try {
+    const res = await fetch(`${url}/api/upload_calibration_file`, {
+      method: "POST",
+      headers: { 'ngrok-skip-browser-warning': 'true' },
+      body: formData
+    });
+    if (!res.ok) throw new Error("File upload failed");
+    const data = await res.json();
+    window.uploadedCalibFiles[fileTypeKey] = data.file_path;
+    if (labelEl) labelEl.textContent = "Uploaded: " + file.name;
+    console.log(`[Calibration] Uploaded ${fileTypeKey}:`, data.file_path);
+  } catch (err) {
+    alert("File upload error: " + err.message);
+    if (labelEl) labelEl.textContent = "Upload failed. Using server default.";
+  }
+};
+
+window.startCalibrationJobUI = async function() {
+  const url = getBackendUrl();
+  const statusPanel = document.getElementById("calibStatusPanel");
+  const statusMsg = document.getElementById("calibStatusMsg");
+  const progressFill = document.getElementById("calibProgressFill");
+  
+  if (statusPanel) statusPanel.style.display = "block";
+  if (statusMsg) statusMsg.textContent = "Connecting to Colab backend server...";
+  if (progressFill) progressFill.style.width = "20%";
+
+  try {
+    const res = await fetch(`${url}/api/run_calibration`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "ngrok-skip-browser-warning": "true"
+      },
+      body: JSON.stringify({
+        sensor_csv_path: window.uploadedCalibFiles.sensor_csv_path,
+        flow_schedule_path: window.uploadedCalibFiles.flow_schedule_path,
+        epw_path: window.uploadedCalibFiles.epw_path
+      })
+    });
+
+    if (!res.ok) throw new Error("Failed to start calibration job.");
+    const data = await res.json();
+    console.log("[Calibration] Job queued:", data.job_id);
+
+    if (statusMsg) statusMsg.textContent = `Job ${data.job_id} queued. Executing EnergyPlus Nelder-Mead optimization...`;
+    if (progressFill) progressFill.style.width = "40%";
+
+    pollCalibrationJobStatus(data.job_id);
+  } catch (err) {
+    if (statusMsg) statusMsg.textContent = "Error: " + err.message;
+    alert("Calibration Error: " + err.message);
+  }
+};
+
+async function pollCalibrationJobStatus(jobId) {
+  const url = getBackendUrl();
+  const statusMsg = document.getElementById("calibStatusMsg");
+  const progressFill = document.getElementById("calibProgressFill");
+
+  const interval = setInterval(async () => {
+    try {
+      const res = await fetch(`${url}/api/status/${jobId}`, {
+        headers: { "ngrok-skip-browser-warning": "true" }
+      });
+      const data = await res.json();
+
+      if (data.status === "processing") {
+        if (statusMsg) statusMsg.textContent = "Optimization active: tuning k_foam, cp_foam, rho_foam, ACH + R noise matrix...";
+        if (progressFill) progressFill.style.width = "65%";
+      } else if (data.status === "done") {
+        clearInterval(interval);
+        if (statusMsg) statusMsg.textContent = "Calibration completed successfully! Rendering plots & evaluation metrics...";
+        if (progressFill) progressFill.style.width = "100%";
+        setTimeout(() => {
+          renderCalibrationResultsUI(data.result);
+        }, 600);
+      } else if (data.status === "error") {
+        clearInterval(interval);
+        if (statusMsg) statusMsg.textContent = "Calibration failed: " + (data.error_message || "Unknown error");
+        alert("Calibration Error: " + (data.error_message || "Unknown error"));
+      }
+    } catch (err) {
+      console.warn("[Calibration Poll Error]:", err);
+    }
+  }, 2500);
+}
+
+function renderCalibrationResultsUI(result) {
+  if (!result) return;
+  const baseUrl = getBackendUrl();
+
+  // Hide placeholder card
+  const placeholderCard = document.getElementById("calibrationPlaceholderCard");
+  if (placeholderCard) placeholderCard.style.display = "none";
+
+  // Populate Plot URLs
+  if (result.plots) {
+    if (result.plots.plot_1 && document.getElementById("plot1Img")) document.getElementById("plot1Img").src = `${baseUrl}${result.plots.plot_1}`;
+    if (result.plots.plot_2 && document.getElementById("plot2Img")) document.getElementById("plot2Img").src = `${baseUrl}${result.plots.plot_2}`;
+    if (result.plots.plot_3 && document.getElementById("plot3Img")) document.getElementById("plot3Img").src = `${baseUrl}${result.plots.plot_3}`;
+    if (result.plots.plot_4 && document.getElementById("plot4Img")) document.getElementById("plot4Img").src = `${baseUrl}${result.plots.plot_4}`;
+    if (result.plots.plot_5 && document.getElementById("plot5Img")) document.getElementById("plot5Img").src = `${baseUrl}${result.plots.plot_5}`;
+  }
+
+  // Populate Parameters
+  if (result.parameters) {
+    const p = result.parameters;
+    if (p.k_foam !== undefined && document.getElementById("valKFoam")) document.getElementById("valKFoam").textContent = p.k_foam.toFixed(5);
+    if (p.cp_foam !== undefined && document.getElementById("valCpFoam")) document.getElementById("valCpFoam").textContent = p.cp_foam.toFixed(1);
+    if (p.rho_foam !== undefined && document.getElementById("valRhoFoam")) document.getElementById("valRhoFoam").textContent = p.rho_foam.toFixed(1);
+    if (p.ach !== undefined && document.getElementById("valACH")) document.getElementById("valACH").textContent = p.ach.toFixed(3);
+    if (p.ua_0 !== undefined && document.getElementById("valUA0")) document.getElementById("valUA0").textContent = p.ua_0.toFixed(2);
+    if (p.cs_0 !== undefined && document.getElementById("valCs0")) document.getElementById("valCs0").textContent = Math.round(p.cs_0).toLocaleString();
+    if (p.r_noise && p.r_noise.R_TT !== undefined && document.getElementById("valRTT")) document.getElementById("valRTT").textContent = `(${Math.sqrt(p.r_noise.R_TT).toFixed(2)}°C)²`;
+  }
+
+  // Populate Metrics & Badges
+  if (result.metrics) {
+    const m = result.metrics;
+    if (m.cv_rmse !== undefined && document.getElementById("valCvRmse")) {
+      document.getElementById("valCvRmse").textContent = m.cv_rmse.toFixed(2) + "%";
+      const b = document.getElementById("badgeCvRmse");
+      if (b) { b.textContent = m.cv_rmse <= 5.0 ? "PASSED" : "FAILED"; b.className = m.cv_rmse <= 5.0 ? "badge badge-success" : "badge badge-error"; }
+    }
+    if (m.nmbe !== undefined && document.getElementById("valNmbe")) {
+      document.getElementById("valNmbe").textContent = (m.nmbe >= 0 ? "+" : "") + m.nmbe.toFixed(2) + "%";
+      const b = document.getElementById("badgeNmbe");
+      if (b) { b.textContent = Math.abs(m.nmbe) <= 2.0 ? "PASSED" : "FAILED"; b.className = Math.abs(m.nmbe) <= 2.0 ? "badge badge-success" : "badge badge-error"; }
+    }
+    if (m.rmse !== undefined && document.getElementById("valRmse")) {
+      document.getElementById("valRmse").textContent = m.rmse.toFixed(2) + " °C";
+      const b = document.getElementById("badgeRmse");
+      if (b) { b.textContent = "HIGH PRECISION"; b.className = "badge badge-success"; }
+    }
+    if (m.mae !== undefined && document.getElementById("valMae")) {
+      document.getElementById("valMae").textContent = m.mae.toFixed(2) + " °C";
+      const b = document.getElementById("badgeMae");
+      if (b) { b.textContent = "HIGH PRECISION"; b.className = "badge badge-success"; }
+    }
+    if (m.r2 !== undefined && document.getElementById("valR2")) {
+      document.getElementById("valR2").textContent = m.r2.toFixed(4);
+      const b = document.getElementById("badgeR2");
+      if (b) { b.textContent = m.r2 >= 0.80 ? "HIGH CORRELATION" : "MODERATE"; b.className = m.r2 >= 0.80 ? "badge badge-success" : "badge badge-secondary"; }
+    }
+  }
+
+  // Unhide results container
+  const resultsCard = document.getElementById("calibrationResultsCard");
+  if (resultsCard) {
+    resultsCard.style.display = "block";
+    resultsCard.scrollIntoView({ behavior: "smooth" });
+  }
+}
+
