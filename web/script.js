@@ -1288,6 +1288,7 @@ function renderCustomMaterialsList() {
 // EnergyPlus Calibration Pipeline
 // ----------------------------
 window.uploadedCalibFiles = {
+  idf_path: null,
   sensor_csv_path: null,
   flow_schedule_path: null,
   epw_path: null
@@ -1338,6 +1339,7 @@ window.startCalibrationJobUI = async function() {
         "ngrok-skip-browser-warning": "true"
       },
       body: JSON.stringify({
+        idf_path: window.uploadedCalibFiles.idf_path,
         sensor_csv_path: window.uploadedCalibFiles.sensor_csv_path,
         flow_schedule_path: window.uploadedCalibFiles.flow_schedule_path,
         epw_path: window.uploadedCalibFiles.epw_path

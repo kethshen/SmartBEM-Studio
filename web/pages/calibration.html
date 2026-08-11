@@ -67,38 +67,47 @@
         <div id="calibConnMsg" style="margin-top: 0.5rem; font-size: 0.82rem; font-weight: 500;"></div>
       </section>
 
-      <!-- Step 2: Upload Datasets Card -->
+      <!-- Step 2: Upload Datasets Card (4 Slots) -->
       <section class="card" style="margin-bottom: 1.75rem;">
         <div class="card-header">
-          <h2 class="card-title card-title-pill">Step 2: Upload Empty-Room Calibration Datasets</h2>
+          <h2 class="card-title card-title-pill">Step 2: Upload Base IDF & Empty-Room Telemetry Files</h2>
         </div>
         <p style="font-size: 0.88rem; color: var(--text-secondary); margin-bottom: 1.25rem;">
-          Provide baseline unoccupied telemetry files recorded during empty-room test runs.
+          Upload your uncalibrated base EnergyPlus model IDF and the baseline unoccupied telemetry files recorded during empty-room test runs.
         </p>
 
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem;">
-          <!-- Slot 1 -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem;">
+          <!-- Slot 1: Base IDF File -->
           <div style="background: var(--bg-app); border: 1px dashed var(--border-subtle); border-radius: var(--radius-sm); padding: 1.25rem; text-align: center;">
-            <div style="font-weight: 600; font-size: 0.9rem; color: var(--text-primary); margin-bottom: 0.25rem;">1. Sensor Telemetry CSV</div>
-            <div style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 0.75rem;">e.g., <code>day_1_p_1.csv</code></div>
+            <div style="font-weight: 600; font-size: 0.88rem; color: var(--text-primary); margin-bottom: 0.25rem;">1. Base Model IDF</div>
+            <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.75rem;">e.g., <code>hanger_chamber_base_template_v3.idf</code></div>
+            <input type="file" id="calibIdfInput" accept=".idf" style="display: none;" onchange="uploadCalibFileUI(this, 'idf_path', 'idfFileStatus')">
+            <button type="button" class="btn btn-secondary" style="font-size: 0.8rem; padding: 0.4rem 0.8rem;" onclick="document.getElementById('calibIdfInput').click()">Choose File</button>
+            <div id="idfFileStatus" style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.5rem;">No file chosen</div>
+          </div>
+
+          <!-- Slot 2: Sensor Telemetry CSV -->
+          <div style="background: var(--bg-app); border: 1px dashed var(--border-subtle); border-radius: var(--radius-sm); padding: 1.25rem; text-align: center;">
+            <div style="font-weight: 600; font-size: 0.88rem; color: var(--text-primary); margin-bottom: 0.25rem;">2. Sensor Telemetry CSV</div>
+            <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.75rem;">e.g., <code>day_1_p_1.csv</code></div>
             <input type="file" id="calibSensorInput" accept=".csv" style="display: none;" onchange="uploadCalibFileUI(this, 'sensor_csv_path', 'sensorFileStatus')">
             <button type="button" class="btn btn-secondary" style="font-size: 0.8rem; padding: 0.4rem 0.8rem;" onclick="document.getElementById('calibSensorInput').click()">Choose File</button>
             <div id="sensorFileStatus" style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.5rem;">No file chosen</div>
           </div>
 
-          <!-- Slot 2 -->
+          <!-- Slot 3: 1-Min Flow Schedule CSV -->
           <div style="background: var(--bg-app); border: 1px dashed var(--border-subtle); border-radius: var(--radius-sm); padding: 1.25rem; text-align: center;">
-            <div style="font-weight: 600; font-size: 0.9rem; color: var(--text-primary); margin-bottom: 0.25rem;">2. 1-Min Flow Schedule</div>
-            <div style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 0.75rem;">e.g., <code>flow_schedule_1min.csv</code></div>
+            <div style="font-weight: 600; font-size: 0.88rem; color: var(--text-primary); margin-bottom: 0.25rem;">3. 1-Min Flow Schedule</div>
+            <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.75rem;">e.g., <code>flow_schedule_1min.csv</code></div>
             <input type="file" id="calibFlowInput" accept=".csv" style="display: none;" onchange="uploadCalibFileUI(this, 'flow_schedule_path', 'flowFileStatus')">
             <button type="button" class="btn btn-secondary" style="font-size: 0.8rem; padding: 0.4rem 0.8rem;" onclick="document.getElementById('calibFlowInput').click()">Choose File</button>
             <div id="flowFileStatus" style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.5rem;">No file chosen</div>
           </div>
 
-          <!-- Slot 3 -->
+          <!-- Slot 4: Weather EPW File -->
           <div style="background: var(--bg-app); border: 1px dashed var(--border-subtle); border-radius: var(--radius-sm); padding: 1.25rem; text-align: center;">
-            <div style="font-weight: 600; font-size: 0.9rem; color: var(--text-primary); margin-bottom: 0.25rem;">3. Weather File EPW</div>
-            <div style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 0.75rem;">e.g., <code>day_1_weather_merged_1min.epw</code></div>
+            <div style="font-weight: 600; font-size: 0.88rem; color: var(--text-primary); margin-bottom: 0.25rem;">4. Weather File EPW</div>
+            <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.75rem;">e.g., <code>day_1_weather_merged_1min.epw</code></div>
             <input type="file" id="calibEpwInput" accept=".epw" style="display: none;" onchange="uploadCalibFileUI(this, 'epw_path', 'epwFileStatus')">
             <button type="button" class="btn btn-secondary" style="font-size: 0.8rem; padding: 0.4rem 0.8rem;" onclick="document.getElementById('calibEpwInput').click()">Choose File</button>
             <div id="epwFileStatus" style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.5rem;">No file chosen</div>
