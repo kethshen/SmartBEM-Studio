@@ -7,12 +7,30 @@
   <title>Calibration Methodology - SmartBEM Studio</title>
   <link rel="icon" type="image/svg+xml" href="../assets/icons/bolt_boost_48dp_14EF10_FILL0_wght400_GRAD0_opsz48.svg">
   <link rel="stylesheet" href="../style.css">
+  <style>
+    /* MathJax Site Theme Integration */
+    .mjx-chtml, .MathJax, MathJax_CHTML, mjx-container {
+      color: var(--text-primary) !important;
+    }
+    .math-eq-box {
+      background: var(--bg-app);
+      color: var(--text-primary);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      padding: 1.25rem;
+      text-align: center;
+      margin: 0.75rem 0;
+    }
+  </style>
   <!-- MathJax for TeX Rendering -->
   <script>
     window.MathJax = {
       tex: {
         inlineMath: [['$', '$'], ['\\(', '\\)']],
         displayMath: [['$$', '$$'], ['\\[', '\\]']]
+      },
+      chtml: {
+        scale: 1.05
       }
     };
   </script>
@@ -56,14 +74,14 @@
 
         <h3 style="font-size: 1rem; font-weight: 600; color: var(--accent-primary); margin-top: 1rem; margin-bottom: 0.5rem;">A.1 Hard Range Masking</h3>
         <p style="font-size: 0.88rem; color: var(--text-secondary); line-height: 1.6;">For a raw sensor temperature reading $T_i$ at time step $t_i$:</p>
-        <div style="background: #0d1117; border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 1rem; text-align: center; margin: 0.75rem 0;">
+        <div class="math-eq-box">
           $$T_i^{\text{masked}} = \begin{cases} T_i & \text{if } 5.0^{\circ}\text{C} \le T_i \le 50.0^{\circ}\text{C} \\ \text{NaN} & \text{otherwise} \end{cases}$$
         </div>
         <p style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.6;">Range limits $[5.0, 50.0]^{\circ}\text{C}$ are enforced because the experimental chamber operates indoors inside an unconditioned hangar ($20.0^{\circ}\text{C} \le T_{\text{chamber}} \le 35.0^{\circ}\text{C}$). Readings outside $5.0^{\circ}\text{C}$ to $50.0^{\circ}\text{C}$ represent electrical artifacts and are set to <code>NaN</code>.</p>
 
         <h3 style="font-size: 1rem; font-weight: 600; color: var(--accent-primary); margin-top: 1.5rem; margin-bottom: 0.5rem;">A.2 Rolling $3\sigma$ Gaussian Outlier Filter</h3>
         <p style="font-size: 0.88rem; color: var(--text-secondary); line-height: 1.6;">For a 2-minute centered rolling window $W_i = [t_i - 1\text{ min}, t_i + 1\text{ min}]$ containing $N = 24$ samples (at 5-second sampling intervals):</p>
-        <div style="background: #0d1117; border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 1rem; text-align: center; margin: 0.75rem 0;">
+        <div class="math-eq-box">
           $$\mu_i = \frac{1}{N} \sum_{j \in W_i} T_j \quad \text{(Rolling Mean)}$$
           $$\sigma_i = \sqrt{\frac{1}{N-1} \sum_{j \in W_i} (T_j - \mu_i)^2} \quad \text{(Rolling Standard Deviation)}$$
           $$\text{Mask Condition:} \quad \text{If } |T_i - \mu_i| > 3.0 \cdot \sigma_i \implies T_i^{\text{clean}} = \text{NaN}$$
@@ -74,13 +92,13 @@
 
         <h3 style="font-size: 1rem; font-weight: 600; color: var(--accent-primary); margin-top: 1.5rem; margin-bottom: 0.5rem;">A.3 Linear NaN Interpolation</h3>
         <p style="font-size: 0.88rem; color: var(--text-secondary); line-height: 1.6;">Continuous <code>NaN</code> gaps are filled via linear interpolation between surrounding valid points $(t_k, T_k)$ and $(t_{k+1}, T_{k+1})$:</p>
-        <div style="background: #0d1117; border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 1rem; text-align: center; margin: 0.75rem 0;">
+        <div class="math-eq-box">
           $$T(t) = T(t_k) + \frac{t - t_k}{t_{k+1} - t_k} \Big(T(t_{k+1}) - T(t_k)\Big)$$
         </div>
 
         <h3 style="font-size: 1rem; font-weight: 600; color: var(--accent-primary); margin-top: 1.5rem; margin-bottom: 0.5rem;">A.4 Exponential Moving Average (EMA) Noise Suppression</h3>
         <p style="font-size: 0.88rem; color: var(--text-secondary); line-height: 1.6;">High-frequency sensor jitter is suppressed using a first-order EMA low-pass filter ($\alpha = 0.10$):</p>
-        <div style="background: #0d1117; border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 1rem; text-align: center; margin: 0.75rem 0;">
+        <div class="math-eq-box">
           $$T_{\text{EMA}}(t_k) = \alpha \cdot T(t_k) + (1 - \alpha) \cdot T_{\text{EMA}}(t_{k-1})$$
         </div>
       </section>
@@ -95,7 +113,7 @@
         <p style="font-size: 0.88rem; color: var(--text-secondary); line-height: 1.6;">ASHRAE Guideline 14 (<em>Measurement of Energy, Demand, and Water Savings</em>) defines two mandatory statistical metrics for validating building energy models against measured sensor data:</p>
 
         <h4 style="font-size: 0.92rem; font-weight: 600; color: var(--text-primary); margin-top: 1rem; margin-bottom: 0.25rem;">1. Coefficient of Variation of RMSE — CV(RMSE)</h4>
-        <div style="background: #0d1117; border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 1rem; text-align: center; margin: 0.75rem 0;">
+        <div class="math-eq-box">
           $$\text{CV(RMSE)} = \frac{1}{\bar{T}_z} \sqrt{\frac{\sum_{i=1}^N \Big(T_{\text{sim}}(t_i) - T_z(t_i)\Big)^2}{N - p}} \times 100\%$$
         </div>
         <ul style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.6; padding-left: 1.25rem;">
@@ -110,7 +128,7 @@
         </div>
 
         <h4 style="font-size: 0.92rem; font-weight: 600; color: var(--text-primary); margin-top: 1.25rem; margin-bottom: 0.25rem;">2. Normalized Mean Bias Error — NMBE</h4>
-        <div style="background: #0d1117; border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 1rem; text-align: center; margin: 0.75rem 0;">
+        <div class="math-eq-box">
           $$\text{NMBE} = \frac{1}{\bar{T}_z} \frac{\sum_{i=1}^N \Big(T_{\text{sim}}(t_i) - T_z(t_i)\Big)}{N - p} \times 100\%$$
         </div>
         <p style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.6;">NMBE measures systematic over-prediction ($>0$) or under-prediction ($<0$) bias.</p>
@@ -120,18 +138,18 @@
 
         <h3 style="font-size: 1rem; font-weight: 600; color: var(--accent-primary); margin-top: 1.5rem; margin-bottom: 0.5rem;">B.2 Dynamic Time Warping (DTW) Trajectory Shape Distance</h3>
         <p style="font-size: 0.88rem; color: var(--text-secondary); line-height: 1.6;">DTW constructs an $N \times N$ pairwise distance matrix $M_{i, j} = |T_{\text{sim}}(t_i) - T_z(t_j)|$ and searches for an optimal warping path $\pi = (\pi_1, \pi_2, \dots, \pi_K)$ that minimizes total path alignment cost:</p>
-        <div style="background: #0d1117; border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 1rem; text-align: center; margin: 0.75rem 0;">
+        <div class="math-eq-box">
           $$\text{DTW\_Distance} = \min_{\pi} \sum_{(i, j) \in \pi} |T_{\text{sim}}(t_i) - T_z(t_j)|$$
         </div>
         <p style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.6;">Subject to monotonicity and continuity constraints ($i_k - i_{k-1} \le 1, j_k - j_{k-1} \le 1$).</p>
 
         <h3 style="font-size: 1rem; font-weight: 600; color: var(--accent-primary); margin-top: 1.5rem; margin-bottom: 0.5rem;">B.3 Composite Loss Function & Bounded Nelder-Mead Simplex Optimization</h3>
         <p style="font-size: 0.88rem; color: var(--text-secondary); line-height: 1.6;">Combined ASHRAE Guideline 14 metrics and DTW distance into a single objective loss function:</p>
-        <div style="background: #0d1117; border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 1rem; text-align: center; margin: 0.75rem 0;">
+        <div class="math-eq-box">
           $$\text{Loss}(\mathbf{x}) = \text{CV(RMSE)} + 0.5 \cdot |\text{NMBE}| + 2.0 \cdot \text{DTW\_Distance}$$
         </div>
         <p style="font-size: 0.88rem; color: var(--text-secondary); line-height: 1.6;">Each physical parameter $P_j$ is normalized to a unit box $x_j \in [0, 1]$:</p>
-        <div style="background: #0d1117; border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 1rem; text-align: center; margin: 0.75rem 0;">
+        <div class="math-eq-box">
           $$P_j(x_j) = P_j^{\text{min}} + x_j \cdot \Big(P_j^{\text{max}} - P_j^{\text{min}}\Big)$$
         </div>
       </section>
