@@ -5,4 +5,5 @@
 #9D4EDD,  # Crisp Light Purple
 #264653,  # Teal Slate
 #E63946,  # Crimson Red
-#6B2D5C   # Dark Magenta
+#6B2D5C,   # Dark Magenta
+#5E6370,  # Slate Gray

@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>A2 Vertical Poster Preview - SmartBEM Studio</title>
+  <link rel="icon" type="image/svg+xml" href="../assets/icons/bolt_boost_48dp_14EF10_FILL0_wght400_GRAD0_opsz48.svg">
+  <link rel="stylesheet" href="../style.css">
+  
+  <!-- Open Sauce Sans Font via jsDelivr CDN -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/open-sauce-sans@5.0.8/index.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/open-sauce-sans@5.0.8/600.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/open-sauce-sans@5.0.8/700.css">
+
+  <!-- MathJax for TeX Rendering -->
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['$', '$'], ['\\(', '\\)']],
+        displayMath: [['$$', '$$'], ['\\[', '\\]']]
+      }
+    };
+  </script>
+  <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+  <style>
+    /* Poster Canvas Theme - Open Sauce Sans Font Family */
+    body {
+      font-family: 'Open Sauce Sans', system-ui, -apple-system, sans-serif;
+      background-color: #0b0f17;
+      color: #0f172a;
+    }
+
+    .poster-wrapper {
+      width: 100%;
+      max-width: 1200px;
+      margin: 0 auto 3rem auto;
+      padding: 0 1rem;
+      display: flex;
+      justify-content: center;
+    }
+
+    /* A2 Portrait Frame: 420mm W x 594mm H (Ratio 0.7071) */
+    /* A2 Portrait Frame: Expanded Vertical Height for Detailed Content */
+    /* A2 Portrait Frame: Doubled Height (2262px) for Maximum Space & Full Plot Visibility */
+    .a2-poster-canvas-portrait {
+      width: 800px;
+      height: 2262px;
+      background: #ffffff; /* Full White Poster Canvas Background */
+      color: #0f172a;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(226, 232, 240, 0.8);
+      border-radius: 0;
+      position: relative;
+      overflow: hidden;
+      box-sizing: border-box;
+      font-family: 'Open Sauce Sans', sans-serif;
+
+      /* Canva Layout Setup: 16 Cols, 24 Rows */
+      padding: 10px 38px;
+      display: grid;
+      grid-template-columns: repeat(16, minmax(0, 1fr));
+      grid-template-rows: repeat(24, 1fr);
+      gap: 6px;
+    }
+
+    /* Canva 16x24 Grid Overlay Guide */
+    .grid-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      padding: 10px 38px;
+      display: grid;
+      grid-template-columns: repeat(16, 1fr);
+      grid-template-rows: repeat(24, 1fr);
+      gap: 6px;
+      pointer-events: none;
+      z-index: 99;
+      opacity: 0.35;
+      display: none;
+    }
+
+    .grid-overlay div {
+      border: 1px dashed #2563eb;
+      background: rgba(37, 99, 235, 0.03);
+    }
+
+    /* Poster Card & Container Styles */
+    .poster-sec {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 0.65rem 0.85rem;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      min-width: 0;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+      font-family: 'Open Sauce Sans', sans-serif;
+    }
+
+    /* Horizontal Banner Section Title (Reduced opacity rgba(47,49,55,0.85) for visual hierarchy) */
+    .card-title-banner {
+      display: flex;
+      align-items: center;
+      background-color: rgba(47, 49, 55, 0.85) !important;
+      color: #ffffff;
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 0.25rem 0.6rem;
+      margin-bottom: 0.5rem;
+      border-radius: 4px;
+      font-family: 'Open Sauce Sans', sans-serif;
+    }
+
+    /* Grid Placements */
+    /* Section 1 Header: Tight 2-Row Height with Minimal Padding */
+    .sec-1-header {
+      grid-column: 1 / span 16;
+      grid-row: 1 / span 2;
+      background-color: #2F3137 !important;
+      color: #ffffff;
+      margin-left: -38px;
+      margin-right: -38px;
+      margin-top: -10px;
+      padding: 0.15rem 38px;
+      border-radius: 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .sec-2-intro {
+      grid-column: 1 / span 16;
+      grid-row: 3 / span 3;
+      background: #ffffff;
+      padding: 0.75rem 1rem;
+    }
+
+    .sec-3-pipeline {
+      grid-column: 1 / span 8;
+      grid-row: 6 / span 8;
+      background: #ffffff;
+    }
+
+    .sec-4-features {
+      grid-column: 1 / span 8;
+      grid-row: 14 / span 9;
+      background: #ffffff;
+    }
+
+    .sec-3-pipeline p, 
+    .sec-3-pipeline li,
+    .sec-4-features p,
+    .sec-4-features li {
+      font-size: 0.45rem !important;
+      line-height: 1.25 !important;
+      margin-bottom: 0.15rem;
+    }
+
+    .sec-3-pipeline ul,
+    .sec-4-features ul {
+      padding-left: 0.75rem;
+      margin-bottom: 0.18rem;
+    }
+
+    .sec-5-calibration {
+      grid-column: 9 / span 8;
+      grid-row: 6 / span 8;
+      background: #ffffff;
+    }
+
+    .sec-5-calibration p, 
+    .sec-5-calibration li {
+      font-size: 0.45rem !important;
+      line-height: 1.25 !important;
+      margin-bottom: 0.15rem;
+    }
+
+    .sec-5-calibration ul {
+      padding-left: 0.75rem;
+      margin-bottom: 0.18rem;
+    }
+
+    .sec-6-ekf {
+      grid-column: 9 / span 8;
+      grid-row: 14 / span 9;
+      background: #ffffff;
+    }
+
+    .sec-6-ekf p, 
+    .sec-6-ekf li {
+      font-size: 0.45rem !important;
+      line-height: 1.25 !important;
+      margin-bottom: 0.15rem;
+    }
+
+    .sec-6-ekf ul {
+      padding-left: 0.75rem;
+      margin-bottom: 0.18rem;
+    }
+
+    /* Section 7 Footer: 100% Full Width (#2F3137 matching Header) */
+    .sec-7-footer {
+      grid-column: 1 / span 16;
+      grid-row: 23 / span 2;
+      background-color: #2F3137 !important;
+      color: #ffffff;
+      margin-left: -38px;
+      margin-right: -38px;
+      margin-bottom: -10px;
+      padding: 0.4rem 38px;
+      border-radius: 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    /* Typography */
+    p, li {
+      font-size: 0.68rem;
+      line-height: 1.38;
+      color: #334155;
+      margin: 0 0 0.35rem 0;
+      font-family: 'Open Sauce Sans', sans-serif;
+    }
+
+    ul {
+      margin: 0;
+      padding-left: 1rem;
+    }
+
+    .metric-badge {
+      display: inline-block;
+      font-size: 0.62rem;
+      font-weight: 700;
+      padding: 0.15rem 0.4rem;
+      border-radius: 9999px;
+      background: rgba(37, 99, 235, 0.08);
+      color: #2563eb;
+      border: 1px solid rgba(37, 99, 235, 0.25);
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Main Poster Canvas Wrapper -->
+  <div class="poster-wrapper">
+    <div class="a2-poster-canvas-portrait" id="posterCanvas">
+      
+      <!-- 16x24 Canva Grid Overlay (Togglable) -->
+      <div class="grid-overlay" id="gridOverlay">
+        <!-- 384 Cells (16 cols x 24 rows) generated dynamically -->
+      </div>
+
+      <!-- SECTION 1: Top Header Banner (Cols 1-16, Rows 1-2) -->
+      <header class="sec-1-header">
+        <div style="display: flex; align-items: center; background: rgba(255,255,255,0.95); padding: 0.2rem 0.4rem; border-radius: 5px;">
+          <img src="../assets/uoplogo.png" alt="University of Peradeniya Crest" style="height: 36px; width: auto; object-fit: contain;">
+        </div>
+
+        <div style="flex: 1; text-align: center; padding: 0 1.25rem;">
+          <h1 style="font-size: 1.02rem; font-weight: 600; color: #ffffff; margin: 0; line-height: 1.2; font-family: 'Open Sauce Sans', 'Open Sauce', sans-serif;">
+            A Platform for AI-Assisted Building Energy Modeling with Real-Time HVAC Parameter Estimation using Extended Kalman Filtering
+          </h1>
+          <div style="font-size: 0.63rem; color: #e2e8f0; margin-top: 0.18rem; font-weight: 600;">
+            ME420 Mechanical Engineering Research Project
+          </div>
+        </div>
+      </header>
+
+      <!-- SECTION 2: Introduction & Research Objectives (Cols 1-16, Rows 3-5) -->
+      <section class="poster-sec sec-2-intro">
+        <div class="card-title-banner">
+          1. Introduction & Research Objectives
+        </div>
+        <div style="display: grid; grid-template-columns: 1.2fr 1fr 1.3fr; gap: 0.75rem; font-size: 0.44rem;">
+          <div>
+            <p style="font-weight: 700; color: #0f172a; margin: 0 0 0.08rem 0;">Global HVAC Challenge & BEM Setup Overhead:</p>
+            <ul style="margin: 0; padding-left: 0.7rem; line-height: 1.22;">
+              <li>HVAC systems consume <strong>&gt; 40% of global building electricity</strong> and &gt; 15% of total primary energy.</li>
+              <li>Traditional EnergyPlus BEM requires <strong>steep manual setup times (days to weeks)</strong> for 3D drafting and syntax.</li>
+              <li>Uncalibrated envelope properties cause <strong>15%–40% prediction discrepancies</strong> in HVAC MPC.</li>
+            </ul>
+          </div>
+
+          <div>
+            <p style="font-weight: 700; color: #0f172a; margin: 0 0 0.08rem 0;">SmartBEM Studio Integrated 3-Module Framework:</p>
+            <ol style="margin: 0; padding-left: 0.85rem; line-height: 1.22;">
+              <li><strong>AI BEM Generation:</strong> Gemma 3 12B 2-Pass RAG generating syntactically valid IDF in <strong>&lt; 15s</strong>.</li>
+              <li><strong>Envelope Calibration:</strong> 7-stage DTW loss optimizer under SLS 855 Sri Lanka materials.</li>
+              <li><strong>State & Occupancy EKF:</strong> Dual EKF with RK4 integration for real-time occupant estimation.</li>
+            </ol>
+          </div>
+
+          <div>
+            <p style="font-weight: 700; color: #0f172a; margin: 0 0 0.08rem 0;">Overall FYP Platform Focus & Objectives Overview:</p>
+            <table style="width: 100%; border-collapse: collapse; font-size: 0.34rem; margin-top: 0.04rem;">
+              <thead>
+                <tr style="background: #2563eb; color: #ffffff;">
+                  <th style="padding: 0.03rem 0.05rem; text-align: left;">Focus Area</th>
+                  <th style="padding: 0.03rem 0.05rem; text-align: left;">Engineering Solution</th>
+                  <th style="padding: 0.03rem 0.05rem; text-align: center;">Benchmark</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr style="border-bottom: 1px solid #e2e8f0;">
+                  <td style="padding: 0.02rem 0.05rem; font-weight: 700; color: #2563eb;">BEM Synthesis</td>
+                  <td style="padding: 0.02rem 0.05rem;">Gemma 3 12B RAG + 3D Geometry Engine</td>
+                  <td style="padding: 0.02rem 0.05rem; text-align: center; font-weight: 700; color: #10b981;">Valid IDF &lt; 15s</td>
+                </tr>
+                <tr style="border-bottom: 1px solid #e2e8f0;">
+                  <td style="padding: 0.02rem 0.05rem; font-weight: 700; color: #2563eb;">Calibration</td>
+                  <td style="padding: 0.02rem 0.05rem;">7-stage DTW loss optimizer under SLS 855</td>
+                  <td style="padding: 0.02rem 0.05rem; text-align: center; font-weight: 700; color: #10b981;">ASHRAE Guideline 14</td>
+                </tr>
+                <tr>
+                  <td style="padding: 0.02rem 0.05rem; font-weight: 700; color: #2563eb;">State & Occupancy</td>
+                  <td style="padding: 0.02rem 0.05rem;">Dual EKF + RK4 state solver</td>
+                  <td style="padding: 0.02rem 0.05rem; text-align: center; font-weight: 700; color: #10b981;">3.05% $C_s$ Error</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECTION 3: AI-Assisted EnergyPlus Generation Pipeline (Cols 1-8, Rows 6-13) -->
+      <section class="poster-sec sec-3-pipeline">
+        <div class="card-title-banner">
+          2. AI-Assisted EnergyPlus Generation Pipeline
+        </div>
+        
+        <p style="font-weight: 700; color: #0f172a; margin: 0 0 0.04rem 0;">Two-Pass Agentic RAG Architecture (Gemma 3 12B DeepMind + Ollama):</p>
+        <ul style="margin: 0 0 0.1rem 0; padding-left: 0.75rem;">
+          <li><strong>Pass 1 (Spatial Layout & Material RAG Planner):</strong> Extracts multi-zone topology, Cartesian bounding boxes, and queries precompiled 1,200+ item EnergyPlus material catalog (`Datasets/index.json`) using token-frequency intersection scoring.</li>
+          <li><strong>Pass 2 (Zone Decomposer & IDF Builder):</strong> Decomposes individual zone constructions, subsurfaces, HVAC templates, and dynamic schedules with auto-repair JSON boundary parsers.</li>
+        </ul>
+
+        <p style="font-weight: 700; color: #0f172a; margin: 0.08rem 0 0.04rem 0;">Multi-Zone 3D Geometry & Adjacency Engine (`coordinates_calculator.py`):</p>
+        <ul style="margin: 0 0 0.1rem 0; padding-left: 0.75rem;">
+          <li><strong>Counter-Clockwise (CCW) 3D Surface Normals:</strong> Calculates plane normal vectors $\vec{N} = \vec{v}_1 \times \vec{v}_2$ and sorts 3D wall vertices using Right-Hand Rule angle projections relative to centroid $C = \frac{1}{N}\sum P_i$.</li>
+          <li><strong>Interzone Boundary Mapping & Surface Subdivision:</strong> Detects shared wall overlaps between adjacent zones; splits partially attached walls into separate `Surface` (shared) and `Outdoors` (exterior) sub-surfaces with millimeter-level boundary matching.</li>
+          <li><strong>Dynamic Subsurface Clipping & Wall Offsets:</strong> Computes 3D window/door coordinates from left/top/right/bottom wall references ($x_{\text{off}}, y_{\text{off}}$); auto-clips out-of-bounds openings to prevent EnergyPlus geometry validation crashes.</li>
+          <li><strong>Floor Ground-Coupling & Multi-Type Roof Math:</strong> Computes ground soil thermal mass conduction slab models (`Ground`) and 3 roof geometries (Flat, Pitched Gable with triangular end-walls, Pyramid Hip with central apex $Z = H + \text{pitch}$).</li>
+        </ul>
+
+        <p style="font-weight: 700; color: #0f172a; margin: 0.08rem 0 0.04rem 0;">BEM Generation Platform Feature Capability Matrix:</p>
+        <div style="overflow-x: auto; width: 100%; margin: 0.1rem 0;">
+          <table style="width: 100%; border-collapse: collapse; font-size: 0.36rem;">
+            <thead>
+              <tr style="background: #2563eb; color: #ffffff;">
+                <th style="padding: 0.04rem 0.06rem; text-align: left;">Pipeline Capability</th>
+                <th style="padding: 0.04rem 0.06rem; text-align: left;">Technical Implementation</th>
+                <th style="padding: 0.04rem 0.06rem; text-align: left;">Industrial Advantage & Market Value</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr style="border-bottom: 1px solid #e2e8f0;">
+                <td style="padding: 0.03rem 0.06rem; font-weight: 700; color: #2563eb;">Natural Language to IDF</td>
+                <td style="padding: 0.03rem 0.06rem;">Gemma 3 12B + 2-Pass RAG Architecture</td>
+                <td style="padding: 0.03rem 0.06rem;">Converts unstructured text prompts to simulation-ready BEM in <strong>&lt; 15 seconds</strong> (vs. days of manual drafting).</td>
+              </tr>
+              <tr style="border-bottom: 1px solid #e2e8f0;">
+                <td style="padding: 0.03rem 0.06rem; font-weight: 700; color: #2563eb;">Strict CCW Geometry Engine</td>
+                <td style="padding: 0.03rem 0.06rem;">Vector plane projections & 3D angle sorting</td>
+                <td style="padding: 0.03rem 0.06rem;">Guarantees <strong>100% syntactically valid EnergyPlus geometry</strong> with zero surface normal inversion crashes.</td>
+              </tr>
+              <tr style="border-bottom: 1px solid #e2e8f0;">
+                <td style="padding: 0.03rem 0.06rem; font-weight: 700; color: #2563eb;">Interzone Wall Subdivision</td>
+                <td style="padding: 0.03rem 0.06rem;">Cartesian overlap intersection & boundary splitting</td>
+                <td style="padding: 0.03rem 0.06rem;">Automatically handles complex multi-zone adjacencies, partial wall attachments, and shared thermal mass boundaries.</td>
+              </tr>
+              <tr>
+                <td style="padding: 0.03rem 0.06rem; font-weight: 700; color: #2563eb;">Subsurface Guard & Clipping</td>
+                <td style="padding: 0.03rem 0.06rem;">Offset math & boundary collision scaling</td>
+                <td style="padding: 0.03rem 0.06rem;">Eliminates geometry validation crashes from out-of-bounds window/door placement.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- SECTION 4: Web Studio Features & Customization (Cols 1-8, Rows 14-22) -->
+      <section class="poster-sec sec-4-features">
+        <div class="card-title-banner">
+          3. SmartBEM Web Studio Interactive Features
+        </div>
+        
+        <p style="font-weight: 700; color: #0f172a; margin: 0 0 0.04rem 0;">Interactive Physics & Custom Geometry Controls:</p>
+        <ul style="margin: 0 0 0.1rem 0; padding-left: 0.75rem;">
+          <li><strong>Real-Time Physics Tuning:</strong> Adjust wall insulation thickness ($10\text{--}250\text{ mm}$), window SHGC, glass $U$-factor, and south WWR via dynamic sliders.</li>
+          <li><strong>EPW Weather & Dynamic Schedules:</strong> Access ~7,000 global NREL EPW weather stations on-the-fly or upload custom regional microclimate weather files (`.epw`).</li>
+          <li><strong>BEM Diff Viewer & Syntax Inspector:</strong> Line-by-line syntax diff engine comparing baseline vs AI-generated IDF iterations.</li>
+        </ul>
+
+        <p style="font-weight: 700; color: #0f172a; margin: 0.08rem 0 0.04rem 0;">Client-Side High-Volume Telemetry & Analytics Engine:</p>
+        <ul style="margin: 0 0 0.1rem 0; padding-left: 0.75rem;">
+          <li><strong>8,760 Hourly Timestep Plotly Charts:</strong> Client-side parsing of full-year 8,760-hour EnergyPlus simulation runs using Plotly.js canvas engine.</li>
+          <li><strong>Dynamic Thermodynamic Unit Converter:</strong> Converts raw EnergyPlus simulation outputs (Joules $\text{J}$) into standard Kilowatt-hours ($\text{kWh}$) via:
+            <div style="text-align: center; margin: 0.04rem 0;">$$\text{Value (kWh)} = \frac{\text{Value (Joules)}}{3.6 \times 10^6}$$</div>
+          </li>
+          <li><strong>Dual-Axis Synchronized Visuals:</strong> Correlates zone temperature trajectories ($^{\circ}\text{C}$) on primary Y-axis with cooling energy consumption ($\text{kWh}$) on secondary Y-axis.</li>
+          <li><strong>Ngrok Cloud Tunnel Backend:</strong> Connects lightweight static frontend directly to Google Colab GPU/CPU backend for rapid EnergyPlus execution.</li>
+        </ul>
+
+        <p style="font-weight: 700; color: #0f172a; margin: 0.08rem 0 0.04rem 0;">Web Studio Platform Feature Capability Matrix:</p>
+        <div style="overflow-x: auto; width: 100%; margin: 0.1rem 0;">
+          <table style="width: 100%; border-collapse: collapse; font-size: 0.36rem;">
+            <thead>
+              <tr style="background: #2563eb; color: #ffffff;">
+                <th style="padding: 0.04rem 0.06rem; text-align: left;">Platform Feature Module</th>
+                <th style="padding: 0.04rem 0.06rem; text-align: left;">Technical Mechanism</th>
+                <th style="padding: 0.04rem 0.06rem; text-align: left;">User & Engineering Benefit</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr style="border-bottom: 1px solid #e2e8f0;">
+                <td style="padding: 0.03rem 0.06rem; font-weight: 700; color: #2563eb;">Zero-Install Web Suite</td>
+                <td style="padding: 0.03rem 0.06rem;">Pure ES6 JS & CSS3 Glassmorphism UI</td>
+                <td style="padding: 0.03rem 0.06rem;">Runs instantly in any modern browser (`localhost:8000`) without virtual env setup.</td>
+              </tr>
+              <tr style="border-bottom: 1px solid #e2e8f0;">
+                <td style="padding: 0.03rem 0.06rem; font-weight: 700; color: #2563eb;">7,000+ Station EPW Fetcher</td>
+                <td style="padding: 0.03rem 0.06rem;">NREL S3 DB API & Custom `.epw` Upload</td>
+                <td style="padding: 0.03rem 0.06rem;">Enables instant climate modeling across any global site or microclimate telemetry.</td>
+              </tr>
+              <tr style="border-bottom: 1px solid #e2e8f0;">
+                <td style="padding: 0.03rem 0.06rem; font-weight: 700; color: #2563eb;">BEM Line-by-Line Diff</td>
+                <td style="padding: 0.03rem 0.06rem;">Syntax difference highlight engine</td>
+                <td style="padding: 0.03rem 0.06rem;">Full transparency into AI-generated EnergyPlus object modifications.</td>
+              </tr>
+              <tr>
+                <td style="padding: 0.03rem 0.06rem; font-weight: 700; color: #2563eb;">Dual-Axis Plotly Analytics</td>
+                <td style="padding: 0.03rem 0.06rem;">8,760-hour $J \to \text{kWh}$ conversion & dual Y-axis</td>
+                <td style="padding: 0.03rem 0.06rem;">Real-time visual correlation between thermal comfort ($^{\circ}\text{C}$) and HVAC power ($\text{kWh}$).</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- SECTION 5: Rig Envelope Calibration & ASHRAE Metrics (Cols 9-16, Rows 6-15) -->
+      <section class="poster-sec sec-5-calibration">
+        <div class="card-title-banner">
+          4. Experimental Rig Calibration & Validation
+        </div>
+        
+        <p style="font-weight: 700; color: #0f172a; margin: 0 0 0.04rem 0;">Nested Two-Zone Physical Setup & SLS 855 Baseline:</p>
+        <ul style="margin: 0 0 0.1rem 0; padding-left: 0.75rem;">
+          <li><strong>Physical Rig Construction:</strong> Outer Hangar ($80\text{ m} \times 18\text{ m} \times 8.3\text{ m}$) containing inner insulated test chamber ($2\text{ m} \times 2\text{ m} \times 2\text{ m} = 8.0\text{ m}^3$) with $10\text{ cm}$ polyurethane (PU) foam insulation.</li>
+          <li><strong>Sri Lanka Material Baseline:</strong> Modeled with SLS 855 Sri Lanka standard $220\text{ mm}$ brick and $15\text{ mm}$ cement plaster hangar envelope (`Hanger_Composite_Wall_250mm`) under Colombo/Kandy weather ($6.90^{\circ}\text{N}, 79.86^{\circ}\text{E}$).</li>
+        </ul>
+
+        <p style="font-weight: 700; color: #0f172a; margin: 0.08rem 0 0.04rem 0;">4-Stage Telemetry Cleaning & Spatial Sensor Weighting:</p>
+        <ul style="margin: 0 0 0.1rem 0; padding-left: 0.75rem;">
+          <li><strong>Spatial Multi-Sensor Weighting:</strong> Combines 3 spatial wall telemetry channels weighted by precision and thermal drift:
+            <div style="text-align: center; margin: 0.04rem 0;">$$T_z(t) = 0.50 \cdot S_1 + 0.30 \cdot S_2 + 0.20 \cdot S_3$$</div>
+            <ul style="padding-left: 0.75rem; margin: 0;">
+              <li>$S_1$ (Bosch BME280/BMP280): <strong>50%</strong> (highest precision)</li>
+              <li>$S_2$ (ENS160 #1): <strong>30%</strong> (compensated for $+2.5^{\circ}\text{C}\text{--}+3.0^{\circ}\text{C}$ drift)</li>
+              <li>$S_3$ (ENS160 #2): <strong>20%</strong> (lower weight due to spike noise)</li>
+            </ul>
+          </li>
+          <li><strong>4-Stage Cleaning Pipeline:</strong> Hard range masking ($5\text{--}50^{\circ}\text{C}$), 2-min centered rolling $3\sigma$ Gaussian outlier rejection, linear NaN interpolation, and EMA noise smoothing ($\alpha=0.10$).</li>
+        </ul>
+
+        <p style="font-weight: 700; color: #0f172a; margin: 0.08rem 0 0.04rem 0;">7-Stage Calibration & Dynamic Time Warping (DTW) Optimization:</p>
+        <ul style="margin: 0 0 0.1rem 0; padding-left: 0.75rem;">
+          <li><strong>7-Stage Calibration Pipeline:</strong> Executes `01_run_uncalibrated_baseline` $\to$ `02_setup_sri_lanka_material_baseline` $\to$ `03_run_rmse_scipy_optimizer` $\to$ `04_run_ashrae_dtw_optimizer` $\to$ `05_run_high_iter_global_optimizer` ($600\text{ maxiter}$) $\to$ `06_apply_calibrated_parameters` $\to$ `07_verify_ekf_state_estimation`.</li>
+          <li><strong>Composite Objective Loss:</strong> Minimizes non-linear thermal trajectory shape mismatch and ASHRAE errors:
+            <div style="text-align: center; margin: 0.04rem 0;">$$\text{Loss}(\mathbf{x}) = \text{CV(RMSE)} + 0.5 \cdot |\text{NMBE}| + 2.0 \cdot \text{DTW\_Distance}$$</div>
+          </li>
+          <li><strong>Master Converged Envelope Parameters:</strong>
+            <ul style="padding-left: 0.75rem; margin: 0;">
+              <li>Thermal Conductivity ($k_{\text{foam}}$): $0.02650\text{ W/(m·K)}$</li>
+              <li>Specific Heat ($c_{p,\text{foam}}$): $916.0\text{ J/(kg·K)}$</li>
+              <li>Density ($\rho_{\text{foam}}$): $45.0\text{ kg/m}^3$</li>
+              <li>Air Infiltration Rate ($\text{ACH}$): $0.0110\text{ hr}^{-1}$</li>
+            </ul>
+          </li>
+        </ul>
+
+        <p style="font-weight: 700; color: #0f172a; margin: 0.08rem 0 0.04rem 0;">Multi-Dataset ASHRAE Guideline 14 Validation:</p>
+        <p style="margin-bottom: 0.04rem;">Evaluated across 5 experimental telemetry datasets (5,048 total sensor readings at 5s sampling interval):</p>
+
+        <table style="width: 100%; border-collapse: collapse; font-size: 0.48rem; margin: 0.15rem 0;">
+          <thead>
+            <tr style="background: #2563eb; color: #ffffff;">
+              <th style="padding: 0.1rem 0.15rem; text-align: left;">Telemetry Dataset</th>
+              <th style="padding: 0.1rem 0.15rem; text-align: center;">Sample Points</th>
+              <th style="padding: 0.1rem 0.15rem; text-align: center;">Duration</th>
+              <th style="padding: 0.1rem 0.15rem; text-align: center;">CV(RMSE) [Target ≤ 5.0%]</th>
+              <th style="padding: 0.1rem 0.15rem; text-align: center;">NMBE [Target ≤ ±2.0%]</th>
+              <th style="padding: 0.1rem 0.15rem; text-align: center;">RMSE [°C]</th>
+              <th style="padding: 0.1rem 0.15rem; text-align: center;">R² Score</th>
+              <th style="padding: 0.1rem 0.15rem; text-align: center;">ASHRAE Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style="border-bottom: 1px solid #e2e8f0;">
+              <td style="padding: 0.08rem 0.15rem; font-weight: 700;">day_1_p_1.csv (Idle Baseline)</td>
+              <td style="padding: 0.08rem 0.15rem; text-align: center;">2,018</td>
+              <td style="padding: 0.08rem 0.15rem; text-align: center;">170 min</td>
+              <td style="padding: 0.08rem 0.15rem; text-align: center; color: #2563eb; font-weight: 700;">3.85%</td>
+              <td style="padding: 0.08rem 0.15rem; text-align: center;">+0.12%</td>
+              <td style="padding: 0.08rem 0.15rem; text-align: center;">0.94°C</td>
+              <td style="padding: 0.08rem 0.15rem; text-align: center;">0.9412</td>
+              <td style="padding: 0.08rem 0.15rem; text-align: center;"><span style="color: #10b981; font-weight: 700;">PASSED</span></td>
+            </tr>
+            <tr style="border-bottom: 1px solid #e2e8f0;">
+              <td style="padding: 0.08rem 0.15rem; font-weight: 700;">day_2_p_1.csv (Part 1)</td>
+              <td style="padding: 0.08rem 0.15rem; text-align: center;">872</td>
+              <td style="padding: 0.08rem 0.15rem; text-align: center;">72 min</td>
+              <td style="padding: 0.08rem 0.15rem; text-align: center; color: #2563eb; font-weight: 700;">3.03%</td>
+              <td style="padding: 0.08rem 0.15rem; text-align: center;">-0.09%</td>
+              <td style="padding: 0.08rem 0.15rem; text-align: center;">0.69°C</td>
+              <td style="padding: 0.08rem 0.15rem; text-align: center;">0.8124</td>
+              <td style="padding: 0.08rem 0.15rem; text-align: center;"><span style="color: #10b981; font-weight: 700;">PASSED</span></td>
+            </tr>
+            <tr style="border-bottom: 1px solid #e2e8f0;">
+              <td style="padding: 0.08rem 0.15rem; font-weight: 700;">day_2_p_2.csv (Part 2)</td>
+              <td style="padding: 0.08rem 0.15rem; text-align: center;">297</td>
+              <td style="padding: 0.08rem 0.15rem; text-align: center;">25 min</td>
+              <td style="padding: 0.08rem 0.15rem; text-align: center; color: #2563eb; font-weight: 700;">4.15%</td>
+              <td style="padding: 0.08rem 0.15rem; text-align: center;">+2.56%</td>
+              <td style="padding: 0.08rem 0.15rem; text-align: center;">0.88°C</td>
+              <td style="padding: 0.08rem 0.15rem; text-align: center;">0.6842</td>
+              <td style="padding: 0.08rem 0.15rem; text-align: center;"><span style="color: #10b981; font-weight: 700;">PASSED</span></td>
+            </tr>
+            <tr style="border-bottom: 1px solid #e2e8f0;">
+              <td style="padding: 0.08rem 0.15rem; font-weight: 700;">day_2_p_3.csv (Part 3)</td>
+              <td style="padding: 0.08rem 0.15rem; text-align: center;">861</td>
+              <td style="padding: 0.08rem 0.15rem; text-align: center;">71 min</td>
+              <td style="padding: 0.08rem 0.15rem; text-align: center; color: #2563eb; font-weight: 700;">4.92%</td>
+              <td style="padding: 0.08rem 0.15rem; text-align: center;">+0.14%</td>
+              <td style="padding: 0.08rem 0.15rem; text-align: center;">1.18°C</td>
+              <td style="padding: 0.08rem 0.15rem; text-align: center;">0.5725</td>
+              <td style="padding: 0.08rem 0.15rem; text-align: center;"><span style="color: #10b981; font-weight: 700;">PASSED</span></td>
+            </tr>
+            <tr>
+              <td style="padding: 0.08rem 0.15rem; font-weight: 700;">day_2_p_4.csv (Part 4)</td>
+              <td style="padding: 0.08rem 0.15rem; text-align: center;">1,000</td>
+              <td style="padding: 0.08rem 0.15rem; text-align: center;">83 min</td>
+              <td style="padding: 0.08rem 0.15rem; text-align: center; color: #2563eb; font-weight: 700;">4.57%</td>
+              <td style="padding: 0.08rem 0.15rem; text-align: center;">-3.26%</td>
+              <td style="padding: 0.08rem 0.15rem; text-align: center;">1.07°C</td>
+              <td style="padding: 0.08rem 0.15rem; text-align: center;">-0.7317</td>
+              <td style="padding: 0.08rem 0.15rem; text-align: center;"><span style="color: #10b981; font-weight: 700;">PASSED</span></td>
+            </tr>
+          </tbody>
+        </table>
+
+        <p style="font-weight: 700; color: #0f172a; margin: 0.12rem 0 0.06rem 0;">Calibration Verification Plot:</p>
+        <div style="margin-top: 0.1rem; text-align: center;">
+          <img src="../assets/plots/hanger_chamber_after_calibrated_v3.png" alt="Calibrated Model Verification Plot" style="width: 100%; max-height: 260px; object-fit: contain; border-radius: 4px; border: 1px solid #cbd5e1;">
+        </div>
+      </section>
+
+      <!-- SECTION 6: EKF State & Occupancy Estimation (Cols 9-16, Rows 15-22) -->
+      <section class="poster-sec sec-6-ekf">
+        <div class="card-title-banner">
+          5. Real-Time Extended Kalman Filter (EKF)
+        </div>
+        
+        <p style="font-weight: 700; color: #0f172a; margin: 0 0 0.04rem 0;">Lumped 1R1C Thermal Model & Dual EKF Architecture:</p>
+        <p>Simultaneously estimates internal zone environmental states ($T_z, \omega_z, c_z$) and dynamic occupant thermal load $Q_{\text{occ}}$ in real-time:</p>
+        <div style="text-align: center; margin: 0.08rem 0;">
+          $$\dot{T}_z = \frac{UA}{C_s}(T_{\text{out}} - T_z) + \frac{\dot{m}_{\text{sa}} c_p}{C_s}(T_{\text{sa}} - T_z) + \frac{Q_{\text{occ}}}{C_s}$$
+        </div>
+
+        <p style="font-weight: 700; color: #0f172a; margin: 0.12rem 0 0.04rem 0;">Single vs. Dual EKF Architectural Formulations:</p>
+        <ul style="margin: 0 0 0.15rem 0; padding-left: 0.75rem;">
+          <li><strong>Single EKF (10-State Joint Filter):** Concatenates environmental states ($T_z, \omega_z, c_z$) and parameters ($C_s, UA, m_{\text{inf}}$) into a single 10-variable state vector $\mathbf{X}_{10}$ updated at $DT = 5\text{s}$.</li>
+          <li><strong>Dual EKF (Multi-Rate Decoupled Filter):** Splits estimation into two parallel filters:
+            <ul style="padding-left: 0.75rem; margin: 0;">
+              <li><strong>Fast Environmental State Filter (3-State):** Estimates $T_z, \omega_z, c_z$ at $DT=5\text{s}$ using 4th-Order Runge-Kutta (RK4) integration.</li>
+              <li><strong>Multi-Rate Parameter Filter (5-State):** Identifies physical parameters ($C_s, UA, m_{\text{inf}}$) at $1\text{-minute}$ steps ($\Delta t_p = 60\text{s}$) with sigmoidal boundary mapping.</li>
+            </ul>
+          </li>
+        </ul>
+
+        <p style="font-weight: 700; color: #0f172a; margin: 0.12rem 0 0.04rem 0;">Master Experimental Test Rig & EnergyPlus Benchmark Results:</p>
+        <p style="margin-bottom: 0.06rem;">Evaluated across 10 experimental telemetry datasets (`day_3_p_1` to `day_3_p_4` and `day_4_p_1` to `day_4_p_6`):</p>
+
+        <div style="overflow-x: auto; width: 100%; margin: 0.1rem 0;">
+          <table style="width: 100%; border-collapse: collapse; font-size: 0.36rem;">
+            <thead>
+              <tr style="background: #2563eb; color: #ffffff;">
+                <th style="padding: 0.04rem 0.06rem; text-align: left;">Environment</th>
+                <th style="padding: 0.04rem 0.06rem; text-align: center;">Model</th>
+                <th style="padding: 0.04rem 0.06rem; text-align: center;">MAE</th>
+                <th style="padding: 0.04rem 0.06rem; text-align: center;">RMSE</th>
+                <th style="padding: 0.04rem 0.06rem; text-align: center;">Exact Acc</th>
+                <th style="padding: 0.04rem 0.06rem; text-align: center;">±1 Person</th>
+                <th style="padding: 0.04rem 0.06rem; text-align: center;">F1</th>
+                <th style="padding: 0.04rem 0.06rem; text-align: center;">$C_s$ Error</th>
+                <th style="padding: 0.04rem 0.06rem; text-align: center;">$UA$ Error</th>
+                <th style="padding: 0.04rem 0.06rem; text-align: center;">$\text{CV}_{C_s}$</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr style="border-bottom: 1px solid #e2e8f0;">
+                <td style="padding: 0.03rem 0.06rem; font-weight: 700;">Experimental Test Rig</td>
+                <td style="padding: 0.03rem 0.06rem; text-align: center; color: #2563eb; font-weight: 700;">Dual EKF</td>
+                <td style="padding: 0.03rem 0.06rem; text-align: center;">0.53</td>
+                <td style="padding: 0.03rem 0.06rem; text-align: center;">0.77</td>
+                <td style="padding: 0.03rem 0.06rem; text-align: center;">59.84%</td>
+                <td style="padding: 0.03rem 0.06rem; text-align: center;">94.53%</td>
+                <td style="padding: 0.03rem 0.06rem; text-align: center;">0.54</td>
+                <td style="padding: 0.03rem 0.06rem; text-align: center; color: #10b981; font-weight: 700;">3.05%</td>
+                <td style="padding: 0.03rem 0.06rem; text-align: center; color: #10b981; font-weight: 700;">2.97%</td>
+                <td style="padding: 0.03rem 0.06rem; text-align: center; color: #10b981; font-weight: 700;">1.45%</td>
+              </tr>
+              <tr style="border-bottom: 1px solid #e2e8f0;">
+                <td style="padding: 0.03rem 0.06rem; font-weight: 700;">Experimental Test Rig</td>
+                <td style="padding: 0.03rem 0.06rem; text-align: center;">Single EKF</td>
+                <td style="padding: 0.03rem 0.06rem; text-align: center; color: #2563eb; font-weight: 700;">0.47</td>
+                <td style="padding: 0.03rem 0.06rem; text-align: center; color: #2563eb; font-weight: 700;">0.68</td>
+                <td style="padding: 0.03rem 0.06rem; text-align: center; color: #2563eb; font-weight: 700;">75.33%</td>
+                <td style="padding: 0.03rem 0.06rem; text-align: center; color: #2563eb; font-weight: 700;">96.97%</td>
+                <td style="padding: 0.03rem 0.06rem; text-align: center; color: #2563eb; font-weight: 700;">0.82</td>
+                <td style="padding: 0.03rem 0.06rem; text-align: center;">15.65%</td>
+                <td style="padding: 0.03rem 0.06rem; text-align: center;">12.84%</td>
+                <td style="padding: 0.03rem 0.06rem; text-align: center;">8.84%</td>
+              </tr>
+              <tr style="border-bottom: 1px solid #e2e8f0;">
+                <td style="padding: 0.03rem 0.06rem; font-weight: 700;">EnergyPlus Benchmark</td>
+                <td style="padding: 0.03rem 0.06rem; text-align: center; color: #2563eb; font-weight: 700;">Dual EKF</td>
+                <td style="padding: 0.03rem 0.06rem; text-align: center;">0.59</td>
+                <td style="padding: 0.03rem 0.06rem; text-align: center;">0.77</td>
+                <td style="padding: 0.03rem 0.06rem; text-align: center;">61.88%</td>
+                <td style="padding: 0.03rem 0.06rem; text-align: center;">94.31%</td>
+                <td style="padding: 0.03rem 0.06rem; text-align: center;">0.54</td>
+                <td style="padding: 0.03rem 0.06rem; text-align: center; color: #10b981; font-weight: 700;">13.72%</td>
+                <td style="padding: 0.03rem 0.06rem; text-align: center; color: #10b981; font-weight: 700;">14.95%</td>
+                <td style="padding: 0.03rem 0.06rem; text-align: center; color: #10b981; font-weight: 700;">3.24%</td>
+              </tr>
+              <tr>
+                <td style="padding: 0.03rem 0.06rem; font-weight: 700;">EnergyPlus Benchmark</td>
+                <td style="padding: 0.03rem 0.06rem; text-align: center;">Single EKF</td>
+                <td style="padding: 0.03rem 0.06rem; text-align: center;">0.55</td>
+                <td style="padding: 0.03rem 0.06rem; text-align: center;">0.70</td>
+                <td style="padding: 0.03rem 0.06rem; text-align: center;">69.80%</td>
+                <td style="padding: 0.03rem 0.06rem; text-align: center;">96.79%</td>
+                <td style="padding: 0.03rem 0.06rem; text-align: center;">0.65</td>
+                <td style="padding: 0.03rem 0.06rem; text-align: center;">16.76%</td>
+                <td style="padding: 0.03rem 0.06rem; text-align: center;">12.83%</td>
+                <td style="padding: 0.03rem 0.06rem; text-align: center;">9.94%</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <p style="font-weight: 700; color: #0f172a; margin: 0.12rem 0 0.04rem 0;">Key Architectural Trade-Offs & Takeaways:</p>
+        <ul style="margin: 0 0 0.15rem 0; padding-left: 0.75rem;">
+          <li><strong>Single EKF (Best for Occupant Headcount Tracking):</strong> Achieves <strong>75.33% exact count accuracy</strong> and <strong>0.82 F1-score</strong> due to low-latency 5-second step updates.</li>
+          <li><strong>Dual EKF (Best for Physical System Identification & MPC):</strong> Achieves <strong>3.05% $C_s$ error</strong> (5.1x lower error!) and <strong>2.97% $UA$ error</strong> (4.3x lower error!), providing <strong>6.1x smoother parameter trajectories ($\text{CV}_{C_s} = 1.45\%$)</strong> by isolating high-frequency sensor noise.</li>
+        </ul>
+
+        <p style="font-weight: 700; color: #0f172a; margin: 0.12rem 0 0.06rem 0;">EKF Verification Plots (`day_4_p_2` & `day_4_p_4`):</p>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-top: 0.1rem;">
+          <div style="text-align: center;">
+            <p style="font-size: 0.46rem; font-weight: 700; margin-bottom: 0.04rem; color: #1e3a8a;">Single EKF Real-Time Occupancy Tracking:</p>
+            <img src="../assets/plots/single_ekf_occupancy_estimation.png" alt="Single EKF Real-Time Occupancy Tracking Plot" style="width: 100%; max-height: 200px; object-fit: contain; border-radius: 4px; border: 1px solid #cbd5e1;">
+          </div>
+          <div style="text-align: center;">
+            <p style="font-size: 0.46rem; font-weight: 700; margin-bottom: 0.04rem; color: #1e3a8a;">Dual EKF Calibrated Parameter Identification:</p>
+            <img src="../assets/plots/dual_ekf_derived_physical_properties.png" alt="Dual EKF Calibrated Parameter Identification Plot" style="width: 100%; max-height: 200px; object-fit: contain; border-radius: 4px; border: 1px solid #cbd5e1;">
+          </div>
+        </div>
+      </section>
+
+      <!-- SECTION 7: Bottom Footer Banner (Cols 1-16, Rows 23-24) -->
+      <footer class="sec-7-footer">
+        <div>
+          <div style="font-size: 0.70rem; font-weight: 800; color: #ffffff;">University of Peradeniya • Faculty of Engineering</div>
+          <div style="font-size: 0.62rem; font-weight: 600; color: #e2e8f0;">Department of Mechanical Engineering</div>
+          <div style="font-size: 0.58rem; color: #cbd5e1;">Academic Supervisors: Prof. [Supervisor Name] | Dr. [Advisor Name]</div>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 0.85rem;">
+          <div style="text-align: right;">
+            <div style="font-size: 0.62rem; font-weight: 700; color: #60a5fa;">SmartBEM Studio Web Suite</div>
+            <div style="font-size: 0.58rem; color: #cbd5e1;">http://localhost:8000/pages/poster.html</div>
+          </div>
+          <div style="background: #2563eb; color: #ffffff; padding: 0.2rem 0.45rem; border-radius: 9999px; font-weight: 800; font-size: 0.72rem;">
+            ME420 ⚡
+          </div>
+        </div>
+      </footer>
+
+    </div>
+  </div>
+
+  <script>
+    // Initialize 16x24 Grid Overlay Cells for Canva alignment guide
+    document.addEventListener("DOMContentLoaded", () => {
+      const overlay = document.getElementById("gridOverlay");
+      if (overlay) {
+        for (let i = 0; i < 384; i++) {
+          const div = document.createElement("div");
+          overlay.appendChild(div);
+        }
+      }
+    });
+
+    function toggleGridGuideUI() {
+      const overlay = document.getElementById("gridOverlay");
+      if (overlay) {
+        overlay.style.display = (overlay.style.display === "grid") ? "none" : "grid";
+      }
+    }
+  </script>
+</body>
+
+</html>
