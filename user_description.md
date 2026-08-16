@@ -1,25 +1,19 @@
-Simulate a building with two nested zones: a outer Hanger and an inner Chamber test rig.
+Simulate a building with three zones: an office, a meeting room, a lobby
 
-The Hanger is 80.00 meters long (East-West), 18.00 meters wide (North-South), and 6.00 meters high at the side walls. The Hanger has a gable roof with an East-West ridge line and a pitch height of 2.30 meters (total peak height 8.30 meters). The Hanger walls are 250mm thick composite masonry according to Sri Lanka Standards (SLS 855), constructed from a 220mm brick core with 15mm cement plaster coatings on both inner and outer surfaces. The long side walls (North and South) feature a series of large windows, each 1.00 meter wide by 3.00 meters high. The Hanger floor is a 200mm heavyweight concrete slab on ground. The Hanger zone uses an Ideal Loads air system.
+The office is 6.00 meters long, 8.00 meters wide, and 4.00 meters high. The meeting room is attached to the North wall of the office.
 
-The Chamber is a sealed cold room box located inside the Hanger, positioned at a 3.00 meter offset from the Hanger long wall and a 40.00 meter offset from the short Hanger wall. The Chamber has outside dimensions of 2.00 meters long (East-West), 2.00 meters wide (North-South), and 2.00 meters high.
+The meeting room is 6.00 meters long, 4.00 meters wide, and 4.00 meters high. The lobby is attached to the East wall of the office.
 
-All 6 surfaces of the Chamber (North, South, East, West walls, ceiling, and floor) are fully enclosed interior surfaces located inside the Hanger zone. The Outside Boundary Condition for all 6 Chamber surfaces is set to the Hanger zone — with zero direct solar or wind exposure.
+The lobby is 5.00 meters long, 8.00 meters wide, and 4.00 meters high.
 
-All 6 surfaces of the Chamber are constructed using the custom material 'Custom_PU_Foam' with a panel thickness of 0.10 meters (100mm rigid polyurethane foam, thermal conductivity k = 0.08 W/m-K, density rho = 100 kg/m3, specific heat Cp = 1543 J/kg-K).
+For the office: place a 1.5x2m window on the South wall 2m from left edge, 1m from top edge. place a 0.8x1.5m window on the West wall 2m from left edge, 1.5m from top edge. place a 1x2.5m door on the West wall 5m from left edge, fix to ground. Make the South wall out of 'M01 100mm brick' and 'I02 50mm insulation board' and the other walls out of 'Medium Exterior Wall'. The office has a heavy concrete floor of 'M15 200mm heavyweight concrete'. The office uses a packaged AC unit (psz_ac). The office has a gable roof with the ridge running east-west (EW gable), gable height 3 meters. Place a 2.0x1.5m skylight on the office roof.
 
-The Chamber is conditioned by an Air Handling Unit (AHU) system consisting of a supply main blower fan, cooling coil, heating coil, humidifier, and mixing damper. The AHU operates with 100% recirculated return air from the Chamber (0% fresh air intake damper opening) and maintains a cooling setpoint of 16.0 degrees Celsius. The Chamber zone infiltration rate is set to 12.5 Air Changes per Hour (ACH).
+For the meeting room: place a 1x1m window on the North wall 2m from left edge, 1.5m from top edge. place a 0.8x1.5m window on the West wall 1m from left edge, 1.5m from top edge. place a 1x2.5m door on the South wall 0.5m from left edge, fix to ground. Make the North wall out of 'M01 100mm brick' and 'I02 50mm insulation board' and the other walls out of 'Medium Exterior Wall'. The meeting room uses a split AC (split_ac). The meeting room has a gable roof with the ridge running north-south (NS gable), gable height 3 meters. Place a 2.0x1.5m skylight on the meeting room roof.
 
-The Chamber has zero occupancy, zero internal lighting loads, and 1.0 Watt background equipment heat load (ESP32 micro-controller).
+For the lobby: place a 2x2.5m door on the East wall 3m from left edge, fix to ground. place a 1x2.5m door on the South wall 2m from left edge, fix to ground. place a 1x1.5m window on the South wall 4.5m from left edge, 1.5m from top edge. Make the South wall out of 'M01 100mm brick' and 'I02 50mm insulation board' and the other walls out of 'Medium Exterior Wall'. The lobby floor is 'Light Floor'. The lobby uses a split AC (split_ac). The lobby has a pyramid hip roof, gable height 3 meters.
 
+The occupancy rate is 30.00 m2/people, the lighting level is 6.00 W/m2, and the equipment power consumption is 45.80 W/m2.
 
+People are in the building from 9am to 5pm on weekdays and completely closed on weekends.
 
-here is the correct details of the hanger and chamber. hanger is 80m x 18m x 6m. the 6m height is wall height without roof pitch height. it wllas made of 220mm brick + out and inside cment plaster layer totalling a 250mm wall thickness, floor is 200mm concrete. roof is gable type a steel structure support with asbestoes roof panels (15mm thickness). there is a abbestoes 10mm thickness ceiling belof roof with 15cm air gap between roof layer and ceiling layer.
-
-its oriented at like this 
-
-its long side walls has window groups. one group think of it as a vertical column starting from the ground 1.2m wall then 1.1m widthx2.1m height window, then 35cm wall then another 1.1m x 1.4m window. then 35cm wall. so total added upto 5.4m. theen there is a free opening of 0.6m. so totoal wall height of hanger is 6m.
-
-long side wall has support concrte vertical columns of 60cmx60cm. between those 2 column that has 4 set of above windos group. those groups seperated at by 20cm. so its like 60cm column+ 20cm wall + 1.1m window group + 20cm wall + 1.1m window group  + 20cm wall + 1.1m window group +20cm wall + 1.1m window group + 20cm wall + 1.1m window group + 60cm column likvise it repeats upto lobbby area. in lobby are there aren't such windows, only walls.
-
-inside hanger as given in the rough draft the chamber is located inside the hanger with other rooms. (do we really need them or shall we remove them?) all the dimensions avaliable in this drawing. rough dimensions.
+The lights are on from 8am to 6pm, and the equipment runs 24/7.
