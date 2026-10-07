@@ -1,0 +1,11 @@
+# Store text files with LF line endings; detect binaries automatically.
+* text=auto
+
+# Always binary
+*.pdf  binary
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.zip  binary
+*.xlsx binary
+*.docx binary

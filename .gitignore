@@ -20,6 +20,8 @@ EKF/Datasets for EKF/Air quality and occupancy dataset Mendeley/
 EKF/Datasets for EKF/Occupancy Detection UCI/
 EKF/Datasets for EKF/Room Occupancy Estimation Keggle/
 EKF/Datasets for EKF/Room Occupancy Estimation UCI/
+my_site_prototype/
+
 
 # ROBOD folder is committed (needed by Colab EKF runs)
 EKF/results/
@@ -122,3 +124,9 @@ Desktop.ini
 node_modules/
 graphify-out/
 .agents/
+
+
+Apply for instructor/
+Apply for Higher Studies/
+Apply for MARC RA/
+Techno/
