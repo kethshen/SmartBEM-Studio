@@ -9,7 +9,7 @@ backend_server/serviceAccountKey.json
 # ==============================================================
 # 2. LOCAL-ONLY FOLDERS (kept here, never committed)
 # ==============================================================
-explainer-web/
+explainer_web/
 
 # Archived FYP material kept on this laptop only (papers, notes, report)
 archive/Research/
