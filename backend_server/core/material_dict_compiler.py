@@ -2,8 +2,8 @@ import os
 import json
 
 # Adjust this path based on the repository structure
-BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
-DATASET_ROOT = os.path.join(BASE_DIR, "Datasets")
+BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))  # backend_server/
+DATASET_ROOT = os.path.join(BASE_DIR, "idf_library")
 
 def clean_idf_text(text):
     """Remove comments to avoid parsing issues and join lines."""
@@ -18,7 +18,7 @@ def clean_idf_text(text):
     return " ".join(lines) # Use space to join so 'A,\nB' becomes 'A, B'
 
 def build_index():
-    print(f"Scanning Datasets at: {DATASET_ROOT}")
+    print(f"Scanning idf_library at: {DATASET_ROOT}")
     index = {}
     
     for dirpath, _, filenames in os.walk(DATASET_ROOT):

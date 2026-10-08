@@ -2,8 +2,8 @@ import os
 import json
 import re
 
-BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
-DATASET_ROOT = os.path.join(BASE_DIR, "Datasets")
+BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))  # backend_server/
+DATASET_ROOT = os.path.join(BASE_DIR, "idf_library")
 INDEX_PATH = os.path.join(os.path.dirname(__file__), "index.json")
 
 def load_index():
@@ -62,7 +62,7 @@ def resolve_dependencies(obj_type, obj_name, extracted_blocks=None):
         return extracted_blocks
         
     if not filepath:
-        print(f"Warning: {obj_name} not found in Datasets.")
+        print(f"Warning: {obj_name} not found in idf_library.")
         return extracted_blocks
         
     with open(os.path.join(DATASET_ROOT, filepath), 'r', encoding='utf-8') as f:

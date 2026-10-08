@@ -143,8 +143,8 @@ This file contains a detailed, production-grade example of a **3-zone building**
 SmartBEM-Studio/
 ├── web/                  # Web Dashboard (HTML / CSS / JS)
 ├── backend_server/       # Backend — FastAPI server, AI pipeline, EnergyPlus wrapper
+│   └── idf_library/      # EnergyPlus object library (RAG library for building materials)
 ├── EKF/                  # Extended Kalman Filter module (algorithms, datasets)
-├── Datasets/             # EnergyPlus object library (RAG library for building materials)
 ├── EnergyPlus utility/   # Python wrappers for compiling, running & retrieving simulations
 ├── scripts/              # Helper scripts and developer utilities
 ├── STRUCTURE.md          # File-by-file annotated structure guide of the codebase

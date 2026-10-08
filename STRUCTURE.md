@@ -41,6 +41,8 @@ SmartBEM-Studio/
 │   │   ├── catalog.json          # HVAC system catalog
 │   │   └── hvac/                 # Modular HVAC IDF snippets (psz_ac, split_ac, etc.)
 │   │
+│   ├── idf_library/              # EnergyPlus object libraries (RAG materials data; was Datasets/)
+│   │
 │   └── eplus/                    # EnergyPlus Python bootstrap & parser tools
 │       ├── eplus_util.py         # Full EnergyPlus utility library
 │       ├── colab_bootstrap.py    # Colab environment setup helper (downloads EP release)
@@ -52,7 +54,6 @@ SmartBEM-Studio/
 │   ├── Datasets for EKF/         # ROBOD Room 3 sensor datasets for EKF analysis
 │   └── Practise demos/           # Python worked examples and test cases
 │
-├── Datasets/                     # EnergyPlus IDD object libraries (RAG materials data)
 ├── EnergyPlus utility/           # Standalone Python wrappers for EnergyPlus executions
 ├── scripts/                      # Developer utilities (e.g. building weather index maps)
 ├── LLM_Prompt_Optimization_Guide.md # Prompt templates & optimization rules for building simulation
@@ -101,7 +102,7 @@ flowchart TD
     F --> G
     class G engine;
     
-    H[("Local Datasets index.json")] -->|Retrieves catalog items| G
+    H[("Local idf_library index.json")] -->|Retrieves catalog items| G
     class H db;
     
     G -->|Frequency-Based Token Intersection and Context Boosts| I["Candidate Material Menus Top 25"]

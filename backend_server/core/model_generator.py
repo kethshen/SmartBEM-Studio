@@ -434,8 +434,8 @@ class AIPipelines:
 
             print(f"[AI Assembler] AI Selected -> L:{L}, W:{W}, Wall_S:{wall_s}, WWR_S:{wwr_s}, Door_S:{door_s}, HVAC:{hvac_type}")
 
-            # 6. Extract material blocks from Datasets
-            # 6. Extract material blocks from Datasets
+            # 6. Extract material blocks from idf_library
+            # 6. Extract material blocks from idf_library
             default_wall = "Composite 2x4 Wood Stud R11"
             default_win = "Theoretical Glass [167]"
             for constr in [global_wall, wall_s, wall_n, wall_e, wall_w, roof_name]:
