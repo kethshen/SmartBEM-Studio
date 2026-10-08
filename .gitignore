@@ -7,11 +7,10 @@ backend_server/secrets.json
 backend_server/serviceAccountKey.json
 
 # ==============================================================
-# 2. LOCAL-ONLY FOLDERS AND FILES (move out of the repo in the cleanup)
+# 2. LOCAL-ONLY FOLDERS (kept here, never committed)
 # ==============================================================
 No_commit_to_git/
-my_site_prototype/
-Apply for instructor.zip
+explainer-web/
 
 # ==============================================================
 # 3. BACKEND RUNTIME OUTPUT (Colab / local runs)
