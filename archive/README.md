@@ -16,10 +16,10 @@ they hold the report, published papers and personal notes.
 
 | Folder | What it is |
 |---|---|
-| `fyp-submission/` | Final year project report (LaTeX), poster files and the submitted PDFs |
+| `fyp_submission/` | Final year project report (LaTeX), poster files and the submitted PDFs |
 | `Research/` | Literature collected during the FYP, literature-review drafts, proposal and mid-evaluation slides |
 | `docs/` | Evaluation material (ES73, ES81) and earlier explanation notes |
-| `EKF-notes/` | EKF plans, meeting prep and progress notes |
+| `EKF_notes/` | EKF plans, meeting prep and progress notes |
 | `Obsidian/` | Notes from the FYP's Obsidian vault |
 
 The FYP as submitted is tagged in git as `fyp-final`.

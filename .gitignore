@@ -14,9 +14,9 @@ explainer-web/
 # Archived FYP material kept on this laptop only (papers, notes, report)
 archive/Research/
 archive/docs/
-archive/EKF-notes/
+archive/EKF_notes/
 archive/Obsidian/
-archive/fyp-submission/
+archive/fyp_submission/
 
 # ==============================================================
 # 3. BACKEND RUNTIME OUTPUT (Colab / local runs)
