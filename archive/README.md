@@ -8,9 +8,21 @@ is maintained.
 |---|---|---|
 | `EKF/` | Extended Kalman Filter work: ROBOD and test-rig estimators, datasets, notes | `EKF/` (repo root) |
 | `Experimental_Rig_Calibration/` | Test-rig calibration runs v1–v5, sensor readings, scripts, photos and CAD | `Experimental_Rig_Calibration/` (repo root) |
-| `fyp-submission/` | Final year project report (LaTeX in `report/`), poster files in `poster/`, and the submitted PDFs `E20028_ES71.pdf` and `E20028_ES83.pdf` | `Final Demo/` |
 
-The whole FYP as submitted is also tagged in git as `fyp-final`.
+## Local only (git-ignored)
+
+These folders sit here on the author's laptop but are not in the repository:
+they hold the report, published papers and personal notes.
+
+| Folder | What it is |
+|---|---|
+| `fyp-submission/` | Final year project report (LaTeX), poster files and the submitted PDFs |
+| `Research/` | Literature collected during the FYP, literature-review drafts, proposal and mid-evaluation slides |
+| `docs/` | Evaluation material (ES73, ES81) and earlier explanation notes |
+| `EKF-notes/` | EKF plans, meeting prep and progress notes |
+| `Obsidian/` | Notes from the FYP's Obsidian vault |
+
+The FYP as submitted is tagged in git as `fyp-final`.
 
 ## Code that still points at the old locations
 

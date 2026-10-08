@@ -9,8 +9,14 @@ backend_server/serviceAccountKey.json
 # ==============================================================
 # 2. LOCAL-ONLY FOLDERS (kept here, never committed)
 # ==============================================================
-No_commit_to_git/
 explainer-web/
+
+# Archived FYP material kept on this laptop only (papers, notes, report)
+archive/Research/
+archive/docs/
+archive/EKF-notes/
+archive/Obsidian/
+archive/fyp-submission/
 
 # ==============================================================
 # 3. BACKEND RUNTIME OUTPUT (Colab / local runs)
