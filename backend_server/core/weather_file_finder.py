@@ -6,6 +6,28 @@ import os
 import urllib.request
 
 
+def _fetch_ddy(epw_url, epw_local_path):
+    """Download the design-day file (.ddy) that sits next to the EPW in the EnergyPlus weather library.
+    Used by core/site_from_weather.py for the design days (flaw A7). A failure only means the template's design days stay."""
+    ddy_path = os.path.splitext(epw_local_path)[0] + ".ddy"
+    if os.path.exists(ddy_path) and os.path.getsize(ddy_path) > 100:
+        return ddy_path
+    ddy_url = epw_url[:-4] + ".ddy" if epw_url.lower().endswith(".epw") else None
+    if not ddy_url:
+        return None
+    try:
+        req = urllib.request.Request(ddy_url, headers={"User-Agent": "SmartBEM-Studio/1.0"})
+        with urllib.request.urlopen(req, timeout=60) as resp:
+            data = resp.read()
+        with open(ddy_path, "wb") as f:
+            f.write(data)
+        print(f"[Weather] Downloaded design days -> {ddy_path}")
+        return ddy_path
+    except Exception as e:
+        print(f"[Weather] WARNING: no .ddy for this EPW ({e}); design days stay as in the template")
+        return None
+
+
 def resolve_epw(sim_settings, firebase_bucket=None, cache_dir="weather"):
     """
     Resolves the EPW file path for a simulation job.
@@ -33,6 +55,7 @@ def resolve_epw(sim_settings, firebase_bucket=None, cache_dir="weather"):
         # Cache: skip download if already exists
         if os.path.exists(local_path) and os.path.getsize(local_path) > 1000:
             print(f"[Weather] Using cached: {local_path}")
+            _fetch_ddy(epw_url, local_path)
             return local_path
         
         print(f"[Weather] Downloading from S3: {filename}...")
@@ -43,6 +66,7 @@ def resolve_epw(sim_settings, firebase_bucket=None, cache_dir="weather"):
             with open(local_path, "wb") as f:
                 f.write(data)
             print(f"[Weather] Downloaded {len(data)/1024:.1f} KB -> {local_path}")
+            _fetch_ddy(epw_url, local_path)
             return local_path
         except Exception as e:
             print(f"[Weather] S3 download failed: {e}")

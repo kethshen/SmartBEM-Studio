@@ -49,6 +49,11 @@ def run_simulation_job(job_id, idf_path, epw_path, config=None, output_dir_base=
 
     _idf_text = _pl.Path(idf_path).read_text(encoding="utf-8", errors="ignore")
 
+    # Site:Location and design days from the chosen weather file, not the template's Chicago (flaw A7)
+    from core.site_from_weather import apply_site
+    _idf_text, site_info = apply_site(_idf_text, epw_path)
+    print(f"[{job_id}] Site: {site_info['location']}; design days: {site_info['design_days']}")
+
     # [NEW] Inject Custom Materials if provided in config
     custom_materials = config.get("custom_materials", [])
     if custom_materials:
@@ -529,7 +534,7 @@ def run_simulation_job(job_id, idf_path, epw_path, config=None, output_dir_base=
         print(f"[{job_id}] SQL file does not exist at all!")
 
     # 7. Extract Results (Data Mining)
-    results = {}
+    results = {"site": site_info}
     sql_path = os.path.join(run_dir, "eplusout.sql")
     if not os.path.exists(sql_path):
         err_path = os.path.join(run_dir, "eplusout.err")
