@@ -252,15 +252,21 @@ function submitDescription() {
       epw_url: document.getElementById("weatherEpwUrl") ? document.getElementById("weatherEpwUrl").value : "",
       model_type: document.getElementById("aiModel") ? document.getElementById("aiModel").value : "ollama",
       generator_type: document.getElementById("generatorType") ? document.getElementById("generatorType").value : "custom",
-      custom_materials: window.customMaterials || [],
-      calibration_overrides: {
-        chamber_inf_ach: document.getElementById("calibChamberInfil") ? parseFloat(document.getElementById("calibChamberInfil").value) : 0.1,
-        hanger_inf_ach: document.getElementById("calibHangerInfil") ? parseFloat(document.getElementById("calibHangerInfil").value) : 0.5,
-        equipment_watts: document.getElementById("calibEquipGains") ? parseFloat(document.getElementById("calibEquipGains").value) : 0.0,
-        ground_h_g: document.getElementById("calibGroundHG") ? parseFloat(document.getElementById("calibGroundHG").value) : 1.5
-      }
+      custom_materials: window.customMaterials || []
     }
   };
+
+  // Rig calibration values are sent only when asked for: the simulator patches every
+  // concrete/floor/slab material with ground_h_g, which is wrong for any other building.
+  const calibApply = document.getElementById("calibApply");
+  if (calibApply && calibApply.checked) {
+    payload.settings.calibration_overrides = {
+      chamber_inf_ach: document.getElementById("calibChamberInfil") ? parseFloat(document.getElementById("calibChamberInfil").value) : 0.1,
+      hanger_inf_ach: document.getElementById("calibHangerInfil") ? parseFloat(document.getElementById("calibHangerInfil").value) : 0.5,
+      equipment_watts: document.getElementById("calibEquipGains") ? parseFloat(document.getElementById("calibEquipGains").value) : 0.0,
+      ground_h_g: document.getElementById("calibGroundHG") ? parseFloat(document.getElementById("calibGroundHG").value) : 1.5
+    };
+  }
 
   fetch(`${backendUrl}/api/simulate`, {
     method: 'POST',
