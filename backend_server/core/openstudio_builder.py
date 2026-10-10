@@ -150,14 +150,10 @@ def build_openstudio_model(params: dict) -> openstudio.model.Model:
             else:
                 flat_layers.append(layer)
 
-        # Map "Theoretical Glass [167]" to "Dbl Clr 3mm/13mm Air"
-        mapped_layers = []
-        for l in flat_layers:
-            if l == "Theoretical Glass [167]":
-                mapped_layers.append("Dbl Clr 3mm/13mm Air")
-            else:
-                mapped_layers.append(l)
-        flat_layers = mapped_layers
+        # "Theoretical Glass [167]" is the default window in both builders: simple glazing with the requested
+        # window_u_factor / window_shgc (Base.idf's "Simple Window Glass"). It used to be swapped for fixed double glazing.
+        if flat_layers == ["Theoretical Glass [167]"]:
+            return simple_window_construction()
 
         if not flat_layers:
             if fallback_name:
@@ -205,9 +201,23 @@ def build_openstudio_model(params: dict) -> openstudio.model.Model:
                 return get_or_create_construction(fallback_name)
             return None
 
+    def simple_window_construction():
+        existing = model.getConstructionByName("Theoretical Glass [167]")
+        if existing.is_initialized():
+            return existing.get()
+        glass = openstudio.model.SimpleGlazing(model)
+        glass.setName("Simple Window Glass")
+        glass.setUFactor(float(params.get("window_u_factor", 3.0)))
+        glass.setSolarHeatGainCoefficient(float(params.get("window_shgc", 0.5)))
+        glass.setVisibleTransmittance(0.5)
+        constr = openstudio.model.Construction(model)
+        constr.setName("Theoretical Glass [167]")
+        constr.setLayers([glass])
+        return constr
+
     wall_default = get_or_create_construction(params.get("wall_layers", "Composite 2x4 Wood Stud R11"), "Composite 2x4 Wood Stud R11")
     roof_default = get_or_create_construction(params.get("roof_layers", "Composite 2x4 Wood Stud R11"), "Composite 2x4 Wood Stud R11")
-    window_default = get_or_create_construction(params.get("window_layers", "Dbl Clr 3mm/13mm Air"), "Dbl Clr 3mm/13mm Air")
+    window_default = get_or_create_construction(params.get("window_layers") or "Theoretical Glass [167]", "Theoretical Glass [167]")
     floor_default = get_or_create_construction(params.get("floor_layers", "Composite 2x4 Wood Stud R11"), "Composite 2x4 Wood Stud R11")
 
     construction_set = openstudio.model.DefaultConstructionSet(model)
@@ -442,7 +452,7 @@ def build_openstudio_model(params: dict) -> openstudio.model.Model:
                 surf_floor.setConstruction(z_floor_constr_obj)
                 print(f"[OpenStudio Builder] Zone '{name}': Applied floor construction '{z_floor_layers}'")
 
-        z_window_constr = get_or_create_construction(z.get("window_layers"), "Dbl Clr 3mm/13mm Air") if z.get("window_layers") else window_default
+        z_window_constr = get_or_create_construction(z.get("window_layers"), "Theoretical Glass [167]") if z.get("window_layers") else window_default
         z_wall_constr = get_or_create_construction(z.get("wall_layers"), "Composite 2x4 Wood Stud R11") if z.get("wall_layers") else wall_default
 
         # Apply subsurfaces (WWR or precise Windows/Doors)
@@ -664,6 +674,34 @@ def build_openstudio_model(params: dict) -> openstudio.model.Model:
                         sub_surf.setAdjacentSubSurface(new_sub)
                         print(f"[OpenStudio Builder] Mirrored subsurface {sub_surf.nameString()} to adjacent surface {adj_surf.nameString()} as {new_sub.nameString()}")
 
+    # 5.6 Shared walls and doors get the custom builder's constructions (coordinates_calculator.py), so both
+    #     builders model the same building: a light interior partition between rooms (not the insulated exterior
+    #     wall), an interior door in it, and the generic exterior door.
+    def one_layer(name, mat_name, thick, k, rho, cp, sol):
+        existing = model.getConstructionByName(name)
+        if existing.is_initialized():
+            return existing.get()
+        mat = openstudio.model.StandardOpaqueMaterial(model, "MediumSmooth", thick, k, rho, cp)
+        mat.setName(mat_name)
+        mat.setThermalAbsorptance(0.9)
+        mat.setSolarAbsorptance(sol)
+        mat.setVisibleAbsorptance(sol)
+        c = openstudio.model.Construction(model)
+        c.setName(name)
+        c.setLayers([mat])
+        return c
+
+    partition = one_layer("Interior_Partition", "Interior_Partition_Material", 0.1, 0.5, 1000.0, 1000.0, 0.7)
+    interior_door = one_layer("Interior_Door_Constr", "Interior_Door_Material", 0.045, 0.15, 600.0, 1000.0, 0.6)
+    exterior_door = one_layer("Generic_Door_Constr", "Generic_Door_Material", 0.05, 0.15, 600.0, 1000.0, 0.7)
+    for surf in model.getSurfaces():
+        shared = surf.outsideBoundaryCondition() == "Surface"
+        if shared and surf.surfaceType() == "Wall":
+            surf.setConstruction(partition)
+        for sub in surf.subSurfaces():
+            if sub.subSurfaceType() == "Door":
+                sub.setConstruction(interior_door if shared else exterior_door)
+
     # 6. Apply Internal Loads & Schedules
     def make_ruleset_schedule(name, val_off, val_on, wd_s, wd_e, we_s, we_e):
         sch = openstudio.model.ScheduleRuleset(model)
@@ -693,6 +731,7 @@ def build_openstudio_model(params: dict) -> openstudio.model.Model:
             day_sch.addValue(openstudio.Time(0, we_e, 0, 0), val_on)
         if we_e < 24:
             day_sch.addValue(openstudio.Time(0, 24, 0, 0), val_off)
+        sch.setHolidaySchedule(day_sch)   # holidays follow the weekend, as in the custom builder
 
         return sch
 
@@ -733,6 +772,9 @@ def build_openstudio_model(params: dict) -> openstudio.model.Model:
         light_def = openstudio.model.LightsDefinition(model)
         light_def.setName(f"{z['name']}_LightsDef")
         light_def.setWattsperSpaceFloorArea(float(z.get("light_density", 10.0)))
+        light_def.setReturnAirFraction(0.0)      # same split as the custom builder's Lights (A8)
+        light_def.setFractionRadiant(0.42)
+        light_def.setFractionVisible(0.18)
         light_inst = openstudio.model.Lights(light_def)
         light_inst.setName(f"{z['name']}_Lights")
         light_inst.setSpace(space)
@@ -742,6 +784,9 @@ def build_openstudio_model(params: dict) -> openstudio.model.Model:
         equip_def = openstudio.model.ElectricEquipmentDefinition(model)
         equip_def.setName(f"{z['name']}_EquipDef")
         equip_def.setWattsperSpaceFloorArea(float(z.get("equipment_density", 10.0)))
+        equip_def.setFractionLatent(0.0)         # same split as the custom builder's ElectricEquipment (A8)
+        equip_def.setFractionRadiant(0.3)
+        equip_def.setFractionLost(0.0)
         equip_inst = openstudio.model.ElectricEquipment(equip_def)
         equip_inst.setName(f"{z['name']}_Equip")
         equip_inst.setSpace(space)
@@ -755,89 +800,16 @@ def build_openstudio_model(params: dict) -> openstudio.model.Model:
             infil.setSpace(space)
             infil.setAirChangesperHour(infil_ach)
 
-        # Ventilation
-        vent_ach = float(z.get("ventilation_ach", 0.5))
-        if vent_ach > 0:
-            oa = openstudio.model.DesignSpecificationOutdoorAir(model)
-            oa.setName(f"{z['name']}_OutdoorAir")
-            oa.setOutdoorAirFlowRateFractionSchedule(sch_occ)
-            space.setDesignSpecificationOutdoorAir(oa)
+        # Ventilation and HVAC are added to the IDF in build_idf_from_params, from the templates shared with
+        # the custom builder (core/hvac_templates.py), so both builders give the same equipment and outdoor air.
 
-    # 7. Apply HVAC Systems
+    # 7. Stand-in equipment. OpenStudio writes a zone's thermostat (and its setpoint schedules) only when the
+    #    zone has equipment. Each zone gets an ideal loads unit here; build_idf_from_params removes it and adds
+    #    the zone's real HVAC from the templates shared with the custom builder.
     for z in zones:
-        space = space_objs[z["name"]]
-        thermal_zone = space.thermalZone().get()
-        hvac_type = z.get("hvac_type", "ideal_loads").lower()
-
-        if hvac_type == "ideal_loads":
-            ideal_loads = openstudio.model.ZoneHVACIdealLoadsAirSystem(model)
-            ideal_loads.setName(f"{z['name']}_IdealLoads")
-            ideal_loads.addToThermalZone(thermal_zone)
-            print(f"[OpenStudio Builder] Assigned Ideal Air Loads to {z['name']}")
-        elif hvac_type == "ptac":
-            fan = openstudio.model.FanConstantVolume(model)
-            heating_coil = openstudio.model.CoilHeatingElectric(model)
-            cooling_coil = openstudio.model.CoilCoolingDXSingleSpeed(model)
-            ptac = openstudio.model.ZoneHVACPackagedTerminalAirConditioner(
-                model,
-                model.alwaysOnDiscreteSchedule(),
-                fan,
-                heating_coil,
-                cooling_coil
-            )
-            ptac.setName(f"{z['name']}_PTAC")
-            ptac.addToThermalZone(thermal_zone)
-            print(f"[OpenStudio Builder] Assigned PTAC system to {z['name']}")
-        elif hvac_type == "psz_ac":
-            # Instantiate PTHP (Packaged Terminal Heat Pump) as single zone packaged AC
-            try:
-                fan = openstudio.model.FanConstantVolume(model)
-                cooling_coil = openstudio.model.CoilCoolingDXSingleSpeed(model)
-                heating_coil_dx = openstudio.model.CoilHeatingDXSingleSpeed(model)
-                supp_heating_coil = openstudio.model.CoilHeatingElectric(model)
-                pthp = openstudio.model.ZoneHVACPackagedTerminalHeatPump(
-                    model,
-                    model.alwaysOnDiscreteSchedule(),
-                    fan,
-                    heating_coil_dx,
-                    cooling_coil,
-                    supp_heating_coil
-                )
-            except Exception as e:
-                print(f"[OpenStudio Builder] PTHP compound constructor failed: {e}. Falling back to default pthp.")
-                pthp = openstudio.model.ZoneHVACPackagedTerminalHeatPump(model)
-
-            pthp.setName(f"{z['name']}_PSZ_AC")
-            pthp.addToThermalZone(thermal_zone)
-            print(f"[OpenStudio Builder] Assigned PSZ-AC (PTHP) system to {z['name']}")
-        elif hvac_type == "split_ac":
-            # Split AC / Mini-split: PTAC with cycling fan (FanOnOff) for realistic on/off compressor behavior.
-            # Uses DX cooling + optional electric strip heater (common in tropical buildings where heating is rarely needed).
-            try:
-                fan = openstudio.model.FanOnOff(model)
-                cooling_coil = openstudio.model.CoilCoolingDXSingleSpeed(model)
-                heating_coil = openstudio.model.CoilHeatingElectric(model)  # Minimal electric strip heater
-                split_ac = openstudio.model.ZoneHVACPackagedTerminalAirConditioner(
-                    model,
-                    model.alwaysOnDiscreteSchedule(),
-                    fan,
-                    heating_coil,
-                    cooling_coil
-                )
-                split_ac.setName(f"{z['name']}_SplitAC")
-                split_ac.addToThermalZone(thermal_zone)
-                print(f"[OpenStudio Builder] Assigned Split AC (mini-split) system to {z['name']}")
-            except Exception as e:
-                print(f"[OpenStudio Builder] Split AC constructor failed: {e}. Falling back to ideal_loads.")
-                ideal_loads = openstudio.model.ZoneHVACIdealLoadsAirSystem(model)
-                ideal_loads.setName(f"{z['name']}_IdealLoads_Fallback")
-                ideal_loads.addToThermalZone(thermal_zone)
-        else:
-            # Unknown hvac_type: fall back to Ideal Air Loads
-            print(f"[OpenStudio Builder] Unknown hvac_type '{hvac_type}' for zone '{z['name']}', falling back to ideal_loads.")
-            ideal_loads = openstudio.model.ZoneHVACIdealLoadsAirSystem(model)
-            ideal_loads.setName(f"{z['name']}_IdealLoads_Fallback")
-            ideal_loads.addToThermalZone(thermal_zone)
+        stand_in = openstudio.model.ZoneHVACIdealLoadsAirSystem(model)
+        stand_in.setName(f"{z['name']}_StandIn")
+        stand_in.addToThermalZone(space_objs[z["name"]].thermalZone().get())
 
     # 8. Sizing Calculations & Simulation Control Setup
     sim_control = model.getSimulationControl()
@@ -847,6 +819,14 @@ def build_openstudio_model(params: dict) -> openstudio.model.Model:
 
     print("[OpenStudio Builder] Model build complete!")
     return model
+
+def _remove_objects(idf_str, cls):
+    """Remove every object of class cls. An object starts where the class name is alone on its line;
+    a field that only names the class (e.g. 'ZoneHVAC:IdealLoadsAirSystem,  !- Zone Equipment 1 Object Type'
+    inside an equipment list) has a comment after the comma and is left alone."""
+    pattern = r'(?ims)^[ \t]*' + re.escape(cls) + r'[ \t]*,[ \t]*\r?\n.*?;[^\n]*\n?'
+    return re.sub(pattern, '', idf_str)
+
 
 def build_idf_from_params(params: dict) -> str:
     """
@@ -865,11 +845,14 @@ def build_idf_from_params(params: dict) -> str:
         "Site:Location",
         "SizingPeriod:DesignDay",
         "Site:GroundTemperature:BuildingSurface",
-        "GlobalGeometryRules"
+        "GlobalGeometryRules",
+        # same simulation settings as the custom builder (A8): terrain, solar distribution, warm-up, timestep
+        "Building",
+        "Timestep",
+        "RunPeriod"
     ]
     for cls in classes_to_clean:
-        pattern = r'(?is)(?:\r?\n|^)\s*' + re.escape(cls) + r'\s*,.*?;'
-        idf_str = re.sub(pattern, '', idf_str)
+        idf_str = _remove_objects(idf_str, cls)
 
     # 2. Extract sizing/environment objects from idf_templates/Base.idf
     base_idf_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "idf_templates", "Base.idf")
@@ -888,37 +871,27 @@ def build_idf_from_params(params: dict) -> str:
         except Exception as e:
             print(f"[OpenStudio Builder] Error reading/extracting from Base.idf: {e}")
 
-    # 3. Create Sizing:Zone objects for each zone in the model
+    # 3. Outdoor air and HVAC per zone, from the templates shared with the custom builder (flaw A8).
+    #    The templates bring their own Sizing:Zone where the equipment needs one, as in the custom builder.
+    from core.hvac_templates import hvac_block, oa_spec_block
     is_multizone = params.get("is_multizone", False)
     if not is_multizone:
-        zones = [{"name": "ZONE ONE", "ventilation_ach": params.get("ventilation_ach", 0.5)}]
+        zones = [{"name": "ZONE ONE", "ventilation_ach": params.get("ventilation_ach", 0.5), "hvac_type": params.get("hvac_type")}]
     else:
         zones = params.get("zones", [])
 
-    sizing_zone_blocks = []
+    # remove the stand-in equipment (see build_openstudio_model, step 7): the templates bring their own
+    # equipment, connections and, where needed, Sizing:Zone
+    for cls in ["ZoneHVAC:IdealLoadsAirSystem", "ZoneHVAC:EquipmentList", "ZoneHVAC:EquipmentConnections", "Sizing:Zone"]:
+        idf_str = _remove_objects(idf_str, cls)
+    hvac_blocks = []
     for z in zones:
         zone_name = f"{z['name']}_ThermalZone"
-        vent_ach = float(z.get("ventilation_ach", 0.5))
-        oa_spec_name = f"{z['name']}_OutdoorAir" if vent_ach > 0 else ""
-        
-        sizing_zone_block = f"""
-  Sizing:Zone,
-    {zone_name},             !- Zone or ZoneList Name
-    SupplyAirTemperature,    !- Zone Cooling Design Supply Air Temperature Input Method
-    12.,                     !- Zone Cooling Design Supply Air Temperature {{C}}
-    ,                        !- Zone Cooling Design Supply Air Temperature Difference {{deltaC}}
-    SupplyAirTemperature,    !- Zone Heating Design Supply Air Temperature Input Method
-    50.,                     !- Zone Heating Design Supply Air Temperature {{C}}
-    ,                        !- Zone Heating Design Supply Air Temperature Difference {{deltaC}}
-    0.008,                   !- Zone Cooling Design Supply Air Humidity Ratio {{kgWater/kgDryAir}}
-    0.008,                   !- Zone Heating Design Supply Air Humidity Ratio {{kgWater/kgDryAir}}
-    {oa_spec_name},          !- Design Specification Outdoor Air Object Name
-    1.2,                     !- Zone Heating Sizing Factor
-    1.2;                     !- Zone Cooling Sizing Factor
-"""
-        sizing_zone_blocks.append(sizing_zone_block)
-
-    sizing_zone_blocks_str = "\n\n".join(sizing_zone_blocks)
+        oa_name = f"{z['name']}_OutdoorAir"
+        vent_ach = z.get("ventilation_ach") if z.get("ventilation_ach") is not None else params.get("ventilation_ach", 0.5)
+        hvac_type = z.get("hvac_type") or params.get("hvac_type") or "ideal_loads"
+        hvac_blocks.append(oa_spec_block(oa_name, vent_ach) + hvac_block(hvac_type, zone_name, oa_name))
+    sizing_zone_blocks_str = "\n\n".join(hvac_blocks)
 
     # 4. Append injected blocks to translated IDF
     idf_str = idf_str.rstrip() + "\n\n! === Sizing and Simulation Control Setup (Injected from Base.idf) ===\n\n"

@@ -5,7 +5,9 @@ C north), windows, window U/SHGC, ventilation and infiltration ACH, gains and on
 EnergyPlus the same way (design days, same outputs). The table is read from the .eio and the results, so it
 shows what the simulation used, not what the code meant.
 Needs the openstudio Python package.
-Usage (from backend_server/):  python3 tests/compare_builders.py [hvac_type] [path/to/energyplus]
+Usage (from backend_server/):  python3 tests/compare_builders.py [hvac_type] [path/to/energyplus] [--pipeline [--single]]
+  --pipeline  build through AIPipelines.generate_idf_from_text with fixed AI answers (the real job route)
+  --single    with --pipeline: one zone, the single-zone path
 """
 import csv, os, re, subprocess, sys, tempfile
 
@@ -51,7 +53,26 @@ OUTPUTS = """
 """
 
 
+def build_via_pipeline(kind, hvac, multizone):
+    """The real text-to-IDF route (AIPipelines.generate_idf_from_text) with the three AI calls replaced by
+    fixed answers, so the single-zone path and the builder switch are tested too."""
+    import json
+    p = params(hvac)
+    zones = p["zones"] if multizone else [dict(p["zones"][0], name="ZONE ONE")]
+    topo = {k: v for k, v in p.items() if k != "zones"}
+    topo["is_multizone"] = multizone
+    topo["zones"] = [{k: z[k] for k in ("name", "length", "width", "height", "relative_to", "direction") if k in z} for z in zones]
+    details = {z["name"]: {k: v for k, v in z.items() if k not in ("name", "relative_to", "direction")} for z in zones}
+    ai = AIPipelines(secrets_path="/nonexistent", template_path="idf_templates/Base.idf")
+    ai._generate_search_keywords = lambda text, model_type: []
+    ai._extract_topology = lambda text, config, model_type: json.dumps(topo)
+    ai._extract_zone_details = lambda text, name, *a, **k: json.dumps(details[name])
+    return ai.generate_idf_from_text("[GLOBAL SETTINGS] fixed test building", {"generator_type": kind}, model_type="ollama")
+
+
 def build(kind, hvac):
+    if PIPELINE:
+        return build_via_pipeline(kind, hvac, MULTIZONE)
     p = params(hvac)
     if kind == "custom":
         ai = AIPipelines(secrets_path="/nonexistent", template_path="idf_templates/Base.idf")
@@ -139,9 +160,14 @@ def summary(work, idf):
     return out
 
 
+PIPELINE = "--pipeline" in sys.argv          # go through generate_idf_from_text (fake AI answers)
+MULTIZONE = "--single" not in sys.argv       # with --pipeline: --single tests the one-zone path
+
+
 def main():
-    hvac = sys.argv[1] if len(sys.argv) > 1 else "ideal_loads"
-    eplus = sys.argv[2] if len(sys.argv) > 2 else "/usr/local/EnergyPlus-25-1-0/energyplus"
+    args = [a for a in sys.argv[1:] if not a.startswith("--")]
+    hvac = args[0] if args else "ideal_loads"
+    eplus = args[1] if len(args) > 1 else "/usr/local/EnergyPlus-25-1-0/energyplus"
     res = {}
     for kind in ["custom", "openstudio"]:
         idf = build(kind, hvac)
@@ -155,6 +181,30 @@ def main():
         a, b = str(res["custom"].get(k, "-")), str(res["openstudio"].get(k, "-"))
         print(f"{k:38} {a:42} {b}{'' if a == b else '   ≠'}")
 
+    # verdict: same building inputs exactly; results within a small tolerance
+    def num(k, kind):
+        try:
+            return float(res[kind].get(k, "nan"))
+        except ValueError:
+            return float("nan")
+    exact = [k for k in keys if any(w in k for w in ["floor m²", "window area", "people /", "infiltration", "glazing", "HVAC objects", "severe", "exit"])]
+    problems = [k for k in exact if res["custom"].get(k) != res["openstudio"].get(k)]
+    a, b = num("mech. ventilation ACH (mean)", "custom"), num("mech. ventilation ACH (mean)", "openstudio")
+    if not abs(a - b) <= 0.05:
+        problems.append("mech. ventilation ACH (mean)")
+    for k in ["zone cooling, design days (kWh)", "zone heating, design days (kWh)", "facility electricity (kWh)"]:
+        a, b = num(k, "custom"), num(k, "openstudio")
+        if not abs(a - b) <= 0.02 * max(abs(a), abs(b), 1.0):
+            problems.append(k)
+    # and it must be the equipment that was asked for (both builders agreeing on the wrong one once hid a bug)
+    expected = {"ideal_loads": "IdealLoadsAirSystem", "ptac": "PackagedTerminalAirConditioner",
+                "split_ac": "PackagedTerminalAirConditioner", "psz_ac": "AirLoopHVAC"}[hvac]
+    for kind in ["custom", "openstudio"]:
+        if expected not in res[kind].get("HVAC objects", ""):
+            problems.append(f"{kind} has no {expected} for hvac_type={hvac}")
+    print("RESULT:", "the builders make the same building (results within 2 %)" if not problems else "they differ in: " + ", ".join(problems))
+    return 0 if not problems else 1
+
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
