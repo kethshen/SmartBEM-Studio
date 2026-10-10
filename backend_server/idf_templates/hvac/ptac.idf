@@ -9,11 +9,6 @@
 
 ! --- Sizing ---
 
-  Sizing:Parameters,
-    1.2,                     !- Heating Sizing Factor
-    1.2,                     !- Cooling Sizing Factor
-    ;                        !- Timesteps in Averaging Window
-
   Sizing:Zone,
     {ZONE_NAME},             !- Zone or ZoneList Name
     SupplyAirTemperature,    !- Zone Cooling Design Supply Air Temperature Input Method
@@ -24,16 +19,9 @@
     ,                        !- Zone Heating Design Supply Air Temperature Difference {deltaC}
     0.008,                   !- Zone Cooling Design Supply Air Humidity Ratio {kgWater/kgDryAir}
     0.008,                   !- Zone Heating Design Supply Air Humidity Ratio {kgWater/kgDryAir}
-    PTAC OA Spec,            !- Design Specification Outdoor Air Object Name
+    {OA_SPEC},               !- Design Specification Outdoor Air Object Name (the zone's ventilation ACH)
     0.0,                     !- Zone Heating Sizing Factor
     0.0;                     !- Zone Cooling Sizing Factor
-
-  DesignSpecification:OutdoorAir,
-    PTAC OA Spec,            !- Name
-    flow/person,             !- Outdoor Air Method
-    0.00944,                 !- Outdoor Air Flow per Person {m3/s-person}
-    0.0,                     !- Outdoor Air Flow per Zone Floor Area {m3/s-m2}
-    0.0;                     !- Outdoor Air Flow per Zone {m3/s}
 
 ! --- Zone Equipment Connections ---
 
@@ -66,22 +54,22 @@
 ! --- PTAC Unit ---
 
   Schedule:Compact,
-    PTAC Avail Schedule,     !- Name
+    {ZONE_NAME} PTAC Avail Schedule,     !- Name
     Any Number,              !- Schedule Type Limits Name
     Through: 12/31,          !- Field 1
     For: AllDays,            !- Field 2
     Until: 24:00,1.0;        !- Field 3
 
   Schedule:Compact,
-    PTAC Fan Continuous,     !- Name
+    {ZONE_NAME} PTAC Fan Mode,  !- Name ({FAN_MODE}: 1 = fan runs continuously (ptac), 0 = fan cycles with the compressor (split_ac))
     Any Number,              !- Schedule Type Limits Name
     Through: 12/31,          !- Field 1
     For: AllDays,            !- Field 2
-    Until: 24:00,0.0;        !- Field 3
+    Until: 24:00,{FAN_MODE};  !- Field 3
 
   ZoneHVAC:PackagedTerminalAirConditioner,
     {ZONE_NAME} PTAC Unit,   !- Name
-    PTAC Avail Schedule,     !- Availability Schedule Name
+    {ZONE_NAME} PTAC Avail Schedule,     !- Availability Schedule Name
     {ZONE_NAME} PTAC Air Inlet,  !- Air Inlet Node Name
     {ZONE_NAME} PTAC Air Outlet,  !- Air Outlet Node Name
     OutdoorAir:Mixer,        !- Outdoor Air Mixer Object Type
@@ -100,7 +88,7 @@
     Coil:Cooling:DX:SingleSpeed,  !- Cooling Coil Object Type
     {ZONE_NAME} PTAC DX Cool Coil,  !- Cooling Coil Name
     BlowThrough,             !- Fan Placement
-    PTAC Fan Continuous;     !- Supply Air Fan Operating Mode Schedule Name
+    {ZONE_NAME} PTAC Fan Mode;  !- Supply Air Fan Operating Mode Schedule Name
 
 ! --- Outdoor Air Mixer ---
 
@@ -118,7 +106,7 @@
 
   Fan:SystemModel,
     {ZONE_NAME} PTAC Fan,    !- Name
-    PTAC Avail Schedule,     !- Availability Schedule Name
+    {ZONE_NAME} PTAC Avail Schedule,     !- Availability Schedule Name
     {ZONE_NAME} PTAC OA Mixer Outlet,  !- Air Inlet Node Name
     {ZONE_NAME} PTAC Fan Outlet,  !- Air Outlet Node Name
     autosize,                !- Design Maximum Air Flow Rate {m3/s}
@@ -137,7 +125,7 @@
 
   Coil:Cooling:DX:SingleSpeed,
     {ZONE_NAME} PTAC DX Cool Coil,  !- Name
-    PTAC Avail Schedule,     !- Availability Schedule Name
+    {ZONE_NAME} PTAC Avail Schedule,     !- Availability Schedule Name
     autosize,                !- Gross Rated Total Cooling Capacity {W}
     autosize,                !- Gross Rated Sensible Heat Ratio
     3.0,                     !- Gross Rated Cooling COP {W/W}
@@ -146,11 +134,11 @@
     934.4,                   !- 2023 Rated Evaporator Fan Power Per Volume Flow Rate {W/(m3/s)}
     {ZONE_NAME} PTAC Fan Outlet,  !- Air Inlet Node Name
     {ZONE_NAME} PTAC Cool Coil Outlet,  !- Air Outlet Node Name
-    PTAC Cool Cap FT,        !- Total Cooling Capacity Function of Temperature Curve Name
-    PTAC Cool Cap FFF,       !- Total Cooling Capacity Function of Flow Fraction Curve Name
-    PTAC Cool EIR FT,        !- Energy Input Ratio Function of Temperature Curve Name
-    PTAC Cool EIR FFF,       !- Energy Input Ratio Function of Flow Fraction Curve Name
-    PTAC Cool PLF,           !- Part Load Fraction Correlation Curve Name
+    {ZONE_NAME} PTAC Cool Cap FT,        !- Total Cooling Capacity Function of Temperature Curve Name
+    {ZONE_NAME} PTAC Cool Cap FFF,       !- Total Cooling Capacity Function of Flow Fraction Curve Name
+    {ZONE_NAME} PTAC Cool EIR FT,        !- Energy Input Ratio Function of Temperature Curve Name
+    {ZONE_NAME} PTAC Cool EIR FFF,       !- Energy Input Ratio Function of Flow Fraction Curve Name
+    {ZONE_NAME} PTAC Cool PLF,           !- Part Load Fraction Correlation Curve Name
     ,                        !- Minimum Outdoor Dry-Bulb Temperature for Compressor Operation {C}
     ,                        !- Nominal Time for Condensate Removal to Begin {s}
     ;                        !- Ratio of Initial Moisture Evaporation Rate and Steady State Latent Capacity {dimensionless}
@@ -159,7 +147,7 @@
 
   Coil:Heating:Electric,
     {ZONE_NAME} PTAC Heater, !- Name
-    PTAC Avail Schedule,     !- Availability Schedule Name
+    {ZONE_NAME} PTAC Avail Schedule,     !- Availability Schedule Name
     1.0,                     !- Efficiency
     autosize,                !- Nominal Capacity {W}
     {ZONE_NAME} PTAC Cool Coil Outlet,  !- Air Inlet Node Name
@@ -168,7 +156,7 @@
 ! --- Performance Curves (from EnergyPlus PTAC Example) ---
 
   Curve:Biquadratic,
-    PTAC Cool Cap FT,        !- Name
+    {ZONE_NAME} PTAC Cool Cap FT,        !- Name
     0.942587793,             !- Coefficient1 Constant
     0.009543347,             !- Coefficient2 x
     0.000683770,             !- Coefficient3 x**2
@@ -186,7 +174,7 @@
     Dimensionless;           !- Output Unit Type
 
   Curve:Biquadratic,
-    PTAC Cool EIR FT,        !- Name
+    {ZONE_NAME} PTAC Cool EIR FT,        !- Name
     0.342414409,             !- Coefficient1 Constant
     0.034885008,             !- Coefficient2 x
     -0.000623700,            !- Coefficient3 x**2
@@ -204,7 +192,7 @@
     Dimensionless;           !- Output Unit Type
 
   Curve:Quadratic,
-    PTAC Cool Cap FFF,       !- Name
+    {ZONE_NAME} PTAC Cool Cap FFF,       !- Name
     0.8,                     !- Coefficient1 Constant
     0.2,                     !- Coefficient2 x
     0.0,                     !- Coefficient3 x**2
@@ -212,7 +200,7 @@
     1.5;                     !- Maximum Value of x
 
   Curve:Quadratic,
-    PTAC Cool EIR FFF,       !- Name
+    {ZONE_NAME} PTAC Cool EIR FFF,       !- Name
     1.1552,                  !- Coefficient1 Constant
     -0.1808,                 !- Coefficient2 x
     0.0256,                  !- Coefficient3 x**2
@@ -220,7 +208,7 @@
     1.5;                     !- Maximum Value of x
 
   Curve:Quadratic,
-    PTAC Cool PLF,           !- Name
+    {ZONE_NAME} PTAC Cool PLF,           !- Name
     0.85,                    !- Coefficient1 Constant
     0.15,                    !- Coefficient2 x
     0.0,                     !- Coefficient3 x**2

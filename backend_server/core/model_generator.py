@@ -203,7 +203,9 @@ class AIPipelines:
                 
                 # 1. Copy all non-subsurface keys from z_details to z
                 # For hvac_type: only override the global value if the zone explicitly specifies one
-                global_hvac = z.get("hvac_type")  # Preserve global hvac_type from topology pass
+                # The topology pass gives hvac_type at the top level (zones only carry an override), so fall back to it;
+                # reading only the zone lost the choice in every single-zone job (both builders ran ideal loads).
+                global_hvac = z.get("hvac_type") or params.get("hvac_type")
                 for key, val in z_details.items():
                     if key != "subsurfaces":
                         z[key] = val
@@ -279,7 +281,8 @@ class AIPipelines:
             if not is_multizone and len(completed_zones) > 0:
                 first_zone = completed_zones[0]
                 for key, val in first_zone.items():
-                    params[key] = val
+                    if val is not None or key not in params:   # an empty zone field must not wipe a global value
+                        params[key] = val
                 params["length"] = first_zone.get("length", params.get("length", 10.0))
                 params["width"] = first_zone.get("width", params.get("width", 10.0))
                 params["height"] = first_zone.get("height", params.get("height", 3.0))
@@ -470,23 +473,10 @@ class AIPipelines:
                 skylight_data=skylight_data
             )
 
-            # 6.5 Load HVAC Template
-            hvac_idf_block = ""
-            hvac_template_dir = os.path.join(os.path.dirname(__file__), "..", "idf_templates", "hvac")
-            hvac_template_path = os.path.join(hvac_template_dir, f"{hvac_type}.idf")
-            if os.path.exists(hvac_template_path):
-                with open(hvac_template_path, "r", encoding="utf-8") as hf:
-                    hvac_idf_block = hf.read()
-                # Replace zone name placeholder in HVAC template
-                hvac_idf_block = hvac_idf_block.replace("{ZONE_NAME}", "ZONE ONE")
-                print(f"[AI Assembler] Loaded HVAC template: {hvac_type}.idf ({len(hvac_idf_block)} chars)")
-            else:
-                print(f"[AI Assembler] WARNING: HVAC template not found at {hvac_template_path}, falling back to ideal_loads")
-                fallback_path = os.path.join(hvac_template_dir, "ideal_loads.idf")
-                if os.path.exists(fallback_path):
-                    with open(fallback_path, "r", encoding="utf-8") as hf:
-                        hvac_idf_block = hf.read()
-                    hvac_idf_block = hvac_idf_block.replace("{ZONE_NAME}", "ZONE ONE")
+            # 6.5 HVAC from the templates shared with the OpenStudio builder; outdoor air = Base.idf's "ZONE ONE OA" (ventilation ACH)
+            from hvac_templates import hvac_block
+            hvac_idf_block = hvac_block(hvac_type, "ZONE ONE", "ZONE ONE OA")
+            print(f"[AI Assembler] HVAC: {hvac_type} ({len(hvac_idf_block)} chars)")
 
             # 7. Stitch it all together
             final_idf = self.base_idf + "\n\n"
@@ -500,7 +490,8 @@ class AIPipelines:
             # 8. Replace placeholder constructions and thermodynamics inside the geometry and Base
             final_idf = final_idf.replace("{EXTERIOR_WALL_CONSTR}", global_wall)
             final_idf = final_idf.replace("{ROOF_CONSTR}", roof_name)
-            final_idf = final_idf.replace("{FLOOR_CONSTR}", global_wall) # Simplified for now
+            floor_name = self._resolve_construction(params.get("floor_layers"), "Floor", custom_constructions_list, idf_assembler, extracted_blocks) or global_wall
+            final_idf = final_idf.replace("{FLOOR_CONSTR}", floor_name)
             
             # Inject HVAC system block
             final_idf = final_idf.replace("{HVAC_SYSTEM_BLOCK}", hvac_idf_block)
@@ -987,6 +978,12 @@ class AIPipelines:
                     r_name = default_constr
                     idf_assembler.resolve_dependencies("Construction", default_constr, extracted_blocks)
             z["roof_construction"] = r_name
+
+            f_layers = z.get("floor_layers") or params.get("floor_layers")
+            f_name = self._resolve_construction(f_layers, f"Floor_{z['name']}", custom_constructions_list, idf_assembler, extracted_blocks) if f_layers else None
+            if f_name and not f_name.startswith("Custom_"):
+                idf_assembler.resolve_dependencies("Construction", f_name, extracted_blocks)
+            z["floor_construction"] = f_name or w_name   # no floor given: the zone's wall construction, as before
             
             win_layers = z.get("window_layers") or z.get("window_construction")
             win_name = None
@@ -1000,27 +997,12 @@ class AIPipelines:
         geometry_idf, adjacency_info = coordinates_calculator.generate_multizone_geometry(zones, zone_origins)
 
         # --- Step 5: Load HVAC templates for each zone ---
+        # HVAC from the templates shared with the OpenStudio builder; outdoor air = the zone's {zn}_OA (ventilation ACH, step 6)
+        from hvac_templates import hvac_block
         hvac_idf_block = ""
-        hvac_template_dir = os.path.join(os.path.dirname(__file__), "..", "idf_templates", "hvac")
         for z in zones:
             zone_hvac = z.get("hvac_type") or params.get("hvac_type") or "ideal_loads"
-            allowed_hvac = ["ideal_loads", "ptac", "psz_ac"]
-            if zone_hvac not in allowed_hvac:
-                zone_hvac = "ideal_loads"
-
-            hvac_template_path = os.path.join(hvac_template_dir, f"{zone_hvac}.idf")
-            if os.path.exists(hvac_template_path):
-                with open(hvac_template_path, "r", encoding="utf-8") as hf:
-                    zone_hvac_block = hf.read()
-                zone_hvac_block = zone_hvac_block.replace("{ZONE_NAME}", z["name"])
-                hvac_idf_block += zone_hvac_block + "\n"
-            else:
-                fallback_path = os.path.join(hvac_template_dir, "ideal_loads.idf")
-                if os.path.exists(fallback_path):
-                    with open(fallback_path, "r", encoding="utf-8") as hf:
-                        zone_hvac_block = hf.read()
-                    zone_hvac_block = zone_hvac_block.replace("{ZONE_NAME}", z["name"])
-                    hvac_idf_block += zone_hvac_block + "\n"
+            hvac_idf_block += hvac_block(zone_hvac, z["name"], f"{z['name']}_OA") + "\n"
 
         # --- Step 6: Generate per-zone People/Lights/Equipment/Infiltration/Ventilation/Thermostat ---
         zone_objects_block = ""

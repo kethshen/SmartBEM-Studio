@@ -49,10 +49,10 @@ def generate_zone_geometry(
     {wind},                  !- Wind Exposure
     {vf},                    !- View Factor to Ground
     4,                       !- Number of Vertices
-    {v1[0]:.2f}, {v1[1]:.2f}, {v1[2]:.2f},  !- X,Y,Z ==> Vertex 1
-    {v2[0]:.2f}, {v2[1]:.2f}, {v2[2]:.2f},  !- X,Y,Z ==> Vertex 2
-    {v3[0]:.2f}, {v3[1]:.2f}, {v3[2]:.2f},  !- X,Y,Z ==> Vertex 3
-    {v4[0]:.2f}, {v4[1]:.2f}, {v4[2]:.2f};  !- X,Y,Z ==> Vertex 4
+    {v1[0]:.4f}, {v1[1]:.4f}, {v1[2]:.4f},  !- X,Y,Z ==> Vertex 1
+    {v2[0]:.4f}, {v2[1]:.4f}, {v2[2]:.4f},  !- X,Y,Z ==> Vertex 2
+    {v3[0]:.4f}, {v3[1]:.4f}, {v3[2]:.4f},  !- X,Y,Z ==> Vertex 3
+    {v4[0]:.4f}, {v4[1]:.4f}, {v4[2]:.4f};  !- X,Y,Z ==> Vertex 4
 """
 
     def make_triangle_surface(name, surf_type, constr, out_bound, sun, wind, v1, v2, v3):
@@ -70,9 +70,9 @@ def generate_zone_geometry(
     {wind},                  !- Wind Exposure
     {vf},                    !- View Factor to Ground
     3,                       !- Number of Vertices
-    {v1[0]:.2f}, {v1[1]:.2f}, {v1[2]:.2f},  !- X,Y,Z ==> Vertex 1
-    {v2[0]:.2f}, {v2[1]:.2f}, {v2[2]:.2f},  !- X,Y,Z ==> Vertex 2
-    {v3[0]:.2f}, {v3[1]:.2f}, {v3[2]:.2f};  !- X,Y,Z ==> Vertex 3
+    {v1[0]:.4f}, {v1[1]:.4f}, {v1[2]:.4f},  !- X,Y,Z ==> Vertex 1
+    {v2[0]:.4f}, {v2[1]:.4f}, {v2[2]:.4f},  !- X,Y,Z ==> Vertex 2
+    {v3[0]:.4f}, {v3[1]:.4f}, {v3[2]:.4f};  !- X,Y,Z ==> Vertex 3
 """
 
     def make_skylight(roof_name, v1, v2, v3, v4, roof_width, roof_height_slant, skylight_data):
@@ -106,10 +106,10 @@ def generate_zone_geometry(
     ,                        !- Frame and Divider Name
     1,                       !- Multiplier
     4,                       !- Number of Vertices
-    {win_v1[0]:.2f}, {win_v1[1]:.2f}, {win_v1[2]:.2f},  !- X,Y,Z ==> Vertex 1
-    {win_v2[0]:.2f}, {win_v2[1]:.2f}, {win_v2[2]:.2f},  !- X,Y,Z ==> Vertex 2
-    {win_v3[0]:.2f}, {win_v3[1]:.2f}, {win_v3[2]:.2f},  !- X,Y,Z ==> Vertex 3
-    {win_v4[0]:.2f}, {win_v4[1]:.2f}, {win_v4[2]:.2f};  !- X,Y,Z ==> Vertex 4
+    {win_v1[0]:.4f}, {win_v1[1]:.4f}, {win_v1[2]:.4f},  !- X,Y,Z ==> Vertex 1
+    {win_v2[0]:.4f}, {win_v2[1]:.4f}, {win_v2[2]:.4f},  !- X,Y,Z ==> Vertex 2
+    {win_v3[0]:.4f}, {win_v3[1]:.4f}, {win_v3[2]:.4f},  !- X,Y,Z ==> Vertex 3
+    {win_v4[0]:.4f}, {win_v4[1]:.4f}, {win_v4[2]:.4f};  !- X,Y,Z ==> Vertex 4
 """
 
     def make_window(wall_name, v1, v2, wall_width, wall_height, wwr_val, window_data=None):
@@ -163,10 +163,10 @@ def generate_zone_geometry(
     ,                        !- Frame and Divider Name
     1,                       !- Multiplier
     4,                       !- Number of Vertices
-    {win_bl_x:.2f}, {win_bl_y:.2f}, {z_bottom:.2f},  !- X,Y,Z ==> Vertex 1
-    {win_br_x:.2f}, {win_br_y:.2f}, {z_bottom:.2f},  !- X,Y,Z ==> Vertex 2
-    {win_br_x:.2f}, {win_br_y:.2f}, {z_top:.2f},  !- X,Y,Z ==> Vertex 3
-    {win_bl_x:.2f}, {win_bl_y:.2f}, {z_top:.2f};  !- X,Y,Z ==> Vertex 4
+    {win_bl_x:.4f}, {win_bl_y:.4f}, {z_bottom:.4f},  !- X,Y,Z ==> Vertex 1
+    {win_br_x:.4f}, {win_br_y:.4f}, {z_bottom:.4f},  !- X,Y,Z ==> Vertex 2
+    {win_br_x:.4f}, {win_br_y:.4f}, {z_top:.4f},  !- X,Y,Z ==> Vertex 3
+    {win_bl_x:.4f}, {win_bl_y:.4f}, {z_top:.4f};  !- X,Y,Z ==> Vertex 4
 """
 
     def make_door(wall_name, v1, v2, wall_width, wall_height, door_data=None):
@@ -219,10 +219,10 @@ def generate_zone_geometry(
     ,                        !- Frame and Divider Name
     1,                       !- Multiplier
     4,                       !- Number of Vertices
-    {win_bl_x:.2f}, {win_bl_y:.2f}, {z_bottom:.2f},  !- X,Y,Z ==> Vertex 1
-    {win_br_x:.2f}, {win_br_y:.2f}, {z_bottom:.2f},  !- X,Y,Z ==> Vertex 2
-    {win_br_x:.2f}, {win_br_y:.2f}, {z_top:.2f},  !- X,Y,Z ==> Vertex 3
-    {win_bl_x:.2f}, {win_bl_y:.2f}, {z_top:.2f};  !- X,Y,Z ==> Vertex 4
+    {win_bl_x:.4f}, {win_bl_y:.4f}, {z_bottom:.4f},  !- X,Y,Z ==> Vertex 1
+    {win_br_x:.4f}, {win_br_y:.4f}, {z_bottom:.4f},  !- X,Y,Z ==> Vertex 2
+    {win_br_x:.4f}, {win_br_y:.4f}, {z_top:.4f},  !- X,Y,Z ==> Vertex 3
+    {win_bl_x:.4f}, {win_bl_y:.4f}, {z_top:.4f};  !- X,Y,Z ==> Vertex 4
 """
 
     # Using placeholder text that our backend Assembler will string-replace later for roof and floor
@@ -528,10 +528,10 @@ def generate_multizone_geometry(zones, zone_origins):
     {wind},                  !- Wind Exposure
     {vf},                    !- View Factor to Ground
     4,                       !- Number of Vertices
-    {v1[0]:.2f}, {v1[1]:.2f}, {v1[2]:.2f},  !- X,Y,Z ==> Vertex 1
-    {v2[0]:.2f}, {v2[1]:.2f}, {v2[2]:.2f},  !- X,Y,Z ==> Vertex 2
-    {v3[0]:.2f}, {v3[1]:.2f}, {v3[2]:.2f},  !- X,Y,Z ==> Vertex 3
-    {v4[0]:.2f}, {v4[1]:.2f}, {v4[2]:.2f};  !- X,Y,Z ==> Vertex 4
+    {v1[0]:.4f}, {v1[1]:.4f}, {v1[2]:.4f},  !- X,Y,Z ==> Vertex 1
+    {v2[0]:.4f}, {v2[1]:.4f}, {v2[2]:.4f},  !- X,Y,Z ==> Vertex 2
+    {v3[0]:.4f}, {v3[1]:.4f}, {v3[2]:.4f},  !- X,Y,Z ==> Vertex 3
+    {v4[0]:.4f}, {v4[1]:.4f}, {v4[2]:.4f};  !- X,Y,Z ==> Vertex 4
 """
     def make_triangle_surface(name, surf_type, constr, zone_name, out_bound, bound_obj, sun, wind, v1, v2, v3):
         vf = "0.50" if surf_type == "Wall" else "0"
@@ -549,9 +549,9 @@ def generate_multizone_geometry(zones, zone_origins):
     {wind},                  !- Wind Exposure
     {vf},                    !- View Factor to Ground
     3,                       !- Number of Vertices
-    {v1[0]:.2f}, {v1[1]:.2f}, {v1[2]:.2f},  !- X,Y,Z ==> Vertex 1
-    {v2[0]:.2f}, {v2[1]:.2f}, {v2[2]:.2f},  !- X,Y,Z ==> Vertex 2
-    {v3[0]:.2f}, {v3[1]:.2f}, {v3[2]:.2f};  !- X,Y,Z ==> Vertex 3
+    {v1[0]:.4f}, {v1[1]:.4f}, {v1[2]:.4f},  !- X,Y,Z ==> Vertex 1
+    {v2[0]:.4f}, {v2[1]:.4f}, {v2[2]:.4f},  !- X,Y,Z ==> Vertex 2
+    {v3[0]:.4f}, {v3[1]:.4f}, {v3[2]:.4f};  !- X,Y,Z ==> Vertex 3
 """
 
     def make_skylight_mz(roof_name, v1, v2, v3, v4, roof_width, roof_height_slant, skylight_data):
@@ -585,14 +585,14 @@ def generate_multizone_geometry(zones, zone_origins):
     ,                        !- Frame and Divider Name
     1,                       !- Multiplier
     4,                       !- Number of Vertices
-    {win_v1[0]:.2f}, {win_v1[1]:.2f}, {win_v1[2]:.2f},  !- X,Y,Z ==> Vertex 1
-    {win_v2[0]:.2f}, {win_v2[1]:.2f}, {win_v2[2]:.2f},  !- X,Y,Z ==> Vertex 2
-    {win_v3[0]:.2f}, {win_v3[1]:.2f}, {win_v3[2]:.2f},  !- X,Y,Z ==> Vertex 3
-    {win_v4[0]:.2f}, {win_v4[1]:.2f}, {win_v4[2]:.2f};  !- X,Y,Z ==> Vertex 4
+    {win_v1[0]:.4f}, {win_v1[1]:.4f}, {win_v1[2]:.4f},  !- X,Y,Z ==> Vertex 1
+    {win_v2[0]:.4f}, {win_v2[1]:.4f}, {win_v2[2]:.4f},  !- X,Y,Z ==> Vertex 2
+    {win_v3[0]:.4f}, {win_v3[1]:.4f}, {win_v3[2]:.4f},  !- X,Y,Z ==> Vertex 3
+    {win_v4[0]:.4f}, {win_v4[1]:.4f}, {win_v4[2]:.4f};  !- X,Y,Z ==> Vertex 4
 """
 
-    def make_window_mz(wall_name, v1, v2, wall_width, wall_height, wwr_val, window_data=None):
-        """Generate window for multi-zone (same logic as single-zone make_window)."""
+    def make_window_mz(wall_name, v1, v2, wall_width, wall_height, wwr_val, window_data=None, constr="{WINDOW_CONSTR}"):
+        """Generate window for multi-zone (same logic as single-zone make_window). constr: the zone's window construction."""
         if window_data and isinstance(window_data, dict):
             win_w = float(window_data.get("width") if window_data.get("width") is not None else 1.0)
             win_h = float(window_data.get("height") if window_data.get("height") is not None else 1.0)
@@ -635,17 +635,17 @@ def generate_multizone_geometry(zones, zone_origins):
   FenestrationSurface:Detailed,
     {wall_name}_Window,      !- Name
     Window,                  !- Surface Type
-    {{WINDOW_CONSTR}},         !- Construction Name
+    {constr},         !- Construction Name
     {wall_name},             !- Building Surface Name
     ,                        !- Outside Boundary Condition Object
     0.5,                     !- View Factor to Ground
     ,                        !- Frame and Divider Name
     1,                       !- Multiplier
     4,                       !- Number of Vertices
-    {win_bl_x:.2f}, {win_bl_y:.2f}, {z_bottom:.2f},  !- X,Y,Z ==> Vertex 1
-    {win_br_x:.2f}, {win_br_y:.2f}, {z_bottom:.2f},  !- X,Y,Z ==> Vertex 2
-    {win_br_x:.2f}, {win_br_y:.2f}, {z_top:.2f},  !- X,Y,Z ==> Vertex 3
-    {win_bl_x:.2f}, {win_bl_y:.2f}, {z_top:.2f};  !- X,Y,Z ==> Vertex 4
+    {win_bl_x:.4f}, {win_bl_y:.4f}, {z_bottom:.4f},  !- X,Y,Z ==> Vertex 1
+    {win_br_x:.4f}, {win_br_y:.4f}, {z_bottom:.4f},  !- X,Y,Z ==> Vertex 2
+    {win_br_x:.4f}, {win_br_y:.4f}, {z_top:.4f},  !- X,Y,Z ==> Vertex 3
+    {win_bl_x:.4f}, {win_bl_y:.4f}, {z_top:.4f};  !- X,Y,Z ==> Vertex 4
 """
 
     def make_door_mz(wall_name, v1, v2, wall_width, wall_height, door_data, constr="{EXTERIOR_DOOR_CONSTR}", twin_door=""):
@@ -701,10 +701,10 @@ def generate_multizone_geometry(zones, zone_origins):
     ,                        !- Frame and Divider Name
     1,                       !- Multiplier
     4,                       !- Number of Vertices
-    {win_bl_x:.2f}, {win_bl_y:.2f}, {z_bottom:.2f},  !- X,Y,Z ==> Vertex 1
-    {win_br_x:.2f}, {win_br_y:.2f}, {z_bottom:.2f},  !- X,Y,Z ==> Vertex 2
-    {win_br_x:.2f}, {win_br_y:.2f}, {z_top:.2f},  !- X,Y,Z ==> Vertex 3
-    {win_bl_x:.2f}, {win_bl_y:.2f}, {z_top:.2f};  !- X,Y,Z ==> Vertex 4
+    {win_bl_x:.4f}, {win_bl_y:.4f}, {z_bottom:.4f},  !- X,Y,Z ==> Vertex 1
+    {win_br_x:.4f}, {win_br_y:.4f}, {z_bottom:.4f},  !- X,Y,Z ==> Vertex 2
+    {win_br_x:.4f}, {win_br_y:.4f}, {z_top:.4f},  !- X,Y,Z ==> Vertex 3
+    {win_bl_x:.4f}, {win_bl_y:.4f}, {z_top:.4f};  !- X,Y,Z ==> Vertex 4
 """
 
     # Generate geometry for each zone
@@ -716,8 +716,8 @@ def generate_multizone_geometry(zones, zone_origins):
         ox, oy, oz = zone_origins[name]
         
         wall_constr = z.get("wall_construction", "{EXTERIOR_WALL_CONSTR}")
-        roof_constr = "{ROOF_CONSTR}"
-        floor_constr = "{FLOOR_CONSTR}"
+        roof_constr = z.get("roof_construction") or "{ROOF_CONSTR}"      # each zone's own roof and floor, as the OpenStudio builder does
+        floor_constr = z.get("floor_construction") or "{FLOOR_CONSTR}"
         
         wwr_s = z.get("wwr_south", 0.0)
         wwr_n = z.get("wwr_north", 0.0)
@@ -739,9 +739,9 @@ def generate_multizone_geometry(zones, zone_origins):
   Zone,
     {name},                  !- Name
     0,                       !- Direction of Relative North {{deg}}
-    {ox:.2f},                !- X Origin {{m}}
-    {oy:.2f},                !- Y Origin {{m}}
-    {oz:.2f},                !- Z Origin {{m}}
+    {ox:.4f},                !- X Origin {{m}}
+    {oy:.4f},                !- Y Origin {{m}}
+    {oz:.4f},                !- Z Origin {{m}}
     1,                       !- Type
     1,                       !- Multiplier
     autocalculate,           !- Ceiling Height {{m}}
@@ -795,7 +795,8 @@ def generate_multizone_geometry(zones, zone_origins):
                     v1, v2, v3, v4
                 )
                 # Add windows and doors only on exterior walls
-                idf_str += make_window_mz(surf_name, v1, v2, wall_w_dim, wall_h_dim, wwr, win_data)
+                idf_str += make_window_mz(surf_name, v1, v2, wall_w_dim, wall_h_dim, wwr, win_data,
+                                          constr=z.get("window_construction") or "{WINDOW_CONSTR}")
                 idf_str += make_door_mz(surf_name, v1, v2, wall_w_dim, wall_h_dim, dr_data)
         
         # Roof & Gable

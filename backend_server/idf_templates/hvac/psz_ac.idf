@@ -23,18 +23,10 @@
     ,                                     !- Zone Heating Design Supply Air Temperature Difference {deltaC}
     0.008,                                !- Zone Cooling Design Supply Air Humidity Ratio {kgWater/kgDryAir}
     0.008,                                !- Zone Heating Design Supply Air Humidity Ratio {kgWater/kgDryAir}
-    {ZONE_NAME} PSZ OA Spec,             !- Design Specification Outdoor Air Object Name
+    {OA_SPEC},                           !- Design Specification Outdoor Air Object Name (the zone's ventilation ACH)
     0.0,                                  !- Zone Heating Sizing Factor
     0.0;                                  !- Zone Cooling Sizing Factor
 
-! --- Outdoor Air Specification ---
-
-  DesignSpecification:OutdoorAir,
-    {ZONE_NAME} PSZ OA Spec,             !- Name
-    flow/person,                          !- Outdoor Air Method
-    0.00944,                              !- Outdoor Air Flow per Person {m3/s-person}
-    0.0,                                  !- Outdoor Air Flow per Zone Floor Area {m3/s-m2}
-    0.0;                                  !- Outdoor Air Flow per Zone {m3/s}
 
 ! --- System Sizing ---
 

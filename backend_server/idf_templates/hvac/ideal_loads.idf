@@ -45,7 +45,7 @@
     ConstantSupplyHumidityRatio,  !- Dehumidification Control Type
     ,                        !- Cooling Sensible Heat Ratio {dimensionless}
     ConstantSupplyHumidityRatio,  !- Humidification Control Type
-    ,                        !- Design Specification Outdoor Air Object Name
+    {OA_SPEC},               !- Design Specification Outdoor Air Object Name (the zone's ventilation ACH)
     ,                        !- Outdoor Air Inlet Node Name
     ,                        !- Demand Controlled Ventilation Type
     ,                        !- Outdoor Air Economizer Type
