@@ -482,11 +482,16 @@ def generate_multizone_geometry(zones, zone_origins):
                 
                 door_key_a = f"door_{wdir.lower()}"
                 door_key_b = f"door_{opp_dir.lower()}"
-                if z.get(door_key_a) and not zone_b.get(door_key_b):
-                    d_data = z[door_key_a].copy()
-                    rx = d_data.get("ref_x", "center")
-                    if rx == "left": d_data["ref_x"] = "right"
-                    elif rx == "right": d_data["ref_x"] = "left"
+                # A shared wall has one door: the first zone's door wins and the other side is always its mirror,
+                # so the two twin doors E+ needs have the same size and place (E+ accepts mismatched twins silently).
+                if z.get(door_key_a):
+                    d_data = z[door_key_a].copy() if isinstance(z[door_key_a], dict) else z[door_key_a]
+                    if isinstance(d_data, dict):
+                        rx = d_data.get("ref_x", "center")
+                        if rx == "left": d_data["ref_x"] = "right"
+                        elif rx == "right": d_data["ref_x"] = "left"
+                    if zone_b.get(door_key_b) and zone_b[door_key_b] != d_data:
+                        print(f"[Geometry MZ] {name_b} {door_key_b} replaced by the mirror of {name_a} {door_key_a} (one door per shared wall)")
                     zone_b[door_key_b] = d_data
                     
                 win_key_a = f"window_{wdir.lower()}"
@@ -643,8 +648,9 @@ def generate_multizone_geometry(zones, zone_origins):
     {win_bl_x:.2f}, {win_bl_y:.2f}, {z_top:.2f};  !- X,Y,Z ==> Vertex 4
 """
 
-    def make_door_mz(wall_name, v1, v2, wall_width, wall_height, door_data, constr="{EXTERIOR_DOOR_CONSTR}"):
-        """Generate door for multi-zone. constr allows specifying interior vs exterior door construction."""
+    def make_door_mz(wall_name, v1, v2, wall_width, wall_height, door_data, constr="{EXTERIOR_DOOR_CONSTR}", twin_door=""):
+        """Generate door for multi-zone. constr allows specifying interior vs exterior door construction.
+        twin_door: for a door in a shared wall, the name of the matching door in the other zone (E+ needs each to name the other)."""
         if not door_data:
             return ""
         
@@ -690,7 +696,7 @@ def generate_multizone_geometry(zones, zone_origins):
     Door,                  !- Surface Type
     {constr},  !- Construction Name
     {wall_name},             !- Building Surface Name
-    ,                        !- Outside Boundary Condition Object
+    {twin_door},             !- Outside Boundary Condition Object
     0.5,                     !- View Factor to Ground
     ,                        !- Frame and Divider Name
     1,                       !- Multiplier
@@ -780,7 +786,7 @@ def generate_multizone_geometry(zones, zone_origins):
                 # Interior doors use a special opaque construction.
                 if dr_data:
                     idf_str += make_door_mz(surf_name, v1, v2, wall_w_dim, wall_h_dim, dr_data,
-                                            constr="Interior_Door_Constr")
+                                            constr="Interior_Door_Constr", twin_door=f"{adj_wall_name}_Door")
             else:
                 # Exterior wall
                 idf_str += make_surface(
